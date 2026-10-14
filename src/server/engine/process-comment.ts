@@ -4,12 +4,15 @@ import { db } from "@/server/db/client";
 import { deliveries, type InstagramAccount } from "@/server/db/schema";
 import { getAccessToken, getActiveAccount } from "@/server/instagram/account";
 import { COMMENT_MAX_CHARS, DM_MAX_CHARS } from "@/server/instagram/constants";
-import { safeErrorMessage } from "@/server/instagram/graph";
+import { GraphApiError, safeErrorMessage } from "@/server/instagram/graph";
+import { logger } from "@/server/log";
 import { replyToComment, sendPrivateReply } from "@/server/instagram/messaging";
 import type { CommentEvent } from "@/server/instagram/webhook";
 import { getSetting } from "@/server/settings";
 import { resolveRule } from "./resolve";
 import { pickRandom, renderTemplate, truncateText } from "./template";
+
+const log = logger("engine");
 
 export type DeliverySource = "webhook" | "n8n" | "manual";
 
@@ -37,6 +40,16 @@ export interface ProcessResult {
   error: string | null;
   publicReplyId: string | null;
   dmMessageId: string | null;
+  /** Graph API error code of the first failure, if any. */
+  errorCode: string | null;
+  durationMs: number;
+}
+
+type ActionStatus = "not_attempted" | "sent" | "failed";
+
+function errorCodeOf(err: unknown): string {
+  if (err instanceof GraphApiError) return err.code !== undefined ? String(err.code) : `HTTP_${err.status}`;
+  return "INTERNAL";
 }
 
 function result(event: CommentEvent, partial: Partial<ProcessResult> & { status: ProcessStatus }): ProcessResult {
@@ -50,6 +63,8 @@ function result(event: CommentEvent, partial: Partial<ProcessResult> & { status:
     error: null,
     publicReplyId: null,
     dmMessageId: null,
+    errorCode: null,
+    durationMs: 0,
     ...partial,
   };
 }
@@ -109,6 +124,8 @@ export async function processCommentEvent(
   event: CommentEvent,
   opts: { source: DeliverySource; now?: Date },
 ): Promise<ProcessResult> {
+  const started = Date.now();
+  const elapsed = () => Date.now() - started;
   const [inserted] = await db
     .insert(deliveries)
     .values({
@@ -123,21 +140,41 @@ export async function processCommentEvent(
     })
     .onConflictDoNothing({ target: deliveries.commentId })
     .returning({ id: deliveries.id });
-  if (!inserted) return result(event, { status: "duplicate" });
+  if (!inserted) {
+    const res = result(event, { status: "duplicate", durationMs: elapsed() });
+    log.info("comment.processed", { commentId: event.commentId, status: res.status, source: opts.source, durationMs: res.durationMs });
+    return res;
+  }
   const deliveryId = inserted.id;
+
+  const finish = (res: ProcessResult): ProcessResult => {
+    log.info("comment.processed", {
+      commentId: res.commentId,
+      deliveryId,
+      source: opts.source,
+      status: res.status,
+      skipReason: res.skipReason,
+      ruleId: res.ruleId,
+      errorCode: res.errorCode,
+      durationMs: res.durationMs,
+    });
+    return res;
+  };
 
   const skip = async (
     reason: SkipReason,
     extra: { campaignId?: string | null; ruleId?: string | null; matchedKeyword?: string | null } = {},
   ): Promise<ProcessResult> => {
+    const durationMs = elapsed();
     await db
       .update(deliveries)
-      .set({ status: "skipped", skipReason: reason, processedAt: new Date(), ...extra })
+      .set({ status: "skipped", skipReason: reason, processedAt: new Date(), durationMs, ...extra })
       .where(eq(deliveries.id, deliveryId));
-    return result(event, { status: "skipped", deliveryId, skipReason: reason, ...extra });
+    return finish(result(event, { status: "skipped", deliveryId, skipReason: reason, durationMs, ...extra }));
   };
 
   let token: string | undefined;
+  let matchInfo: { campaignId: string; ruleId: string; matchedKeyword: string } | undefined;
   try {
     const account = await getActiveAccount();
     if (!account || !account.accessTokenEnc) return await skip("no_account");
@@ -148,7 +185,7 @@ export async function processCommentEvent(
 
     const match = await resolveRule({ accountId: account.id, mediaId: event.mediaId, text: event.text, now: opts.now });
     if (!match) return await skip("no_match");
-    const matchInfo = { campaignId: match.campaign.id, ruleId: match.rule.id, matchedKeyword: match.keyword };
+    matchInfo = { campaignId: match.campaign.id, ruleId: match.rule.id, matchedKeyword: match.keyword };
 
     if ((await getSetting("processing.enabled")) === false) return await skip("processing_disabled", matchInfo);
 
@@ -165,57 +202,88 @@ export async function processCommentEvent(
     token = getAccessToken(account);
     const vars = { username: event.fromUsername, keyword: match.keyword };
     const errors: string[] = [];
-    let attempted = 0;
-    let succeeded = 0;
+    let errorCode: string | null = null;
+    let publicReplyStatus: ActionStatus = "not_attempted";
+    let dmStatus: ActionStatus = "not_attempted";
     let publicReplyId: string | null = null;
     let dmMessageId: string | null = null;
 
     const variant = pickRandom(match.rule.publicReplies.filter((r) => r.trim()));
     const publicText = variant ? truncateText(renderTemplate(variant, vars).trim(), COMMENT_MAX_CHARS) : "";
     if (publicText) {
-      attempted++;
       try {
         publicReplyId = (await replyToComment(token, event.commentId, publicText)).id;
-        succeeded++;
+        publicReplyStatus = "sent";
       } catch (err) {
+        publicReplyStatus = "failed";
+        errorCode ??= errorCodeOf(err);
         errors.push(`public reply: ${safeErrorMessage(err, [token], 240)}`);
+        log.warn("action.public_reply_failed", { commentId: event.commentId, err: safeErrorMessage(err, [token]) });
       }
     }
 
     const dmText = truncateText(renderTemplate(match.rule.dmMessage, vars).trim(), DM_MAX_CHARS);
     if (dmText) {
-      attempted++;
       const button =
         match.rule.dmButtonUrl && match.rule.dmButtonTitle
           ? { title: match.rule.dmButtonTitle, url: match.rule.dmButtonUrl }
           : null;
       try {
-        dmMessageId = (
-          await sendPrivateReply({ accessToken: token, igUserId: account.igUserId, commentId: event.commentId, text: dmText, button })
-        ).messageId;
-        succeeded++;
+        const dm = await sendPrivateReply({
+          accessToken: token,
+          igUserId: account.igUserId,
+          commentId: event.commentId,
+          text: dmText,
+          button,
+        });
+        dmMessageId = dm.messageId;
+        dmStatus = "sent";
+        if (dm.templateFallback) {
+          log.warn("action.dm_template_fallback", { commentId: event.commentId, graphCode: dm.templateFallback.code });
+        }
       } catch (err) {
+        dmStatus = "failed";
+        errorCode ??= errorCodeOf(err);
         errors.push(`private reply: ${safeErrorMessage(err, [token], 240)}`);
+        log.warn("action.dm_failed", { commentId: event.commentId, err: safeErrorMessage(err, [token]) });
       }
     }
 
-    if (attempted === 0) return await skip("no_actions", matchInfo);
+    const outcomes = [publicReplyStatus, dmStatus].filter((s) => s !== "not_attempted");
+    if (outcomes.length === 0) return await skip("no_actions", matchInfo);
 
-    const status = succeeded === attempted ? "sent" : succeeded === 0 ? "failed" : "partial";
+    const status = outcomes.every((s) => s === "sent") ? "sent" : outcomes.every((s) => s === "failed") ? "failed" : "partial";
     const error = errors.length ? errors.join("; ") : null;
+    const durationMs = elapsed();
     await db
       .update(deliveries)
-      .set({ status, publicReplyId, dmMessageId, error, attempts: sql`${deliveries.attempts} + 1`, processedAt: new Date() })
+      .set({
+        status,
+        publicReplyStatus,
+        publicReplyId,
+        dmStatus,
+        dmMessageId,
+        error,
+        errorCode,
+        durationMs,
+        attempts: sql`${deliveries.attempts} + 1`,
+        processedAt: new Date(),
+      })
       .where(eq(deliveries.id, deliveryId));
-    return result(event, { status, deliveryId, ...matchInfo, error, publicReplyId, dmMessageId });
+    return finish(
+      result(event, { status, deliveryId, ...matchInfo, error, errorCode, publicReplyId, dmMessageId, durationMs }),
+    );
   } catch (err) {
     const error = safeErrorMessage(err, [token]);
+    const errorCode = errorCodeOf(err);
+    const durationMs = elapsed();
+    log.error("comment.processing_error", { commentId: event.commentId, deliveryId, err: error });
     await db
       .update(deliveries)
-      .set({ status: "failed", error, processedAt: new Date() })
+      .set({ status: "failed", error, errorCode, durationMs, processedAt: new Date() })
       .where(eq(deliveries.id, deliveryId))
       .catch(() => undefined);
-    return result(event, { status: "failed", deliveryId, error });
+    return finish(result(event, { status: "failed", deliveryId, ...matchInfo, error, errorCode, durationMs }));
   }
 }
 

@@ -1,12 +1,23 @@
 import "server-only";
+import { AppError } from "@/server/errors";
 import { ensureVerifyToken, getSetting } from "@/server/settings";
-import { checkVerifyRequest, extractCommentEvents, MAX_WEBHOOK_BODY_BYTES, parseWebhookPayload, verifySignature, type CommentEvent } from "./webhook";
+import { noStore } from "./http";
+import {
+  checkVerifyRequest,
+  extractCommentEvents,
+  MAX_WEBHOOK_BODY_BYTES,
+  parseWebhookPayload,
+  verifySignature,
+  type CommentEvent,
+} from "./webhook";
 
 export const SIGNATURE_HEADER = "x-hub-signature-256";
 
-export type InboundResult =
-  | { ok: true; events: CommentEvent[] }
-  | { ok: false; status: number; error: "payload_too_large" | "not_configured" | "invalid_signature" | "invalid_payload" };
+export interface AuthenticatedWebhook {
+  /** Number of `entry[]` items in the payload. */
+  entries: number;
+  events: CommentEvent[];
+}
 
 /** Reads the request body as raw text, enforcing {@link MAX_WEBHOOK_BODY_BYTES}. */
 export async function readRawBody(req: Request): Promise<string | null> {
@@ -19,18 +30,20 @@ export async function readRawBody(req: Request): Promise<string | null> {
 /**
  * Shared POST pipeline for Meta webhooks (direct or relayed by n8n): size limit → signature check
  * against `meta.appSecret` on the exact raw body → Zod parse → comment events.
+ * Throws {@link AppError}: VALIDATION (too large / bad payload), NOT_CONFIGURED (no app secret),
+ * UNAUTHORIZED (bad or missing signature).
  */
-export async function authenticateWebhook(req: Request): Promise<InboundResult> {
+export async function authenticateWebhook(req: Request): Promise<AuthenticatedWebhook> {
   const raw = await readRawBody(req);
-  if (raw === null) return { ok: false, status: 413, error: "payload_too_large" };
+  if (raw === null) throw new AppError("VALIDATION", "Payload too large");
   const appSecret = await getSetting("meta.appSecret");
-  if (!appSecret) return { ok: false, status: 503, error: "not_configured" };
+  if (!appSecret) throw new AppError("NOT_CONFIGURED", "Instagram app secret is not configured");
   if (!verifySignature(raw, req.headers.get(SIGNATURE_HEADER), appSecret)) {
-    return { ok: false, status: 401, error: "invalid_signature" };
+    throw new AppError("UNAUTHORIZED", "Invalid or missing X-Hub-Signature-256");
   }
   const payload = parseWebhookPayload(raw);
-  if (!payload) return { ok: false, status: 400, error: "invalid_payload" };
-  return { ok: true, events: extractCommentEvents(payload) };
+  if (!payload) throw new AppError("VALIDATION", "Invalid webhook payload");
+  return { entries: payload.entry.length, events: extractCommentEvents(payload) };
 }
 
 /** Answers Meta's GET verification handshake (`hub.challenge` as text/plain, or 403). */
@@ -38,9 +51,4 @@ export async function verificationResponse(params: URLSearchParams): Promise<Res
   const challenge = checkVerifyRequest(params, await ensureVerifyToken());
   if (challenge === null) return new Response("Forbidden", { status: 403, headers: noStore("text/plain") });
   return new Response(challenge, { status: 200, headers: noStore("text/plain") });
-}
-
-/** Common no-cache headers. */
-export function noStore(contentType?: string): HeadersInit {
-  return { "Cache-Control": "no-store", ...(contentType ? { "Content-Type": `${contentType}; charset=utf-8` } : {}) };
 }

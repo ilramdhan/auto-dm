@@ -1,6 +1,10 @@
 import "server-only";
 import { z } from "zod";
+import { AppError } from "@/server/errors";
+import { logger } from "@/server/log";
 import { GRAPH_BASE_URL } from "./constants";
+
+const log = logger("graph");
 
 /* --------------------------------- errors --------------------------------- */
 
@@ -34,6 +38,11 @@ export class GraphApiError extends Error {
   /** App/user/business-level throttling. */
   get isRateLimit(): boolean {
     return this.status === 429 || [4, 17, 32, 613].includes(this.code ?? -1);
+  }
+
+  /** Maps to the app-wide error type (`UPSTREAM`, 502) for route handlers. */
+  toAppError(publicMessage = "Instagram API request failed"): AppError {
+    return new AppError("UPSTREAM", publicMessage, { cause: this });
   }
 
   /** Short, log-safe description, e.g. `(#100) Invalid parameter [code=100 subcode=33 trace=Ab12]`. */
@@ -155,6 +164,21 @@ export async function graphRequest<T>(opts: GraphRequestOptions<T>): Promise<T> 
   const retries = Math.max(0, opts.retries ?? 2);
   const idempotent = opts.idempotent ?? method === "GET";
   const url = buildUrl(opts.path, opts.query, opts.accessToken);
+  // Log-safe identifier: path only, never the query string (it carries the token/secret).
+  const logPath = /^https:\/\//.test(opts.path) ? new URL(opts.path).pathname : opts.path;
+  const fail = (err: GraphApiError, attempts: number): GraphApiError => {
+    log.warn("graph.request_failed", {
+      method,
+      path: logPath,
+      attempts,
+      httpStatus: err.status,
+      code: err.code,
+      subcode: err.subcode,
+      fbtraceId: err.fbtraceId,
+      message: err.message,
+    });
+    return err;
+  };
 
   let body: BodyInit | undefined;
   const headers: Record<string, string> = { Accept: "application/json" };
@@ -183,9 +207,10 @@ export async function graphRequest<T>(opts: GraphRequestOptions<T>): Promise<T> 
         await sleep(backoffMs(attempt, null));
         continue;
       }
-      throw new GraphApiError(timedOut ? "Instagram API request timed out" : "Network error calling Instagram API", {
-        status: 0,
-      });
+      throw fail(
+        new GraphApiError(timedOut ? "Instagram API request timed out" : "Network error calling Instagram API", { status: 0 }),
+        attempt + 1,
+      );
     }
 
     const text = await res.text();
@@ -202,18 +227,18 @@ export async function graphRequest<T>(opts: GraphRequestOptions<T>): Promise<T> 
         await sleep(backoffMs(attempt, res.headers.get("retry-after")));
         continue;
       }
-      throw errorFromBody(res.status, parsed);
+      throw fail(errorFromBody(res.status, parsed), attempt + 1);
     }
 
     if (parsed === undefined) {
-      throw new GraphApiError("Instagram API returned a non-JSON response", { status: res.status });
+      throw fail(new GraphApiError("Instagram API returned a non-JSON response", { status: res.status }), attempt + 1);
     }
     // Some endpoints answer HTTP 200 with an error envelope.
-    if (graphErrorSchema.safeParse(parsed).success) throw errorFromBody(res.status, parsed);
+    if (graphErrorSchema.safeParse(parsed).success) throw fail(errorFromBody(res.status, parsed), attempt + 1);
 
     const result = opts.schema.safeParse(parsed);
     if (!result.success) {
-      throw new GraphApiError("Unexpected Instagram API response shape", { status: res.status });
+      throw fail(new GraphApiError("Unexpected Instagram API response shape", { status: res.status }), attempt + 1);
     }
     return result.data;
   }

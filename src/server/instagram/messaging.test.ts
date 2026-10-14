@@ -79,7 +79,7 @@ describe("sendPrivateReply", () => {
       text: "Here you go",
       button: { title: "Open", url: "https://example.com/x" },
     });
-    expect(res).toEqual({ messageId: "m3", format: "text" });
+    expect(res).toEqual({ messageId: "m3", format: "text", templateFallback: { code: 100, message: "Invalid parameter" } });
     expect(bodyOf(fetchMock.mock.calls[1]!)).toEqual({
       recipient: { comment_id: "c" },
       message: { text: "Here you go\n\nOpen: https://example.com/x" },

@@ -2,11 +2,14 @@ import { NextResponse, type NextRequest } from "next/server";
 import { appUrl } from "@/env";
 import { requireUser } from "@/server/auth/guard";
 import { safeErrorMessage } from "@/server/instagram/graph";
+import { logger } from "@/server/log";
 import { completeOAuth, OAUTH_STATE_COOKIE, OAuthFlowError, verifyOAuthState } from "@/server/instagram/oauth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
+
+const log = logger("oauth");
 
 function back(query: string): NextResponse {
   const res = NextResponse.redirect(new URL(`/settings?tab=instagram&${query}`, appUrl()), 303);
@@ -32,12 +35,13 @@ export async function GET(req: NextRequest) {
   if (!code) return back("error=missing_code");
 
   try {
-    const { subscribed } = await completeOAuth(code);
+    const { account, subscribed } = await completeOAuth(code);
+    log.info("oauth.connected", { igUserId: account.igUserId, username: account.username, subscribed });
     return back(subscribed ? "connected=1" : "connected=1&warning=subscribe_failed");
   } catch (err) {
     const code = err instanceof OAuthFlowError ? err.code : "token_exchange_failed";
     const cause = err instanceof OAuthFlowError ? err.cause : err;
-    console.error(`[oauth] connect failed (${code}):`, safeErrorMessage(cause));
+    log.warn("oauth.connect_failed", { reason: code, err: safeErrorMessage(cause) });
     return back(`error=${code}`);
   }
 }

@@ -34,6 +34,8 @@ export interface PrivateReplyResult {
   messageId: string;
   /** "button" when sent as a button template, "text" otherwise. */
   format: "button" | "text";
+  /** Set when a button template was rejected and the DM was re-sent as text + link. */
+  templateFallback?: { code: number | undefined; message: string };
 }
 
 /** Appends the button URL to the text, keeping the total within {@link DM_MAX_CHARS}. */
@@ -42,6 +44,14 @@ export function textWithLink(text: string, button: { title: string; url: string 
   const room = DM_MAX_CHARS - Array.from(suffix).length;
   if (room < 1) return truncateText(text, DM_MAX_CHARS);
   return `${truncateText(text, room)}${suffix}`;
+}
+
+/**
+ * A 4xx Graph error that is not about auth or throttling — i.e. Instagram rejected the message
+ * format (e.g. `(#100) Invalid parameter` for an unsupported template). Retried once as text.
+ */
+function isTemplateRejection(err: unknown): err is GraphApiError {
+  return err instanceof GraphApiError && err.status >= 400 && err.status < 500 && !err.isAuthError && !err.isRateLimit;
 }
 
 async function sendMessage(accessToken: string, igUserId: string, commentId: string, message: unknown) {
@@ -82,9 +92,9 @@ export async function sendPrivateReply(input: PrivateReplyInput): Promise<Privat
         });
         return { messageId: res.message_id, format: "button" };
       } catch (err) {
-        const fallback =
-          err instanceof GraphApiError && err.status >= 400 && err.status < 500 && !err.isAuthError && !err.isRateLimit;
-        if (!fallback) throw err;
+        if (!isTemplateRejection(err)) throw err;
+        const res = await sendMessage(accessToken, igUserId, commentId, { text: textWithLink(text, button) });
+        return { messageId: res.message_id, format: "text", templateFallback: { code: err.code, message: err.message } };
       }
     }
     const res = await sendMessage(accessToken, igUserId, commentId, { text: textWithLink(text, button) });

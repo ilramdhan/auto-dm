@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Instagram, PauseCircle, PlayCircle } from "lucide-react";
+import { PauseCircle, PlayCircle } from "lucide-react";
+import { InstagramIcon } from "@/components/icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +32,7 @@ export function StatusCard({ status, onNavigate }: { status: ShellStatus; onNavi
           onClick={onNavigate}
           className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-sm"
         >
-          <Instagram className="size-4" aria-hidden />
+          <InstagramIcon className="size-4" aria-hidden />
           <span>Instagram not connected</span>
         </Link>
       )}

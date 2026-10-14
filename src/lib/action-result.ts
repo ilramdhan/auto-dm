@@ -1,26 +1,26 @@
-import { z } from "zod";
+import type { z } from "zod";
+import type { ActionResult } from "@/server/errors";
 
-/** Uniform server-action result shared by every form. */
-export type ActionResult<T = undefined> =
-  | ({ ok: true; message?: string } & (T extends undefined ? { data?: undefined } : { data: T }))
-  | { ok: false; error: string; fieldErrors?: Record<string, string[] | undefined> };
+/**
+ * Isomorphic helpers around the shared `ActionResult` type (defined in server/errors.ts;
+ * type-only import, so nothing server-only reaches the client bundle).
+ */
+export type { ActionResult };
+export type FieldErrors = Record<string, string[]>;
+export type Failure = Extract<ActionResult, { ok: false }>;
 
-export type FieldErrors = Record<string, string[] | undefined>;
-
-export function ok(message?: string): ActionResult {
-  return { ok: true, message };
+export function ok(): ActionResult;
+export function ok<T>(data: T): ActionResult<T>;
+export function ok<T>(data?: T): ActionResult<T | undefined> {
+  return { ok: true, data };
 }
 
-export function okWith<T>(data: T, message?: string): ActionResult<T> {
-  return { ok: true, message, data } as ActionResult<T>;
+export function fail(error: string, fieldErrors?: FieldErrors): Failure {
+  return { ok: false, error, ...(fieldErrors ? { code: "VALIDATION" as const, fieldErrors } : {}) };
 }
 
-export function fail(error: string, fieldErrors?: FieldErrors): { ok: false; error: string; fieldErrors?: FieldErrors } {
-  return { ok: false, error, fieldErrors };
-}
-
-/** Turn a ZodError into `{ ok:false, fieldErrors }` keyed by dotted path. */
-export function fromZodError(err: z.ZodError, message = "Please fix the highlighted fields.") {
+/** ZodError → `{ ok:false, fieldErrors }` keyed by dotted path ("publicReplies.0"). */
+export function zodFailure(err: z.ZodError, message = "Please fix the highlighted fields."): Failure {
   const fieldErrors: FieldErrors = {};
   for (const issue of err.issues) {
     const key = issue.path.length ? issue.path.join(".") : "_form";
