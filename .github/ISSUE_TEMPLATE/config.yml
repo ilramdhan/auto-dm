@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ilramdhan/auto-reply-ig/security/advisories/new
+    about: Report privately, never in a public issue.
+  - name: Questions and help
+    url: https://github.com/ilramdhan/auto-reply-ig/blob/main/SUPPORT.md
+    about: Read the docs and support guide first.

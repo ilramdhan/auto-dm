@@ -1,0 +1,43 @@
+name: Bug report
+description: Something is broken
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do **not** paste access tokens, app secrets or full webhook payloads. Check docs/troubleshooting.md first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        [Webhook / Meta, Private reply / DM, Public reply, Dashboard UI, Auth, Deployment / build, n8n, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+  - type: dropdown
+    id: appmode
+    attributes:
+      label: Meta app mode
+      options: [Development, Live, Not applicable]
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Activity error message (redacted)
+      render: shell

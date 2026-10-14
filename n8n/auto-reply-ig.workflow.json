@@ -1,0 +1,333 @@
+{
+  "name": "auto-reply-ig relay",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## auto-reply-ig relay\n\n**Setup (3 steps)**\n1. Create a **Header Auth** credential named `auto-reply-ig API key`: Name = `Authorization`, Value = `Bearer <API key from the app: Settings > n8n>`. Select it on the two HTTP Request nodes.\n2. In the **Config** node, set `appUrl` to your app's public URL (no trailing slash). Skipped if you downloaded the workflow from the app.\n3. Activate the workflow and paste the **Production URL** of the webhook nodes into Meta > Webhooks > Callback URL.\n\nThe app does all keyword matching and sending. This workflow only relays Meta's requests, so it works for every post and keyword.",
+        "height": 300,
+        "width": 440,
+        "color": 4
+      },
+      "id": "5f3f0a51-0001-4a00-8000-000000000001",
+      "name": "Sticky: Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-240, -120]
+    },
+    {
+      "parameters": {
+        "content": "**Do not re-serialize the body.**\nMeta signs the exact bytes it sends. The POST webhook has **Raw Body** on, and the Code node forwards the original string untouched. Changing it (e.g. JSON.stringify) breaks the HMAC check in the app.",
+        "height": 180,
+        "width": 340,
+        "color": 3
+      },
+      "id": "5f3f0a51-0002-4a00-8000-000000000002",
+      "name": "Sticky: Raw body",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [220, -120]
+    },
+    {
+      "parameters": {
+        "content": "**Extend here.** Add your own nodes after the event relay (e.g. Google Sheets log, Slack/Telegram alert, CRM). Each item is one comment result: `commentId`, `status`, `matchedKeyword`, `error`.",
+        "height": 160,
+        "width": 340,
+        "color": 5
+      },
+      "id": "5f3f0a51-0003-4a00-8000-000000000003",
+      "name": "Sticky: Extend",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [1180, 360]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "instagram",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "5f3f0a51-0010-4a00-8000-000000000010",
+      "name": "Webhook GET (Meta verification)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-200, 260],
+      "webhookId": "7c1e0b2a-3d4f-4a5b-8c6d-1a2b3c4d5e01"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "instagram",
+        "responseMode": "onReceived",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "5f3f0a51-0011-4a00-8000-000000000011",
+      "name": "Webhook POST (Meta events)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-200, 460],
+      "webhookId": "7c1e0b2a-3d4f-4a5b-8c6d-1a2b3c4d5e02"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Recover Meta's raw request body (byte-identical) and signature header.\n// For GET (verification) requests there is no body, only query params.\nconst out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n  const headers = item.json.headers || {};\n  let rawBody = '';\n  if (item.binary && item.binary.data) {\n    const buf = await this.helpers.getBinaryDataBuffer(i, 'data');\n    rawBody = buf.toString('utf8');\n  }\n  out.push({\n    json: {\n      isVerification: !rawBody,\n      query: item.json.query || {},\n      signature: headers['x-hub-signature-256'] || '',\n      rawBody,\n    },\n  });\n}\nreturn out;"
+      },
+      "id": "5f3f0a51-0012-4a00-8000-000000000012",
+      "name": "Extract raw body + signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [60, 360]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1b2c3d4-0001-4a00-8000-000000000001",
+              "name": "appUrl",
+              "value": "__APP_URL__",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "5f3f0a51-0013-4a00-8000-000000000013",
+      "name": "Config",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [300, 360]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1d2e3f4-0001-4a00-8000-000000000001",
+              "leftValue": "={{ $json.isVerification }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5f3f0a51-0014-4a00-8000-000000000014",
+      "name": "Is verification request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [540, 360]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.appUrl }}/api/v1/n8n/verify",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            { "name": "hub.mode", "value": "={{ $json.query['hub.mode'] }}" },
+            { "name": "hub.verify_token", "value": "={{ $json.query['hub.verify_token'] }}" },
+            { "name": "hub.challenge", "value": "={{ $json.query['hub.challenge'] }}" }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "5f3f0a51-0015-4a00-8000-000000000015",
+      "name": "App: verify token",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 220],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "auto-reply-ig API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.data }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "text/plain" }]
+          }
+        }
+      },
+      "id": "5f3f0a51-0016-4a00-8000-000000000016",
+      "name": "Respond challenge (200)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1060, 160]
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Forbidden",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [{ "name": "Content-Type", "value": "text/plain" }]
+          }
+        }
+      },
+      "id": "5f3f0a51-0017-4a00-8000-000000000017",
+      "name": "Respond 403",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1060, 320]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.appUrl }}/api/v1/n8n/events",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [{ "name": "X-Hub-Signature-256", "value": "={{ $json.signature }}" }]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.rawBody }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "5f3f0a51-0018-4a00-8000-000000000018",
+      "name": "App: relay events",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [800, 560],
+      "onError": "continueErrorOutput",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_ME",
+          "name": "auto-reply-ig API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "results",
+        "options": {}
+      },
+      "id": "5f3f0a51-0019-4a00-8000-000000000019",
+      "name": "Split results",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [1060, 520]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1d2e3f4-0002-4a00-8000-000000000002",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "failed",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5f3f0a51-001a-4a00-8000-00000000001a",
+      "name": "Any failed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [1300, 520]
+    },
+    {
+      "parameters": {},
+      "id": "5f3f0a51-001b-4a00-8000-00000000001b",
+      "name": "Notify on failure (add Telegram/Slack/Email here)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [1560, 500]
+    }
+  ],
+  "connections": {
+    "Webhook GET (Meta verification)": {
+      "main": [[{ "node": "Extract raw body + signature", "type": "main", "index": 0 }]]
+    },
+    "Webhook POST (Meta events)": {
+      "main": [[{ "node": "Extract raw body + signature", "type": "main", "index": 0 }]]
+    },
+    "Extract raw body + signature": {
+      "main": [[{ "node": "Config", "type": "main", "index": 0 }]]
+    },
+    "Config": {
+      "main": [[{ "node": "Is verification request?", "type": "main", "index": 0 }]]
+    },
+    "Is verification request?": {
+      "main": [
+        [{ "node": "App: verify token", "type": "main", "index": 0 }],
+        [{ "node": "App: relay events", "type": "main", "index": 0 }]
+      ]
+    },
+    "App: verify token": {
+      "main": [
+        [{ "node": "Respond challenge (200)", "type": "main", "index": 0 }],
+        [{ "node": "Respond 403", "type": "main", "index": 0 }]
+      ]
+    },
+    "App: relay events": {
+      "main": [
+        [{ "node": "Split results", "type": "main", "index": 0 }],
+        [{ "node": "Notify on failure (add Telegram/Slack/Email here)", "type": "main", "index": 0 }]
+      ]
+    },
+    "Split results": {
+      "main": [[{ "node": "Any failed?", "type": "main", "index": 0 }]]
+    },
+    "Any failed?": {
+      "main": [
+        [{ "node": "Notify on failure (add Telegram/Slack/Email here)", "type": "main", "index": 0 }],
+        []
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "active": false,
+  "tags": []
+}
