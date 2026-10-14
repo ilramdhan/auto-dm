@@ -38,6 +38,7 @@ service by exhausting free-tier quotas; issues requiring a compromised admin acc
 - **Row Level Security** is enabled on every table with no policies, so the Supabase anon/public key
   cannot read or write anything.
 - Secrets are never sent to the browser and never logged.
+- Every page is served with a per-request **nonce-based Content-Security-Policy** (`script-src 'nonce-…' 'strict-dynamic'`, `frame-ancestors 'none'`, `object-src 'none'`), plus `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy` and `Permissions-Policy`.
 
 ## Operator hardening
 
