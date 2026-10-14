@@ -15,6 +15,7 @@ import { getPublicSettings } from "@/server/settings";
 import { AccountTab } from "./account-tab";
 import { InstagramTab } from "./instagram-tab";
 import { ProcessingTab } from "./processing-tab";
+import { TimeZoneCard } from "./timezone-card";
 import { N8nTab } from "./n8n-tab";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -112,10 +113,13 @@ export default async function SettingsPage({
           />
         </TabsContent>
         <TabsContent value="processing">
-          <ProcessingTab
-            mode={settings["processing.mode"].value ?? "webhook"}
-            enabled={settings["processing.enabled"].value ?? true}
-          />
+          <div className="grid gap-6">
+            <ProcessingTab
+              mode={settings["processing.mode"].value ?? "webhook"}
+              enabled={settings["processing.enabled"].value ?? true}
+            />
+            <TimeZoneCard timeZone={settings["general.timezone"].value ?? "UTC"} />
+          </div>
         </TabsContent>
         <TabsContent value="n8n">
           <N8nTab keys={apiKeys} appUrl={base} mode={settings["processing.mode"].value ?? "webhook"} />

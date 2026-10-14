@@ -2,14 +2,18 @@ import "server-only";
 import { and, eq, gte, isNull, lt, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { campaigns, deliveries, rules } from "@/server/db/schema";
+import { addDaysYmd } from "@/lib/timezone";
 import type { ResolvedRange } from "@/lib/validation/analytics";
 import type { DeliveryStatusValue } from "@/lib/validation/activity";
 
 /**
  * All aggregation happens in Postgres (`count(*) filter (where …)`, `date_trunc`), scoped by the
- * indexed `created_at` / `(campaign_id, created_at)` columns. Days are UTC.
+ * indexed `created_at` / `(campaign_id, created_at)` columns. Calendar days use the configured time zone.
  */
-export type AnalyticsScope = { range: Pick<ResolvedRange, "from" | "to" | "days">; campaignId?: string };
+export type AnalyticsScope = {
+  range: Pick<ResolvedRange, "from" | "to" | "days" | "fromYmd" | "timeZone">;
+  campaignId?: string;
+};
 
 function scopeWhere({ range, campaignId }: AnalyticsScope): SQL {
   const parts = [gte(deliveries.createdAt, range.from), lt(deliveries.createdAt, range.to)];
@@ -83,18 +87,19 @@ export async function getKpis(scope: AnalyticsScope): Promise<Kpis> {
 
 export type DayPoint = { day: string; comments: number; dmsSent: number; repliesSent: number };
 
-/** One point per UTC day in range (gaps filled with zeros; at most `range.days` rows come back). */
+/** One point per calendar day in the range's time zone (gaps filled with zeros). */
 export async function getDailySeries(scope: AnalyticsScope): Promise<DayPoint[]> {
-  const dayExpr = sql<string>`to_char(date_trunc('day', ${d.createdAt} at time zone 'UTC'), 'YYYY-MM-DD')`;
+  const dayExpr = sql<string>`to_char(${d.createdAt} at time zone ${scope.range.timeZone}, 'YYYY-MM-DD')`;
   const rows = await db
     .select({ day: dayExpr, comments: agg.comments, dmsSent: agg.dmsSent, repliesSent: agg.repliesSent })
     .from(d)
     .where(scopeWhere(scope))
-    .groupBy(dayExpr);
+    // By position: a second `at time zone $n` parameter would not match the SELECT expression.
+    .groupBy(sql`1`);
   const byDay = new Map(rows.map((r) => [r.day, r]));
   const out: DayPoint[] = [];
   for (let i = 0; i < scope.range.days; i++) {
-    const day = new Date(scope.range.from.getTime() + i * 86_400_000).toISOString().slice(0, 10);
+    const day = addDaysYmd(scope.range.fromYmd, i);
     const r = byDay.get(day);
     out.push({ day, comments: r?.comments ?? 0, dmsSent: r?.dmsSent ?? 0, repliesSent: r?.repliesSent ?? 0 });
   }

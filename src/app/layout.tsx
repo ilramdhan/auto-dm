@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,11 +25,20 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Set by middleware (CSP nonce). Reading headers also keeps every page dynamic so each
+  // response gets a fresh nonce.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-dvh font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+          nonce={nonce}
+        >
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
         </ThemeProvider>

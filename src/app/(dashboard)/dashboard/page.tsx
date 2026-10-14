@@ -25,8 +25,9 @@ import { hasAnyDelivery, recentDeliveries } from "@/server/repos/deliveries";
 import { getDashboardStats } from "@/server/repos/stats";
 import { getDailySeries } from "@/server/repos/analytics";
 import { resolveRange } from "@/lib/validation/analytics";
+import { addDaysYmd, ymdInZone } from "@/lib/timezone";
 import { CommentsVsDmsChart } from "@/components/analytics/comments-dms-chart";
-import { getPublicSettings } from "@/server/settings";
+import { getPublicSettings, getTimeZone } from "@/server/settings";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
@@ -36,8 +37,10 @@ export default async function DashboardPage({
   searchParams: Promise<{ welcome?: string }>;
 }) {
   await requireUser();
-  const trend = resolveRange({ range: "custom", from: undefined, to: undefined });
-  const twoWeeks = { ...trend, from: new Date(trend.to.getTime() - 14 * 86_400_000), days: 14 };
+  const now = new Date();
+  const timeZone = await getTimeZone();
+  const today = ymdInZone(now, timeZone);
+  const twoWeeks = resolveRange({ range: "custom", from: addDaysYmd(today, -13), to: today }, now, timeZone);
   const [{ welcome }, settings, account, campaignCount, anyDelivery, stats, recent, series] =
     await Promise.all([
       searchParams,
@@ -45,7 +48,7 @@ export default async function DashboardPage({
       getActiveAccount(),
       countCampaigns(),
       hasAnyDelivery(),
-      getDashboardStats(),
+      getDashboardStats(now, timeZone),
       recentDeliveries(8),
       getDailySeries({ range: twoWeeks }),
     ]);
@@ -97,7 +100,7 @@ export default async function DashboardPage({
   const cards = [
     {
       label: "Comments today",
-      value: stats.comments24h,
+      value: stats.commentsToday,
       sub: `${formatNumber(stats.comments7d)} in the last 7 days`,
       icon: MessageCircle,
       tone: "text-primary bg-primary/10",
@@ -259,7 +262,7 @@ export default async function DashboardPage({
       <Card>
         <CardHeader>
           <CardTitle>Last 14 days</CardTitle>
-          <CardDescription>Comments received vs DMs sent per day (UTC).</CardDescription>
+          <CardDescription>Comments received vs DMs sent per day ({timeZone}).</CardDescription>
           <CardAction>
             <Button asChild variant="ghost" size="sm">
               <Link href="/analytics">

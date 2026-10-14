@@ -47,3 +47,25 @@ describe("csv", () => {
     expect(pct(1, 3)).toBe(33.3);
   });
 });
+
+describe("resolveRange in a time zone", () => {
+  // 2026-10-14T18:30Z is already 2026-10-15 01:30 in Jakarta (UTC+7).
+  const now = new Date("2026-10-14T18:30:00Z");
+
+  it("uses the zone's calendar day for 'today'", () => {
+    const r = resolveRange({ range: "7d" }, now, "Asia/Jakarta");
+    expect(r.toYmd).toBe("2026-10-15");
+    expect(r.fromYmd).toBe("2026-10-09");
+    expect(r.days).toBe(7);
+    expect(r.from.toISOString()).toBe("2026-10-08T17:00:00.000Z");
+    expect(r.to.toISOString()).toBe("2026-10-15T17:00:00.000Z");
+    expect(r.timeZone).toBe("Asia/Jakarta");
+  });
+
+  it("keeps whole local days across a DST change", () => {
+    const later = new Date("2026-11-01T12:00:00Z");
+    const r = resolveRange({ range: "custom", from: "2026-10-24", to: "2026-10-26" }, later, "Europe/Berlin");
+    expect(r.days).toBe(3);
+    expect((r.to.getTime() - r.from.getTime()) / 3_600_000).toBe(73);
+  });
+});
