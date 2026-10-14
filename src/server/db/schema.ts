@@ -56,7 +56,7 @@ export const settings = pgTable("settings", {
   ...timestamps,
 });
 
-/** API keys for machine clients (n8n). Only a keyed HMAC-SHA256 hash is stored (see crypto.tokenHash). */
+/** API keys for machine clients (n8n). Looked up by `prefix`, verified against an argon2id `key_hash`. */
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

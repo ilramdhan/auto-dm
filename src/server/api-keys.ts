@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { tokenHash } from "./crypto";
+import { hashPassword, verifyPassword } from "./auth/password";
 import { db } from "./db/client";
 import { apiKeys } from "./db/schema";
 
@@ -23,7 +23,8 @@ export interface ApiKeySummary {
 }
 
 /**
- * Creates an API key. The plaintext `key` is returned once and never stored (only its SHA-256).
+ * Creates an API key. The plaintext `key` is returned once and never stored: only its non-secret
+ * display prefix (used for lookup) and an argon2id hash (used for verification).
  */
 export async function createApiKey(name: string): Promise<{ id: string; key: string }> {
   const trimmed = name.trim().slice(0, 100);
@@ -31,7 +32,7 @@ export async function createApiKey(name: string): Promise<{ id: string; key: str
   const key = `${API_KEY_PREFIX}${randomBytes(32).toString("base64url")}`;
   const [row] = await db
     .insert(apiKeys)
-    .values({ name: trimmed, prefix: key.slice(0, DISPLAY_PREFIX_LENGTH), keyHash: tokenHash(key) })
+    .values({ name: trimmed, prefix: key.slice(0, DISPLAY_PREFIX_LENGTH), keyHash: await hashPassword(key) })
     .returning({ id: apiKeys.id });
   if (!row) throw new Error("Failed to create API key");
   return { id: row.id, key };
@@ -72,19 +73,26 @@ export function parseBearer(authorizationHeader: string | null | undefined): str
 
 /**
  * Verifies an `Authorization: Bearer <key>` header. Returns the key's id/name when valid and not
- * revoked (and bumps `last_used_at`), otherwise `null`. Lookup is by SHA-256 of a 256-bit random
- * key, so it is not timing-sensitive.
+ * revoked (and bumps `last_used_at`), otherwise `null`. Candidates are found by the non-secret
+ * display prefix (48 random bits, so normally exactly one), then checked with argon2id.
  */
 export async function verifyApiKey(
   authorizationHeader: string | null | undefined,
 ): Promise<{ id: string; name: string } | null> {
   const key = parseBearer(authorizationHeader);
   if (!key || !API_KEY_RE.test(key)) return null;
-  const [row] = await db
-    .select({ id: apiKeys.id, name: apiKeys.name, lastUsedAt: apiKeys.lastUsedAt })
+  const candidates = await db
+    .select({ id: apiKeys.id, name: apiKeys.name, keyHash: apiKeys.keyHash, lastUsedAt: apiKeys.lastUsedAt })
     .from(apiKeys)
-    .where(and(eq(apiKeys.keyHash, tokenHash(key)), isNull(apiKeys.revokedAt)))
-    .limit(1);
+    .where(and(eq(apiKeys.prefix, key.slice(0, DISPLAY_PREFIX_LENGTH)), isNull(apiKeys.revokedAt)))
+    .limit(5);
+  let row: (typeof candidates)[number] | undefined;
+  for (const candidate of candidates) {
+    if (await verifyPassword(candidate.keyHash, key)) {
+      row = candidate;
+      break;
+    }
+  }
   if (!row) return null;
   const now = new Date();
   if (!row.lastUsedAt || now.getTime() - row.lastUsedAt.getTime() > LAST_USED_RESOLUTION_MS) {
