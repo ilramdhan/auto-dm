@@ -26,15 +26,27 @@ export type Env = z.infer<typeof schema>;
 
 let cached: Env | undefined;
 
-export function env(): Env {
-  if (cached) return cached;
-  const raw = process.env;
+function parseEnv(raw: Record<string, string | undefined>) {
   const vercelUrl = raw.VERCEL_PROJECT_PRODUCTION_URL ?? raw.VERCEL_URL;
-  const parsed = schema.safeParse({
+  return schema.safeParse({
     ...raw,
     DATABASE_URL: raw.DATABASE_URL ?? raw.POSTGRES_URL,
     APP_URL: raw.APP_URL ?? (vercelUrl ? `https://${vercelUrl}` : undefined),
   });
+}
+
+/**
+ * Names of the variables that are missing or invalid (never their values), so pages can show a
+ * "finish setup" screen instead of a generic error on a fresh deploy.
+ */
+export function envProblems(raw: Record<string, string | undefined> = process.env): string[] {
+  const parsed = parseEnv(raw);
+  return parsed.success ? [] : [...new Set(parsed.error.issues.map((i) => i.path.join(".")))];
+}
+
+export function env(): Env {
+  if (cached) return cached;
+  const parsed = parseEnv(process.env);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  - ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid environment variables:\n${issues}\nSee .env.example.`);

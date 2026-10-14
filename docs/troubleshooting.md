@@ -1,5 +1,13 @@
 # Troubleshooting
 
+## "Setup needed" or "Something went wrong" right after deploying
+
+The server is missing required environment variables. Set `DATABASE_URL` (or connect the Vercel
+Supabase integration, which provides `POSTGRES_URL`) and `APP_SECRET` (at least 32 characters, e.g.
+`openssl rand -base64 48`) under Vercel → Project → Settings → Environment Variables, then
+**redeploy**. Migrations run during the build, so a build without a database URL creates no tables.
+The home page and `/login` list which variables are missing.
+
 ## Webhook does not fire (no rows in Activity)
 
 1. **App mode**: in Development mode only app-role users trigger webhooks. Switch to **Live** ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).
