@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # pull_request_target runs with write access: never check out or run PR code here.
-      - uses: actions/labeler@v5
+      - uses: actions/labeler@v7
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           sync-labels: true
