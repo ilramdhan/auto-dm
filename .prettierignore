@@ -1,0 +1,4 @@
+content/
+pnpm-lock.yaml
+drizzle/migrations/meta/
+.next/
