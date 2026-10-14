@@ -1,4 +1,4 @@
-# Voice Over Script — "Rapikan Google Drive dengan Claude" (Reels ±54 detik)
+# Voice Over Script — "Rapikan Google Drive dengan Claude" (Reels ±54 detik — versi final video 77 detik)
 
 Tempo: santai tapi cepat (±2,5 kata/detik). Timecode = posisi visual di video.
 Timing video akan saya sesuaikan ke rekamanmu, jadi tidak perlu pas ke detik.

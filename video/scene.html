@@ -1,0 +1,790 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Drive x Claude Reel</title>
+<style>
+@font-face{font-family:Inter;src:url(file:///usr/share/fonts/opentype/inter/Inter-Regular.otf);font-weight:400}
+@font-face{font-family:Inter;src:url(file:///usr/share/fonts/opentype/inter/Inter-Medium.otf);font-weight:500}
+@font-face{font-family:Inter;src:url(file:///usr/share/fonts/opentype/inter/Inter-SemiBold.otf);font-weight:600}
+@font-face{font-family:Inter;src:url(file:///usr/share/fonts/opentype/inter/Inter-Bold.otf);font-weight:700}
+@font-face{font-family:Inter;src:url(file:///usr/share/fonts/opentype/inter/Inter-ExtraBold.otf);font-weight:800}
+@font-face{font-family:Disp;src:url(file:///usr/share/fonts/opentype/inter/InterDisplay-Bold.otf);font-weight:700}
+@font-face{font-family:Mono;src:url(file:///usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf)}
+@font-face{font-family:Mono;src:url(file:///usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf);font-weight:700}
+:root{
+  --bg:#0A0C11;--panel:#121620;--panel2:#1A1F2B;--line:rgba(255,255,255,.09);
+  --text:#EEF1F6;--muted:#8B94A6;--claude:#D97757;--claude2:#F0A27F;
+  --blue:#4C8DF6;--green:#34A853;--yellow:#FBBC04;--red:#EA4335;--purple:#A78BFA;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+body{font-family:Inter,sans-serif;color:var(--text);-webkit-font-smoothing:antialiased}
+#stage{position:absolute;inset:0;overflow:hidden}
+.abs{position:absolute}
+.scene{position:absolute;inset:0;display:none;will-change:transform,opacity,filter}
+.center{left:0;width:1080px;text-align:center}
+.h1{font-family:Disp,Inter;font-weight:700;letter-spacing:-.02em;line-height:1.02}
+.muted{color:var(--muted)}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.02));border:1.5px solid var(--line);border-radius:36px;box-shadow:0 40px 80px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.06)}
+.pill{display:inline-flex;align-items:center;gap:14px;padding:12px 26px;border-radius:999px;font-weight:600}
+.steptag{position:absolute;left:72px;top:300px;display:flex;align-items:center;gap:18px}
+.steptag .num{font-family:Mono;font-weight:700;font-size:30px;color:#111;background:var(--claude);border-radius:14px;padding:6px 16px}
+.steptag .lbl{font-size:28px;font-weight:600;color:var(--claude2);letter-spacing:.14em}
+.stitle{position:absolute;left:72px;top:360px;width:900px;font-family:Disp;font-weight:700;font-size:64px;line-height:1.06;letter-spacing:-.02em}
+.chip{position:absolute;display:flex;align-items:center;gap:14px;padding:14px 22px 14px 16px;background:#161B26;border:1.5px solid rgba(255,255,255,.1);border-radius:18px;font-size:25px;font-weight:500;white-space:nowrap;box-shadow:0 14px 30px rgba(0,0,0,.4)}
+.row{display:flex;align-items:center}
+.cursor{position:absolute;left:0;top:0;width:54px;height:54px;z-index:50;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.ripple{position:absolute;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;border:4px solid var(--claude2);z-index:49;opacity:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;border-radius:16px;font-weight:700}
+.hl{border-radius:8px;transition:none}
+#prompt{font-family:Mono;font-size:32px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+#prompt span.c{visibility:hidden}
+#prompt span.v{visibility:visible}
+.caret{display:inline-block;width:3px;height:34px;background:var(--claude2);vertical-align:-6px;margin-left:1px}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:90;pointer-events:none}
+.guides .g{position:absolute;background:rgba(255,0,80,.28);z-index:100;border:2px dashed #ff2d6f;color:#fff;font:600 24px Inter;display:flex;align-items:center;justify-content:center}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" class="abs" width="1080" height="1920" style="left:0;top:0"></canvas>
+
+  <!-- persistent header (inside safe zone, under IG top bar) -->
+  <div id="hdr" class="abs" style="left:72px;top:250px;width:880px;height:40px;display:flex;align-items:center;justify-content:space-between;font-size:24px;color:var(--muted);font-weight:600;z-index:20">
+    <div style="display:flex;align-items:center;gap:12px"><div style="width:12px;height:12px;border-radius:50%;background:var(--claude)"></div>@ilramadhan_</div>
+    <div id="dots" style="display:flex;gap:10px"></div>
+  </div>
+
+  <!-- S1 HOOK -->
+  <div class="scene" id="s-hook">
+    <div id="hookChips"></div>
+    <div id="hookL1" class="abs center h1" style="top:330px;font-size:70px">Google Drive kamu</div>
+    <div id="hookL2" class="abs center h1" style="top:415px;font-size:132px;color:var(--red)">BERANTAKAN?</div>
+    <div id="hookCount" class="abs center" style="top:1330px">
+      <div class="pill" style="background:rgba(234,67,53,.14);border:1.5px solid rgba(234,67,53,.5);font-size:34px;color:#FFB4AB">
+        <span id="hookNum" style="font-family:Mono;font-weight:700;font-size:40px;color:#fff">0</span> file lepas di root · 26 folder campur aduk
+      </div>
+    </div>
+  </div>
+
+  <!-- S2 TITLE -->
+  <div class="scene" id="s-title">
+    <div id="tLogos" class="abs center" style="top:470px;height:200px">
+      <div id="tSpark" class="abs" style="left:300px;top:0;width:200px;height:200px"></div>
+      <div id="tX" class="abs h1" style="left:510px;top:52px;width:60px;font-size:80px;color:var(--muted)">×</div>
+      <div id="tDrive" class="abs" style="left:590px;top:10px;width:200px;height:180px"></div>
+    </div>
+    <div id="tT1" class="abs center h1" style="top:740px;font-size:84px">Cara Merapikan</div>
+    <div id="tT2" class="abs center h1" style="top:835px;font-size:118px;background:linear-gradient(90deg,#4C8DF6,#34A853 50%,#FBBC04);-webkit-background-clip:text;color:transparent">Google Drive</div>
+    <div id="tT3" class="abs center h1" style="top:965px;font-size:84px">dengan <span style="color:var(--claude)">Claude</span></div>
+    <div id="tSub" class="abs center" style="top:1130px">
+      <div class="pill" style="background:rgba(217,119,87,.14);border:1.5px solid rgba(217,119,87,.55);font-size:36px;color:var(--claude2)">
+        <span style="font-family:Mono;font-weight:700;color:#fff">1</span> prompt · 4 langkah · <span style="color:#fff">0 file dihapus</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- S3 STEP 1 -->
+  <div class="scene" id="s-step1">
+    <div class="steptag"><span class="num">01</span><span class="lbl">LANGKAH 1</span></div>
+    <div class="stitle">Connect Claude ke<br><span style="color:var(--blue)">Google Drive</span></div>
+    <div id="c1" class="card abs" style="left:72px;top:560px;width:880px;height:720px;padding:40px">
+      <div class="row" style="gap:16px;font-size:30px;font-weight:600;margin-bottom:34px">
+        <span id="bcSettings" class="hl" style="padding:6px 12px">Settings</span><span class="muted">›</span>
+        <span id="bcConn" class="hl" style="padding:6px 12px">Connectors</span>
+      </div>
+      <div id="connRows"></div>
+    </div>
+    <div id="c1cap" class="abs center" style="top:1320px;font-size:30px;color:var(--muted)">claude.ai › Settings › Connectors › Google Drive</div>
+  </div>
+
+  <!-- S4 STEP 2 -->
+  <div class="scene" id="s-step2">
+    <div class="steptag"><span class="num">02</span><span class="lbl">LANGKAH 2</span></div>
+    <div class="stitle">Buka Drive + extension<br><span style="color:var(--claude)">Claude in Chrome</span></div>
+    <div id="br" class="card abs" style="left:72px;top:560px;width:880px;height:720px;overflow:hidden;border-radius:28px;background:#0F131B">
+      <div class="row" style="height:64px;padding:0 22px;gap:12px;background:#1A1F2A;border-bottom:1.5px solid var(--line)">
+        <div style="width:16px;height:16px;border-radius:50%;background:#FF5F57"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#FEBC2E"></div>
+        <div style="width:16px;height:16px;border-radius:50%;background:#28C840"></div>
+        <div style="margin-left:18px;flex:1;height:42px;border-radius:21px;background:#0F131B;display:flex;align-items:center;padding:0 20px;font-size:24px;gap:10px">
+          <span style="width:18px;height:18px;border:3px solid #8B94A6;border-radius:50%;display:inline-block"></span><span id="url" style="font-family:Mono"></span><span id="urlCaret" class="caret" style="height:26px;vertical-align:-4px"></span>
+        </div>
+        <div id="extBtn" style="width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:#262C39"></div>
+      </div>
+      <div id="driveUI" style="position:absolute;left:0;top:64px;right:0;bottom:0;padding:26px">
+        <div class="row" style="gap:14px;font-size:28px;font-weight:600;margin-bottom:20px"><span id="drvLogoSm" style="width:40px;height:36px;display:inline-block"></span>My Drive</div>
+        <div id="drvGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px"></div>
+      </div>
+      <div id="sidePanel" style="position:absolute;top:64px;right:0;bottom:0;width:470px;background:#171B24;border-left:1.5px solid var(--line);box-shadow:-30px 0 60px rgba(0,0,0,.5);padding:26px">
+        <div class="row" style="gap:12px;font-size:28px;font-weight:700"><span class="sparkSm" style="width:36px;height:36px;display:inline-block"></span>Claude</div>
+        <div style="margin-top:150px;text-align:center;font-family:Disp;font-size:38px;line-height:1.2">How can I help<br>you today?</div>
+        <div style="position:absolute;left:24px;right:24px;bottom:26px;height:96px;border-radius:20px;border:1.5px solid var(--line);background:#11151D;padding:18px;font-size:22px;color:var(--muted)">Ask Claude to do anything…</div>
+      </div>
+    </div>
+    <div id="installBadge" class="abs center" style="top:1320px">
+      <div class="pill" style="background:rgba(52,168,83,.14);border:1.5px solid rgba(52,168,83,.55);font-size:30px;color:#9BE3AE">✓ Pastikan extension sudah ter-install</div>
+    </div>
+  </div>
+
+  <!-- S5 STEP 3 -->
+  <div class="scene" id="s-step3">
+    <div class="steptag"><span class="num">03</span><span class="lbl">LANGKAH 3</span></div>
+    <div class="stitle">Kirim prompt ini</div>
+    <div id="composer" class="card abs" style="left:72px;top:470px;width:880px;height:830px;padding:34px 38px;background:#141924">
+      <div class="row" style="gap:12px;font-size:26px;font-weight:700;margin-bottom:24px">
+        <span class="sparkSm" style="width:34px;height:34px;display:inline-block"></span>Claude in Chrome
+        <span style="margin-left:auto;font-size:22px;font-weight:600;color:var(--muted);border:1.5px solid var(--line);border-radius:999px;padding:6px 16px">drive.google.com</span>
+      </div>
+      <div id="prompt"></div>
+      <div id="sendBtn" style="position:absolute;right:30px;bottom:28px;width:76px;height:76px;border-radius:22px;background:var(--claude);display:flex;align-items:center;justify-content:center">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+      </div>
+    </div>
+    <div id="thinking" class="abs" style="left:72px;top:600px;width:880px">
+      <div id="bubble" style="margin-left:auto;width:640px;background:#262C3A;border-radius:28px 28px 8px 28px;padding:24px 28px;font-family:Mono;font-size:22px;line-height:1.45;color:#C9D0DC">Hi Claude, review this Drive (or this folder) recursively… Show me the plan BEFORE moving anything. DON'T DELETE ANYTHING…</div>
+      <div class="row" style="gap:16px;margin-top:40px;font-size:30px;font-weight:600"><span id="thinkSpark" style="width:54px;height:54px;display:inline-block"></span><span>Claude sedang menganalisis <span id="thinkCount" style="font-family:Mono;color:var(--claude2)">0</span> file<span id="thinkDots"></span></span></div>
+    </div>
+    <div id="teaser" class="abs center" style="top:1330px">
+      <div class="pill" style="background:rgba(217,119,87,.16);border:1.5px solid rgba(217,119,87,.6);font-size:30px;color:var(--claude2)">Prompt versi lengkap? Komen <b style="color:#fff;font-family:Mono">DRIVE</b></div>
+    </div>
+  </div>
+
+
+  <!-- S5b ANALYSIS -->
+  <div class="scene" id="s-scan">
+    <div class="steptag"><span class="num" style="background:var(--purple)">AI</span><span class="lbl" style="color:#C9B8FF">CLAUDE BEKERJA</span></div>
+    <div class="stitle">Menganalisis isi Drive<span id="scDots"></span></div>
+    <div id="scTree" class="card abs" style="left:72px;top:460px;width:880px;height:600px;padding:22px 26px;overflow:hidden;background:#121722">
+      <div id="scRows"></div>
+      <div id="scBeam" class="abs" style="left:0;width:880px;height:70px;top:0;background:linear-gradient(180deg,rgba(167,139,250,0),rgba(167,139,250,.22) 70%,rgba(167,139,250,.9) 100%);box-shadow:0 6px 30px rgba(167,139,250,.6)"></div>
+    </div>
+    <div id="scPeek" class="abs" style="left:400px;top:915px;width:540px;height:200px;border-radius:24px;background:#1E2432;border:1.5px solid rgba(167,139,250,.6);box-shadow:0 30px 60px rgba(0,0,0,.6);padding:20px 24px;z-index:5">
+      <div class="row" style="gap:12px;font-size:22px;font-weight:700;color:#C9B8FF;margin-bottom:14px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#C9B8FF" stroke-width="2.6" stroke-linecap="round"><circle cx="10" cy="10" r="6"/><path d="M15 15l6 6"/></svg>
+        Membaca isi "Untitled document"…</div>
+      <div id="peekLines"></div>
+      <div id="peekRes" style="margin-top:10px;font-size:22px;font-weight:700;color:#8FB6FF">→ ternyata draft project · 06 Projects & Code</div>
+    </div>
+    <div id="scAgents" class="abs" style="left:72px;top:1085px;width:880px"></div>
+    <div id="scCount" class="abs row" style="left:72px;top:1385px;width:880px;justify-content:space-between;font-size:26px;color:#C9D0DC"></div>
+  </div>
+
+  <!-- S6 STEP 4 -->
+  <div class="scene" id="s-step4">
+    <div class="steptag"><span class="num">04</span><span class="lbl">LANGKAH 4</span></div>
+    <div class="stitle">Review plan → <span style="color:var(--green)">Approve</span></div>
+    <div id="planCard" class="card abs" style="left:72px;top:500px;width:880px;height:860px;padding:34px 38px">
+      <div class="row" style="gap:14px;margin-bottom:22px">
+        <span class="sparkSm" style="width:36px;height:36px;display:inline-block"></span>
+        <span style="font-size:32px;font-weight:700">Rencana Reorganisasi</span>
+        <span style="margin-left:auto;font-size:21px;font-weight:700;color:var(--yellow);background:rgba(251,188,4,.12);border:1.5px solid rgba(251,188,4,.45);padding:6px 14px;border-radius:999px">DRAFT · 0 dipindah</span>
+      </div>
+      <div id="planItems"></div>
+      <div id="planBtns" class="row" style="position:absolute;left:38px;right:38px;bottom:34px;gap:18px">
+        <div class="btn" style="flex:1;height:84px;border:1.5px solid var(--line);font-size:28px;color:var(--muted)">Revisi</div>
+        <div id="approveBtn" class="btn" style="flex:1.6;height:84px;background:var(--claude);color:#111;font-size:30px">APPROVED ✓</div>
+      </div>
+      <div id="progWrap" style="position:absolute;left:38px;right:38px;bottom:34px;height:84px;opacity:0">
+        <div class="row" style="justify-content:space-between;font-size:26px;font-weight:600;margin-bottom:14px">
+          <span>Memindahkan file… <span id="progN" style="font-family:Mono;color:var(--claude2)">0</span>/270</span>
+          <span style="color:var(--green)">0 dihapus</span>
+        </div>
+        <div style="height:18px;border-radius:9px;background:#232937;overflow:hidden"><div id="progBar" style="height:100%;width:0;background:linear-gradient(90deg,var(--claude),var(--yellow))"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S7 BEFORE / AFTER -->
+  <div class="scene" id="s-before">
+    <div id="baTag" class="abs" style="left:72px;top:310px"></div>
+    <div id="baTitle" class="abs h1" style="left:72px;top:372px;font-size:60px">My Drive</div>
+    <div id="beforeList" class="abs" style="left:72px;top:470px;width:880px"></div>
+    <div id="afterList" class="abs" style="left:72px;top:465px;width:880px"></div>
+    <div id="stats" class="abs row" style="left:72px;top:1335px;width:880px;gap:16px"></div>
+    <div id="camFrame" class="abs" style="left:52px;top:300px;width:920px;height:1180px;opacity:0"></div>
+  </div>
+
+  <!-- S8 CTA -->
+  <div class="scene" id="s-cta">
+    <div id="dmNotif" class="abs" style="left:72px;top:305px;width:880px;height:118px;border-radius:30px;background:rgba(32,37,50,.92);border:1.5px solid var(--line);box-shadow:0 20px 50px rgba(0,0,0,.5);display:flex;align-items:center;gap:20px;padding:0 24px;z-index:30">
+      <img src="../assets/profile.webp" style="width:74px;height:74px;border-radius:50%;object-fit:cover">
+      <div style="flex:1"><div style="font-size:25px;font-weight:700">ilramadhan_ <span class="muted" style="font-weight:500">· sekarang</span></div><div style="font-size:24px;color:#C9D0DC;margin-top:4px">Ini prompt lengkapnya ya → ilramdhan.dev/…</div></div>
+      <div style="width:16px;height:16px;border-radius:50%;background:var(--blue)"></div>
+    </div>
+    <div id="pfWrap" class="abs" style="left:375px;top:470px;width:330px;height:330px">
+      <div id="pfRing" class="abs" style="inset:0;border-radius:50%;background:conic-gradient(from 0deg,#D97757,#FBBC04,#34A853,#4C8DF6,#A78BFA,#D97757)"></div>
+      <img src="../assets/profile.webp" class="abs" style="left:12px;top:12px;width:306px;height:306px;border-radius:50%;object-fit:cover;object-position:50% 22%;border:8px solid var(--bg)">
+    </div>
+    <div id="pfName" class="abs center h1" style="top:830px;font-size:56px">Ilham Ramadhan</div>
+    <div id="pfMeta" class="abs center" style="top:905px;font-size:30px;color:var(--muted)"><span style="color:var(--claude2);font-weight:700">@ilramadhan_</span> · Fullstack Web Developer</div>
+    <div id="ctaCard" class="card abs" style="left:72px;top:990px;width:880px;height:330px;text-align:center;padding-top:36px">
+      <div style="font-family:Disp;font-size:50px">Mau prompt lengkapnya?</div>
+      <div class="row" style="justify-content:center;gap:22px;margin-top:26px">
+        <span style="font-size:46px;font-weight:700">Komen</span>
+        <span id="kw" style="font-family:Mono;font-weight:700;font-size:62px;color:#111;background:linear-gradient(90deg,#F0A27F,#D97757);padding:6px 30px;border-radius:20px;box-shadow:0 0 0 rgba(217,119,87,.6)">DRIVE</span>
+      </div>
+      <div style="font-size:32px;color:var(--muted);margin-top:26px">nanti aku kirim lewat <b style="color:#fff">DM</b></div>
+    </div>
+    <div id="ctaFoot" class="abs center row" style="top:1360px;justify-content:center;gap:20px">
+      <div id="followBtn" class="btn" style="height:76px;padding:0 36px;background:var(--blue);font-size:30px">Follow</div>
+      <div class="btn" style="height:76px;padding:0 30px;border:1.5px solid var(--line);font-size:30px">ilramdhan.dev</div>
+    </div>
+  </div>
+
+  <svg id="cursor" class="cursor" viewBox="0 0 24 24"><path d="M4 2l15 11-6.5 1.2L16 21l-3 1.4-3.4-6.8L4 20z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg>
+  <div id="ripple" class="ripple"></div>
+  <div id="flash" class="flash"></div>
+  <div id="guides" class="guides"></div>
+</div>
+
+<script src="timeline.js"></script>
+<script>
+// ---------- utils ----------
+const $ = id => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, p) => a + (b - a) * p;
+const Ez = {
+  lin: p => p,
+  out: p => 1 - Math.pow(1 - p, 3),
+  in: p => p * p * p,
+  io: p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2,
+  back: p => { const c1 = 1.9, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); },
+  expo: p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p),
+};
+const pr = (t, a, d, e = Ez.out) => e(clamp((t - a) / d));
+const bump = (t, a, d) => { const p = clamp((t - a) / d); return Math.sin(Math.PI * p); };
+function css(el, o = {}) {
+  const { x = 0, y = 0, s = 1, sx, sy, r = 0, op = 1, b = 0 } = o;
+  el.style.transform = `translate(${x}px,${y}px) rotate(${r}deg) scale(${sx ?? s},${sy ?? s})`;
+  el.style.opacity = op;
+  el.style.filter = b > .1 ? `blur(${b.toFixed(1)}px)` : 'none';
+}
+// standard element entrance: rise + fade + blur
+function rise(el, t, a, d = .55, dy = 50) {
+  const p = pr(t, a, d, Ez.expo);
+  css(el, { y: (1 - p) * dy, op: clamp(p * 1.4), b: (1 - p) * 10 });
+  return p;
+}
+function popIn(el, t, a, d = .45, extra = {}) {
+  const p = clamp((t - a) / d);
+  css(el, { s: lerp(.6, 1, Ez.back(p)), op: clamp(p * 2), b: (1 - Ez.out(p)) * 8, ...extra });
+  return p;
+}
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+// ---------- icons ----------
+function sparkSVG(color = '#D97757', rays = 12) {
+  let s = `<svg viewBox="-50 -50 100 100" width="100%" height="100%">`;
+  for (let i = 0; i < rays; i++) {
+    const a = i / rays * Math.PI * 2, L = i % 2 ? 34 : 46;
+    s += `<line x1="${(Math.cos(a) * 6).toFixed(1)}" y1="${(Math.sin(a) * 6).toFixed(1)}" x2="${(Math.cos(a) * L).toFixed(1)}" y2="${(Math.sin(a) * L).toFixed(1)}" stroke="${color}" stroke-width="10" stroke-linecap="round"/>`;
+  }
+  return s + `</svg>`;
+}
+function driveSVG() {
+  return `<svg viewBox="0 0 100 88" width="100%" height="100%">
+    <path d="M33 2h34l33 57H66z" fill="#FBBC04"/><path d="M33 2L0 59l17 29 33-57z" fill="#34A853"/>
+    <path d="M17 88h66l17-29H34z" fill="#4C8DF6"/></svg>`;
+}
+const FT = { pdf: ['#EA4335', 'PDF'], img: ['#34A853', 'IMG'], doc: ['#4C8DF6', 'DOC'], xls: ['#1E8E3E', 'XLS'], zip: ['#8B94A6', 'ZIP'], vid: ['#A78BFA', 'MP4'], key: ['#FBBC04', 'KEY'] };
+function fileSVG(type, w = 40) {
+  const [c, l] = FT[type];
+  return `<svg width="${w}" height="${w * 1.2}" viewBox="0 0 40 48"><path d="M4 0h22l14 14v30a4 4 0 01-4 4H4a4 4 0 01-4-4V4a4 4 0 014-4z" fill="${c}"/><path d="M26 0v10a4 4 0 004 4h10z" fill="rgba(255,255,255,.35)"/><text x="20" y="38" font-family="Inter" font-weight="800" font-size="11" fill="#fff" text-anchor="middle">${l}</text></svg>`;
+}
+function folderSVG(c = '#8B94A6', w = 52) {
+  return `<svg width="${w}" height="${w * .8}" viewBox="0 0 60 48"><path d="M0 8a5 5 0 015-5h16l6 6h28a5 5 0 015 5v29a5 5 0 01-5 5H5a5 5 0 01-5-5z" fill="${c}"/><path d="M0 16h60v27a5 5 0 01-5 5H5a5 5 0 01-5-5z" fill="rgba(255,255,255,.14)"/></svg>`;
+}
+function lockSVG(c = '#fff') { return `<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.4"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>`; }
+document.querySelectorAll('.sparkSm').forEach(e => e.innerHTML = sparkSVG());
+$('tSpark').innerHTML = sparkSVG(); $('tDrive').innerHTML = driveSVG(); $('drvLogoSm').innerHTML = driveSVG();
+$('extBtn').innerHTML = `<div style="width:30px;height:30px">${sparkSVG()}</div>`;
+$('thinkSpark').innerHTML = sparkSVG();
+
+// ---------- build: header dots ----------
+for (let i = 0; i < 4; i++) $('dots').insertAdjacentHTML('beforeend', `<div class="dot" style="width:36px;height:8px;border-radius:4px;background:#2A3040"></div>`);
+
+// ---------- build: hook chips ----------
+const HOOK_FILES = [
+  ['img', 'IMG_20210916_102933.jpg'], ['doc', 'Untitled document'], ['img', 'Screenshot_2021-10-09.jpg'], ['pdf', 'CV_final.pdf'],
+  ['xls', 'Untitled spreadsheet'], ['img', 'Copy of Bottom.png'], ['pdf', 'Scan_0012.pdf'], ['doc', 'Untitled document (2)'],
+  ['zip', 'project_backup.zip'], ['vid', 'VID_20221207_112107.mp4'], ['pdf', 'CV_final (1).pdf'], ['xls', 'Data_raw.xlsx'],
+  ['img', 'download (3).jpg'], ['doc', 'Laporan_UAS.docx'], ['img', 'logo_final_FINAL.png'], ['pdf', 'Sertifikat.pdf'],
+  ['doc', 'Meeting notes'], ['xls', 'Monthly budget'], ['zip', 'assets_v2.zip'], ['img', 'IMG_20221130_194419.jpg'],
+  ['doc', 'Copy of Copy of Report'], ['pdf', 'Invoice_2023.pdf'], ['doc', 'Presentation draft'], ['img', 'Screenshot_2022-03-01.jpg'],
+  ['doc', 'Untitled document (5)'], ['xls', 'Copy of Template'], ['pdf', 'Tugas Akhir.pdf'], ['vid', 'Screen Recording.mp4'],
+];
+const hookChips = HOOK_FILES.map(([t, n], i) => {
+  const el = document.createElement('div'); el.className = 'chip';
+  el.innerHTML = fileSVG(t, 30) + `<span>${n}</span>`;
+  $('hookChips').appendChild(el);
+  // scatter in the safe area between headline and counter
+  const col = i % 2, x = col ? 540 + rnd() * 90 : 70 + rnd() * 110, y = 590 + Math.floor(i / 2) * 50 + rnd() * 20;
+  el.style.left = (x - (col ? 60 : 0)) + 'px'; el.style.top = y + 'px';
+  return { el, x, y, r: (rnd() - .5) * 22, ph: rnd() * 6, cx: x, cy: y };
+});
+hookChips.forEach(c => { c.el.style.left = Math.min(parseFloat(c.el.style.left), 960 - c.el.offsetWidth) + 'px'; });
+
+// ---------- build: connectors ----------
+const CONN = [
+  ['drive', 'Google Drive', 'Cari & kelola file Drive'],
+  ['gmail', 'Gmail', 'Baca & draft email'],
+  ['cal', 'Google Calendar', 'Lihat & atur jadwal'],
+  ['gh', 'GitHub', 'Repo, issue & PR'],
+];
+CONN.forEach(([k, n, d], i) => {
+  const icon = k === 'drive' ? `<div style="width:56px;height:50px">${driveSVG()}</div>`
+    : `<div style="width:56px;height:56px;border-radius:14px;background:${['', '#EA4335', '#4C8DF6', '#2A3040'][i]};display:flex;align-items:center;justify-content:center;font:800 28px Inter">${['', 'M', '31', '{ }'][i]}</div>`;
+  $('connRows').insertAdjacentHTML('beforeend', `
+    <div id="conn${i}" class="row" style="gap:24px;height:136px;padding:0 22px;border-radius:24px;margin-bottom:12px;border:1.5px solid transparent">
+      ${icon}
+      <div style="flex:1"><div style="font-size:32px;font-weight:700">${n}</div><div style="font-size:24px;color:var(--muted);margin-top:4px">${d}</div></div>
+      <div id="connBtn${i}" class="btn" style="width:210px;height:68px;font-size:27px;${i === 3 ? 'background:rgba(52,168,83,.15);color:#9BE3AE;border:1.5px solid rgba(52,168,83,.5)' : 'background:#EEF1F6;color:#111'}">${i === 3 ? '✓ Connected' : 'Connect'}</div>
+    </div>`);
+});
+
+// ---------- build: drive grid ----------
+['img', 'doc', 'pdf', 'xls', 'img', 'zip', 'doc', 'img', 'pdf', 'vid', 'doc', 'xls'].forEach((t, i) => {
+  $('drvGrid').insertAdjacentHTML('beforeend', `<div class="dg" style="height:132px;border-radius:16px;background:#1A1F2A;border:1.5px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">${fileSVG(t, 42)}<div style="width:70%;height:10px;border-radius:5px;background:#2A3040"></div></div>`);
+});
+
+// ---------- build: prompt (char spans with highlight groups) ----------
+const PROMPT_LINES = [
+  [['Hi Claude, review this Drive (or this folder) '], ['recursively, down to the deepest file.', 'deep'], ['\n']],
+  [['1. Suggest a '], ['folder structure', 'structure'], [' based on my files.\n']],
+  [['2. Flag '], ['possible duplicates', 'dup'], [' & anything you '], ["can't identify.", 'dup'], ['\n']],
+  [['3. Show me the plan '], ['BEFORE moving anything.', 'before'], ['\n']],
+  [['⚠ '], ["DON'T DELETE ANYTHING.", 'del'], [' Ask me if unsure.\n']],
+  [['Use '], ['sub-agents', 'agents'], [': '], ['Sonnet', 'sonnet'], [' for easy tasks, '], ['Opus', 'opus'], [' for medium–heavy tasks to save tokens.']],
+];
+const HL_COL = { deep: '76,141,246', structure: '52,168,83', dup: '167,139,250', before: '251,188,4', del: '234,67,53', agents: '167,139,250', sonnet: '76,141,246', opus: '217,119,87' };
+const promptChars = []; // {el, line, idx}
+PROMPT_LINES.forEach((segs, li) => {
+  let idx = 0;
+  segs.forEach(([txt, g]) => {
+    for (const ch of txt) {
+      const sp = document.createElement('span'); sp.className = 'c'; sp.textContent = ch;
+      if (g) sp.dataset.g = g;
+      $('prompt').appendChild(sp); promptChars.push({ el: sp, line: li, idx: idx++, g });
+    }
+  });
+});
+const lineLen = PROMPT_LINES.map((_, li) => promptChars.filter(c => c.line === li).length);
+const caret = document.createElement('span'); caret.className = 'caret';
+
+// ---------- build: plan items ----------
+const PLAN = [
+  [folderSVG('#4C8DF6', 46), '<b>11 folder bernomor</b> · 00 Private → 99 Archive'],
+  [fileSVG('doc', 30), '<b>36 kemungkinan duplikat</b> → _Duplicates to review'],
+  [fileSVG('img', 30), '<b>30 file tak dikenali</b> → _Unidentified'],
+  [fileSVG('xls', 30), '<b>14 file "Untitled"</b> → _Untitled'],
+  [`<div style="width:46px;display:flex;justify-content:center">${lockSVG('#FBBC04')}</div>`, '<b>Dokumen identitas & keuangan</b> → 00 Private'],
+  [`<div style="width:46px;height:40px">${sparkSVG('#A78BFA')}</div>`, '<b>Sub-agent:</b> <span style="color:#8FB6FF">Sonnet</span> scan & pindah · <span style="color:#F0A27F">Opus</span> struktur & duplikat'],
+];
+PLAN.forEach(([ic, tx], i) => $('planItems').insertAdjacentHTML('beforeend',
+  `<div class="pi row" style="gap:20px;min-height:92px;padding:12px 18px;margin-bottom:10px;border-radius:20px;background:rgba(255,255,255,.03);border:1.5px solid var(--line);font-size:26px;line-height:1.3"><div style="width:50px;display:flex;justify-content:center">${ic}</div><div style="flex:1">${tx}</div><div class="ck" style="color:var(--green);font-weight:800;font-size:30px">✓</div></div>`));
+
+// ---------- build: before / after ----------
+const BEFORE = [
+  ['270 file lepas di root', 'CV, screenshot, scan, foto, Untitled…', 'file'],
+  ['Berkas Penting', 'campur: ijazah, sertifikat, dokumen', 'fold'],
+  ['BackupIP · BackupPC', 'backup HP + PC', 'fold'],
+  ['Work Docs · Office Files', 'dokumen kerja campur aduk', 'fold'],
+  ['Sertif Sinus · Foto 17 Aug · Safari', 'foto & sertifikat tercampur', 'fold'],
+  ['Fintrack Backup · WebSmapol · GloryTest', 'project + lamaran kerja', 'fold'],
+  ['Mee · Google Earth · Wings Group · SelfPod', 'kosong / tak dikenal', 'fold'],
+  ['Untitled document (×14)', '???', 'file'],
+];
+BEFORE.forEach(([n, d, k], i) => $('beforeList').insertAdjacentHTML('beforeend',
+  `<div class="bi row" style="gap:20px;height:96px;padding:0 22px;margin-bottom:10px;border-radius:18px;background:#151A24;border:1.5px solid ${i === 0 ? 'rgba(234,67,53,.6)' : 'var(--line)'}">
+    ${k === 'file' ? fileSVG(i === 0 ? 'pdf' : 'doc', 34) : folderSVG('#5F6878', 46)}
+    <div style="flex:1;min-width:0"><div style="font-size:28px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${n}</div><div style="font-size:22px;color:var(--muted)">${d}</div></div></div>`));
+const AFTER = [
+  ['00', 'Private (restricted)', 'Identity · Finance · Secrets', '#EA4335', true],
+  ['01', 'Personal', 'Profile · Notes · Travel · Helping Others', '#F0A27F'],
+  ['02', 'Education', 'Sinus (S1) · UT · Graduation · TOEFL/LPDP', '#FBBC04'],
+  ['03', 'Certificates', 'Bangkit · Dicoding · Sololearn · +5', '#FBBC04'],
+  ['04', 'Career', 'CV & Portfolio · Job Apps · Internships · Work', '#34A853'],
+  ['05', 'Bootcamps & Programs', 'Bangkit · MSIB · SYNRGY 6 · Digistar', '#34A853'],
+  ['06', 'Projects & Code', 'XYN · CMMS · Fintrack · WebSmapol', '#4C8DF6'],
+  ['07', 'Backups', 'Phone Backup · PC Backup', '#4C8DF6'],
+  ['08', 'Photos & Media', 'Events & Trips · Screenshots · Misc', '#A78BFA'],
+  ['09', 'Design Assets', 'Envanto · Logo · Assets', '#A78BFA'],
+  ['99', 'Archive & To Review', 'Duplicates 36 · Unidentified 30 · Untitled 14', '#8B94A6'],
+  ['', 'Tetap di root (otomatis)', 'Colab · AI Studio · Second Brain · cmms-backups', '#3A4252'],
+];
+AFTER.forEach(([num, n, d, c, lock], i) => $('afterList').insertAdjacentHTML('beforeend',
+  `<div class="ai row" style="gap:18px;height:66px;padding:0 18px;margin-bottom:5px;border-radius:16px;background:#141924;border:1.5px solid var(--line)">
+    ${folderSVG(c, 42)}
+    ${num ? `<span style="font-family:Mono;font-weight:700;font-size:24px;color:${c};width:38px">${num}</span>` : ''}
+    <div style="flex:1;min-width:0;display:flex;align-items:baseline;gap:14px;white-space:nowrap;overflow:hidden">
+      <span style="font-size:27px;font-weight:700">${n}</span>${lock ? lockSVG('#EA4335') : ''}
+      <span style="font-size:20px;color:var(--muted);overflow:hidden;text-overflow:ellipsis">${d}</span></div></div>`));
+const STATS = [['270 → 0', 'file lepas di root', '#4C8DF6'], ['36', 'duplikat dipisah<br>untuk di-review', '#A78BFA'], ['0', 'file dihapus', '#34A853']];
+STATS.forEach(([v, l, c], i) => $('stats').insertAdjacentHTML('beforeend',
+  `<div class="st" style="flex:1;height:126px;border-radius:22px;background:rgba(255,255,255,.04);border:1.5px solid ${c}66;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+    <div style="font-family:Disp;font-size:46px;color:${c};line-height:1">${v}</div><div style="font-size:20px;color:#C9D0DC;margin-top:6px;line-height:1.2">${l}</div></div>`));
+$('camFrame').innerHTML = ['left:0;top:0;border-width:6px 0 0 6px', 'right:0;top:0;border-width:6px 6px 0 0', 'left:0;bottom:0;border-width:0 0 6px 6px', 'right:0;bottom:0;border-width:0 6px 6px 0']
+  .map(s => `<div style="position:absolute;${s};width:90px;height:90px;border-style:solid;border-color:#fff;border-radius:6px"></div>`).join('')
+  + `<div style="position:absolute;right:30px;top:24px;font:700 26px Mono;color:#fff;display:flex;align-items:center;gap:10px"><span style="width:16px;height:16px;border-radius:50%;background:#EA4335"></span>SEBELUM</div>`;
+
+
+// ---------- build: analysis scene ----------
+const SCAN = [
+  [0, 'fold', 'My Drive', '', ''],
+  [1, 'fold', 'Berkas Penting', '', ''],
+  [2, 'pdf', 'CV_final.pdf', '04 Career', '#34A853'],
+  [2, 'pdf', 'Sertifikat.pdf', '03 Certificates', '#FBBC04'],
+  [2, 'img', 'Dokumen identitas.jpg', '00 Private', '#EA4335'],
+  [1, 'fold', 'Backup', '', ''],
+  [2, 'zip', 'backup_2023.zip', '07 Backups', '#4C8DF6'],
+  [1, 'doc', 'Untitled document', '06 Projects', '#4C8DF6'],
+  [1, 'pdf', 'CV_final (1).pdf', 'Duplikat', '#A78BFA'],
+  [1, 'img', 'download (3).jpg', '? Tak dikenal', '#8B94A6'],
+];
+SCAN.forEach(([lv, ty, n, tag, c]) => $('scRows').insertAdjacentHTML('beforeend',
+  `<div class="sr row" style="height:55px;gap:14px;padding-left:${lv * 42}px;font-size:25px;font-weight:${ty === 'fold' ? 700 : 500}">
+    ${ty === 'fold' ? `<span class="car" style="font-size:18px;color:var(--muted);width:16px">▸</span>` + folderSVG('#6B7385', 34) : fileSVG(ty, 24)}
+    <span style="white-space:nowrap">${n}</span>
+    ${tag ? `<span class="tg" style="margin-left:auto;font-size:20px;font-weight:700;padding:5px 14px;border-radius:999px;color:${c};background:${c}22;border:1.5px solid ${c}88;white-space:nowrap">→ ${tag}</span>` : ''}
+  </div>`));
+for (let i = 0; i < 4; i++) $('peekLines').insertAdjacentHTML('beforeend', `<div class="pl" style="height:12px;border-radius:6px;background:#3A4254;margin:8px 0;width:${[92, 78, 86, 54][i]}%"></div>`);
+const AGENTS = [['Sonnet', '#8FB6FF', 'Scan folder & metadata'], ['Sonnet', '#8FB6FF', 'Baca isi file "Untitled"'], ['Opus', '#F0A27F', 'Duplikat & susun struktur']];
+AGENTS.forEach(([m, c, d], i) => $('scAgents').insertAdjacentHTML('beforeend',
+  `<div class="ag row" style="gap:16px;height:84px;padding:0 22px;margin-bottom:10px;border-radius:20px;background:rgba(255,255,255,.035);border:1.5px solid var(--line)">
+    <span class="agSp" style="width:34px;height:34px;display:inline-block">${sparkSVG(c)}</span>
+    <span style="font-family:Mono;font-weight:700;font-size:22px;color:${c};width:96px">${m}</span>
+    <div style="flex:1"><div style="font-size:24px;font-weight:600">${d}</div>
+      <div style="height:10px;border-radius:5px;background:#232937;margin-top:8px;overflow:hidden"><div class="agBar" style="height:100%;width:0;background:${c}"></div></div></div>
+    <span class="agPct" style="font-family:Mono;font-size:22px;color:var(--muted);width:70px;text-align:right">0%</span>
+  </div>`));
+
+// ---------- background ----------
+const bg = $('bg'), g = bg.getContext('2d');
+function drawBG(t, accent) {
+  g.fillStyle = '#0A0C11'; g.fillRect(0, 0, 1080, 1920);
+  const blobs = [
+    [540 + Math.sin(t * .31) * 260, 700 + Math.cos(t * .23) * 260, 700, accent, .20],
+    [200 + Math.cos(t * .2) * 120, 1500 + Math.sin(t * .27) * 140, 600, '76,141,246', .12],
+    [900 + Math.sin(t * .17) * 120, 300 + Math.cos(t * .21) * 120, 520, '167,139,250', .10],
+  ];
+  for (const [x, y, r, c, a] of blobs) {
+    const gr = g.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, `rgba(${c},${a})`); gr.addColorStop(1, `rgba(${c},0)`);
+    g.fillStyle = gr; g.fillRect(0, 0, 1080, 1920);
+  }
+  // dot grid drifting
+  g.fillStyle = 'rgba(255,255,255,.055)';
+  const off = (t * 14) % 54;
+  for (let y = -54 + off; y < 1920; y += 54) for (let x = 27; x < 1080; x += 54) g.fillRect(x, y, 2.4, 2.4);
+  // vignette
+  const v = g.createRadialGradient(540, 960, 500, 540, 960, 1250);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.55)');
+  g.fillStyle = v; g.fillRect(0, 0, 1080, 1920);
+}
+
+// ---------- scenes ----------
+const S = TL.scenes, K = TL.k;
+function sceneWrap(id, t, [a, b], { inD = .5, outD = .38, dir = 1 } = {}) {
+  const el = $(id);
+  if (t < a - .001 || t >= b + .001) { el.style.display = 'none'; return false; }
+  el.style.display = 'block';
+  const pi = pr(t, a, inD, Ez.expo), po = pr(t, b - outD, outD, Ez.in);
+  css(el, { x: (1 - pi) * 160 * dir - po * 200, s: lerp(.96, 1, pi) * lerp(1, 1.04, po), op: Math.min(clamp(pi * 1.6), 1 - po), b: (1 - pi) * 18 + po * 22 });
+  return true;
+}
+let cursorState = null;
+function cursorAt(x, y, op = 1, press = 0) { cursorState = { x, y, op, press }; }
+function path(t, pts) { // pts: [[time,x,y],...] eased between
+  if (t <= pts[0][0]) return pts[0].slice(1);
+  for (let i = 1; i < pts.length; i++) if (t <= pts[i][0]) {
+    const [t0, x0, y0] = pts[i - 1], [t1, x1, y1] = pts[i], p = Ez.io((t - t0) / (t1 - t0));
+    return [lerp(x0, x1, p), lerp(y0, y1, p) - Math.sin(Math.PI * p) * 40];
+  }
+  return pts[pts.length - 1].slice(1);
+}
+function ripple(t, tc, x, y) {
+  const p = clamp((t - tc) / .5);
+  if (p > 0 && p < 1) { const r = $('ripple'); r.style.left = x + 'px'; r.style.top = y + 'px'; css(r, { s: lerp(.3, 1.4, Ez.out(p)), op: 1 - p }); return true; }
+  return false;
+}
+let rippleUsed = false;
+function rip(t, tc, x, y) { if (!rippleUsed && ripple(t, tc, x, y)) rippleUsed = true; }
+const press = (t, tc) => bump(t, tc - .06, .2);
+
+function sHook(t) {
+  if (!sceneWrap('s-hook', t, S.hook, { inD: .01, outD: .01 })) return;
+  const suck = pr(t, 4.9, .65, Ez.in);
+  hookChips.forEach((c, i) => {
+    const a = .15 + i * .05, p = clamp((t - a) / .4);
+    const jx = Math.sin(t * 9 + c.ph) * 3 + (t > 1.5 && t < 1.75 ? (rnd() - .5) * 16 : 0);
+    const jy = Math.cos(t * 7 + c.ph) * 3;
+    const dx = (540 - c.x - 150) * suck, dy = (930 - c.y) * suck;
+    css(c.el, { x: jx + dx, y: jy + dy + (1 - Ez.back(p)) * 60, r: c.r * (1 - suck) + suck * 120 * (i % 2 ? 1 : -1), s: lerp(.4, 1, Ez.back(p)) * (1 - suck * .9), op: clamp(p * 2) * (1 - suck), b: suck * 16 + (1 - p) * 6 });
+  });
+  rise($('hookL1'), t, .2, .5);
+  const p2 = popIn($('hookL2'), t, .45, .5);
+  const gl = (t > .45 && t < .8) || (t > 1.5 && t < 1.75) || (t > 3.2 && t < 3.4);
+  const gx = gl ? (rnd() - .5) * 18 : 0;
+  $('hookL2').style.textShadow = gl ? `${gx}px 0 rgba(76,141,246,.9), ${-gx}px 0 rgba(52,168,83,.9)` : '0 0 60px rgba(234,67,53,.35)';
+  if (gl) $('hookL2').style.transform += ` translateX(${gx * .6}px) skewX(${gx * .4}deg)`;
+  const pc = rise($('hookCount'), t, .9, .5);
+  $('hookNum').textContent = Math.round(270 * Ez.out(clamp((t - .9) / 2.0)));
+  const out = pr(t, 4.9, .6, Ez.in);
+  if (out > 0) { [$('hookL1'), $('hookL2'), $('hookCount')].forEach(e => { e.style.opacity = (parseFloat(e.style.opacity) * (1 - out)); e.style.filter = `blur(${out * 20}px)`; }); }
+}
+
+function sTitle(t) {
+  if (!sceneWrap('s-title', t, S.title, { inD: .3 })) return;
+  const u = t - S.title[0];
+  const pl = pr(t, S.title[0] + .05, .7, Ez.back);
+  css($('tSpark'), { x: (1 - pl) * -400, r: u * 40, op: clamp(pl * 2), b: (1 - clamp(pl)) * 20 });
+  css($('tDrive'), { x: (1 - pl) * 400, op: clamp(pl * 2), b: (1 - clamp(pl)) * 20, s: 1 + bump(t, S.title[0] + .65, .3) * .12 });
+  popIn($('tX'), t, S.title[0] + .55, .4);
+  rise($('tT1'), t, S.title[0] + .55);
+  const p2 = rise($('tT2'), t, S.title[0] + .75, .6, 70);
+  rise($('tT3'), t, S.title[0] + .95);
+  const ps = popIn($('tSub'), t, K.onePrompt - .1, .5);
+}
+
+function sStep1(t) {
+  if (!sceneWrap('s-step1', t, S.step1)) return;
+  const a = S.step1[0];
+  rise(document.querySelector('#s-step1 .steptag'), t, a + .1); rise(document.querySelector('#s-step1 .stitle'), t, a + .2);
+  rise($('c1'), t, a + .4, .7, 80); rise($('c1cap'), t, a + 1.0);
+  CONN.forEach((_, i) => rise($('conn' + i), t, a + .6 + i * .1, .5, 30));
+  const hl = (el, on) => { el.style.background = `rgba(217,119,87,${.25 * on})`; el.style.color = on > .5 ? '#fff' : ''; };
+  hl($('bcSettings'), pr(t, K.s1Settings, .25) * (1 - pr(t, K.s1Connectors, .2)));
+  hl($('bcConn'), pr(t, K.s1Connectors, .25));
+  const dr = pr(t, K.s1Drive, .3);
+  $('conn0').style.background = `rgba(76,141,246,${.12 * dr})`; $('conn0').style.borderColor = `rgba(76,141,246,${.6 * dr})`;
+  const done = t >= K.s1Click + .1, b = $('connBtn0');
+  b.innerHTML = done ? '✓ Connected' : 'Connect';
+  b.style.background = done ? 'rgba(52,168,83,.18)' : '#EEF1F6'; b.style.color = done ? '#9BE3AE' : '#111';
+  b.style.border = done ? '1.5px solid rgba(52,168,83,.6)' : 'none';
+  css(b, { s: 1 - press(t, K.s1Click) * .1 + bump(t, K.s1Click + .1, .35) * .08 });
+  // cursor: card at (72,560); breadcrumb ~ (150,620),(330,620); drive row (500,760); button (830,770)
+  const [x, y] = path(t, [[a + .6, 760, 1500], [K.s1Settings - .1, 150, 625], [K.s1Connectors - .1, 330, 625], [K.s1Drive - .1, 500, 770], [K.s1Click - .08, 845, 775], [S.step1[1], 870, 840]]);
+  cursorAt(x, y, pr(t, a + .6, .3), press(t, K.s1Click));
+  [K.s1Settings, K.s1Connectors].forEach((tc, i) => rip(t, tc, [150, 330][i], 625));
+  rip(t, K.s1Click, 845, 775);
+}
+
+function sStep2(t) {
+  if (!sceneWrap('s-step2', t, S.step2)) return;
+  const a = S.step2[0];
+  rise(document.querySelector('#s-step2 .steptag'), t, a + .1); rise(document.querySelector('#s-step2 .stitle'), t, a + .2);
+  rise($('br'), t, a + .35, .7, 80);
+  const url = 'drive.google.com', n = Math.floor(clamp((t - K.s2UrlStart) / (K.s2Enter - .1 - K.s2UrlStart)) * url.length);
+  $('url').textContent = url.slice(0, n);
+  $('urlCaret').style.opacity = (t < K.s2Enter && Math.floor(t * 3) % 2 === 0) ? 1 : 0;
+  const d = pr(t, K.s2Enter + .15, .5);
+  css($('driveUI'), { op: d, y: (1 - d) * 30 });
+  document.querySelectorAll('.dg').forEach((e, i) => popIn(e, t, K.s2Enter + .25 + i * .04, .35, { r: Math.sin(i * 2.3) * 3 * (1 - pr(t, K.s2ExtClick, .4)) }));
+  const sp = pr(t, K.s2ExtClick + .1, .5, Ez.expo);
+  css($('sidePanel'), { x: (1 - sp) * 500, b: (1 - sp) * 12, op: sp > 0 ? 1 : 0 });
+  css($('extBtn'), { s: 1 - press(t, K.s2ExtClick) * .2 + bump(t, K.s2ExtClick - 1.2, 1.0) * .15 });
+  $('extBtn').style.boxShadow = `0 0 0 ${4 * bump(t, K.s2ExtClick - 1.2, 1.2)}px rgba(217,119,87,.8)`;
+  const [x, y] = path(t, [[a + .6, 760, 1450], [K.s2UrlStart - .2, 500, 600], [K.s2ExtClick - 1.0, 560, 900], [K.s2ExtClick - .08, 942, 600], [S.step2[1], 900, 1150]]);
+  cursorAt(x, y, pr(t, a + .6, .3), press(t, K.s2ExtClick));
+  rip(t, K.s2ExtClick, 942, 600);
+  popIn($('installBadge'), t, K.s2Install, .5);
+}
+
+function sStep3(t) {
+  if (!sceneWrap('s-step3', t, S.step3)) return;
+  const a = S.step3[0];
+  rise(document.querySelector('#s-step3 .steptag'), t, a + .1); rise(document.querySelector('#s-step3 .stitle'), t, a + .2);
+  // typing per line
+  let last = null;
+  promptChars.forEach(c => {
+    const [la, lb] = K.s3Lines[c.line];
+    const vis = t >= la + (c.idx / lineLen[c.line]) * (lb - la);
+    c.el.className = vis ? 'c v' : 'c';
+    if (vis) last = c;
+    if (c.g) {
+      const th = K.s3Hl[c.g], h = pr(t, th, .35);
+      const flash = bump(t, th, .6);
+      c.el.style.background = h > 0 ? `rgba(${HL_COL[c.g]},${.18 + .25 * flash})` : 'transparent';
+      c.el.style.color = h > 0 ? `rgb(${HL_COL[c.g]})` : '';
+      c.el.style.fontWeight = h > 0 ? 700 : 400;
+      c.el.style.boxShadow = h > 0 ? `0 3px 0 rgba(${HL_COL[c.g]},${h})` : 'none';
+    }
+  });
+  if (caret.parentNode) caret.remove();
+  if (last && t < K.s3Send && Math.floor(t * 2.5) % 2 === 0) last.el.after(caret);
+  else if (!last && t > a + .5 && Math.floor(t * 2.5) % 2 === 0) $('prompt').prepend(caret);
+  // send
+  const send = pr(t, K.s3Send, .55, Ez.in);
+  const cin = pr(t, a + .4, .7, Ez.expo);
+  css($('composer'), { y: (1 - cin) * 80 - send * 260, s: 1 - send * .35, op: clamp(1 - send * 1.3) * clamp(cin * 1.4), b: (1 - cin) * 10 + send * 14 });
+  css($('sendBtn'), { s: 1 - press(t, K.s3Send) * .2 });
+  const th = pr(t, K.s3Send + .3, .4);
+  css($('thinking'), { op: th, y: (1 - th) * 40, b: (1 - th) * 8 });
+  $('thinkSpark').style.transform = `rotate(${t * 220}deg)`;
+  $('thinkCount').textContent = Math.round(296 * clamp((t - K.s3Send - .4) / .6));
+  $('thinkDots').textContent = '.'.repeat(1 + Math.floor(t * 3) % 3);
+  const [x, y] = path(t, [[K.s3Send - 1.2, 700, 1450], [K.s3Send - .08, 908, 1240], [S.step3[1], 950, 1420]]);
+  cursorAt(x, y, pr(t, K.s3Send - 1.2, .3) * (1 - pr(t, K.s3Send + .5, .3)), press(t, K.s3Send));
+  rip(t, K.s3Send, 908, 1240);
+  popIn($('teaser'), t, K.s3Send + .6, .5);
+}
+
+
+function sScan(t) {
+  if (!sceneWrap('s-scan', t, S.scan)) return;
+  const a = S.scan[0], [b0, b1] = K.scanBeam;
+  rise(document.querySelector('#s-scan .steptag'), t, a + .1); rise(document.querySelector('#s-scan .stitle'), t, a + .15);
+  $('scDots').textContent = '.'.repeat(1 + Math.floor(t * 3) % 3);
+  rise($('scTree'), t, a + .25, .6, 60);
+  const rows = document.querySelectorAll('.sr'), N = rows.length;
+  const beamP = clamp((t - b0) / (b1 - b0));
+  rows.forEach((r, i) => {
+    // folders "expand": rows appear recursively, just ahead of the beam
+    const ta = a + .4 + i * .09;
+    const p = pr(t, ta, .35, Ez.expo);
+    css(r, { x: (1 - p) * -30, op: p, b: (1 - p) * 6 });
+    const car = r.querySelector('.car'); if (car) car.style.transform = `rotate(${90 * pr(t, ta + .2, .25)}deg)`;
+    const tc = b0 + (i + .5) / N * (b1 - b0);
+    const scanned = bump(t, tc - .12, .35);
+    r.style.background = scanned > .01 ? `rgba(167,139,250,${.16 * scanned})` : 'transparent';
+    r.style.borderRadius = '12px';
+    const tg = r.querySelector('.tg'); if (tg) popIn(tg, t, tc + .05, .4);
+  });
+  const beamOn = t >= b0 - .1 && t <= b1 + .2;
+  css($('scBeam'), { y: 22 + beamP * (N * 55) - 70, op: beamOn ? 1 : 0 });
+  // peek into file content
+  const pk = pr(t, K.scanPeek, .4, Ez.expo), pko = pr(t, K.scanPeek + 1.5, .3, Ez.in);
+  css($('scPeek'), { s: lerp(.85, 1, pk), op: pk * (1 - pko), b: (1 - pk) * 8 + pko * 10, y: (1 - pk) * 20 });
+  document.querySelectorAll('.pl').forEach((l, i) => { const lp = pr(t, K.scanPeek + .2 + i * .15, .2); l.style.background = `linear-gradient(90deg,#8FB6FF ${lp * 100}%,#3A4254 ${lp * 100}%)`; });
+  css($('peekRes'), { op: pr(t, K.scanPeek + .9, .3) });
+  // sub-agents
+  document.querySelectorAll('.ag').forEach((g, i) => {
+    rise(g, t, a + .5 + i * .12, .5, 30);
+    const st = a + .8 + i * .3, en = [b1 - .6, K.scanPeek + 1.4, K.scanDone - .1][i];
+    const p = Ez.io(clamp((t - st) / (en - st)));
+    g.querySelector('.agBar').style.width = (p * 100) + '%';
+    g.querySelector('.agPct').textContent = p >= 1 ? '✓' : Math.round(p * 100) + '%';
+    g.querySelector('.agPct').style.color = p >= 1 ? 'var(--green)' : '';
+    g.querySelector('.agSp').style.transform = `rotate(${p < 1 ? t * 260 : 0}deg)`;
+  });
+  const cp = Ez.out(clamp((t - b0) / (K.scanDone - b0)));
+  $('scCount').innerHTML = `<span><b style="font-family:Mono;color:#fff">${Math.round(296 * cp)}</b> file dipindai</span><span><b style="font-family:Mono;color:#C9B8FF">${Math.round(36 * cp)}</b> duplikat</span><span><b style="font-family:Mono;color:#fff">${Math.round(30 * cp)}</b> tak dikenal</span><span style="color:var(--green);font-weight:700">0 dihapus</span>`;
+  rise($('scCount'), t, a + .9);
+}
+
+function sStep4(t) {
+  if (!sceneWrap('s-step4', t, S.step4)) return;
+  const a = S.step4[0];
+  rise(document.querySelector('#s-step4 .steptag'), t, a + .1); rise(document.querySelector('#s-step4 .stitle'), t, a + .2);
+  rise($('planCard'), t, a + .3, .7, 80);
+  document.querySelectorAll('.pi').forEach((e, i) => {
+    const p = popIn(e, t, K.s4Items + i * .36, .4);
+    css(e.querySelector('.ck'), { s: Ez.back(clamp((t - K.s4Progress - i * .25) / .35)), op: clamp((t - K.s4Progress - i * .25) / .2) });
+  });
+  const ap = $('approveBtn');
+  css(ap, { s: 1 - press(t, K.s4Approve) * .08 + bump(t, K.s4Approve - 1, .9) * .04 });
+  ap.style.boxShadow = `0 0 ${40 * bump(t, K.s4Approve - 1.2, 1.4)}px rgba(217,119,87,.8)`;
+  const pw = pr(t, K.s4Approve + .35, .35);
+  $('planBtns').style.opacity = 1 - pw; $('progWrap').style.opacity = pw;
+  const prog = Ez.io(clamp((t - K.s4Progress) / (S.step4[1] - .6 - K.s4Progress)));
+  $('progBar').style.width = (prog * 100) + '%'; $('progN').textContent = Math.round(prog * 270);
+  const [x, y] = path(t, [[K.s4Approve - 1.4, 650, 1470], [K.s4Approve - .08, 700, 1290], [S.step4[1], 760, 1460]]);
+  cursorAt(x, y, pr(t, K.s4Approve - 1.4, .3) * (1 - pr(t, K.s4Approve + .6, .3)), press(t, K.s4Approve));
+  rip(t, K.s4Approve, 700, 1290);
+}
+
+function sBefore(t) {
+  if (!sceneWrap('s-before', t, S.before)) return;
+  const a = S.before[0], m = K.bMorph;
+  const isAfter = t >= m;
+  $('baTag').innerHTML = isAfter
+    ? `<div class="pill" style="background:rgba(52,168,83,.16);border:1.5px solid rgba(52,168,83,.6);font-size:28px;color:#9BE3AE;font-weight:800;letter-spacing:.12em">SESUDAH</div>`
+    : `<div class="pill" style="background:rgba(234,67,53,.16);border:1.5px solid rgba(234,67,53,.6);font-size:28px;color:#FFB4AB;font-weight:800;letter-spacing:.12em">SEBELUM</div>`;
+  popIn($('baTag'), t, isAfter ? m : a + .1, .45);
+  rise($('baTitle'), t, a + .2);
+  $('baTitle').innerHTML = isAfter ? 'My Drive <span style="color:var(--green)">rapi ✓</span>' : 'My Drive <span style="color:var(--red)">berantakan</span>';
+  document.querySelectorAll('.bi').forEach((e, i) => {
+    const pin = pr(t, a + .3 + i * .07, .45, Ez.expo);
+    const out = pr(t, m - .25 + i * .03, .45, Ez.in);
+    const dir = i % 2 ? 1 : -1;
+    css(e, { x: dir * (1 - pin) * 120 + Math.sin(t * 6 + i) * 3 * (1 - out) + dir * out * 700, y: -out * 80, r: (i % 3 - 1) * 1.6 * (1 - out) + dir * out * 25, op: pin * (1 - out), b: (1 - pin) * 10 + out * 24 });
+  });
+  // camera snapshot
+  const cf = bump(t, K.bShutter - .25, 1.1);
+  $('camFrame').style.opacity = cf; css($('camFrame'), { s: lerp(1.06, 1, pr(t, K.bShutter - .25, .3)), op: cf });
+  document.querySelectorAll('.ai').forEach((e, i) => {
+    const p = popIn(e, t, K.bRows + i * .14, .4, { x: 0 });
+    let glow = 0;
+    if (i === 10) glow = bump(t, K.bStatDup, 1.3);
+    if (i < 11) glow = Math.max(glow, bump(t, K.bStat11 + i * .05, .5) * .7);
+    e.style.borderColor = glow > .01 ? `rgba(240,162,127,${glow})` : 'var(--line)';
+    e.style.background = glow > .01 ? `rgba(217,119,87,${.12 * glow})` : '#141924';
+  });
+  document.querySelectorAll('.st').forEach((e, i) => popIn(e, t, [K.bStat11, K.bStatDup, K.bStatDel][i], .5));
+  const st = document.querySelectorAll('.st')[2];
+  st.style.boxShadow = `0 0 ${60 * bump(t, K.bStatDel, 1.4)}px rgba(52,168,83,.7)`;
+}
+
+function sCta(t) {
+  if (!sceneWrap('s-cta', t, S.cta, { outD: .01 })) return;
+  const a = S.cta[0];
+  const pp = popIn($('pfWrap'), t, a + .2, .6);
+  $('pfRing').style.transform = `rotate(${t * 60}deg)`;
+  rise($('pfName'), t, a + .45); rise($('pfMeta'), t, a + .6);
+  rise($('ctaCard'), t, a + .5, .6, 80);
+  const kw = $('kw');
+  const pk = clamp((t - K.cKeyword) / .5);
+  css(kw, { s: (t < K.cKeyword ? 1 : Ez.back(pk) * (1 + .05 * Math.sin((t - K.cKeyword) * 6))) });
+  kw.style.boxShadow = `0 0 ${t > K.cKeyword ? 30 + 20 * Math.sin(t * 6) : 0}px rgba(217,119,87,.75)`;
+  const dn = pr(t, K.cDm, .5, Ez.expo), dout = pr(t, K.cDm + 2.4, .4, Ez.in);
+  css($('dmNotif'), { y: (1 - dn) * -160 - dout * 160, op: dn * (1 - dout), b: (1 - dn) * 10 + dout * 10 });
+  rise($('ctaFoot'), t, a + .9);
+  const fb = $('followBtn');
+  const fol = t >= K.cFollow + .08;
+  fb.textContent = fol ? 'Following ✓' : 'Follow';
+  fb.style.background = fol ? '#262C39' : 'var(--blue)';
+  css(fb, { s: 1 - press(t, K.cFollow) * .1 + bump(t, K.cFollow + .08, .4) * .08 });
+  const [x, y] = path(t, [[K.cFollow - 1.2, 760, 1480], [K.cFollow - .08, 440, 1400], [S.cta[1], 520, 1470]]);
+  cursorAt(x, y, pr(t, K.cFollow - 1.2, .3) * (1 - pr(t, K.cFollow + .9, .3)), press(t, K.cFollow));
+  rip(t, K.cFollow, 440, 1400);
+}
+
+const ACCENT = [['hook', '234,67,53'], ['title', '217,119,87'], ['step1', '76,141,246'], ['step2', '217,119,87'], ['step3', '217,119,87'], ['scan', '167,139,250'], ['step4', '52,168,83'], ['before', '167,139,250'], ['cta', '217,119,87']];
+function render(t) {
+  seed = 7 + Math.floor(t * 60);
+  cursorState = null; rippleUsed = false;
+  $('ripple').style.opacity = 0;
+  let acc = ACCENT[0][1]; for (const [n, c] of ACCENT) if (t >= S[n][0]) acc = c;
+  drawBG(t, acc);
+  sHook(t); sTitle(t); sStep1(t); sStep2(t); sStep3(t); sScan(t); sStep4(t); sBefore(t); sCta(t);
+  // header: step dots
+  const steps = ['step1', 'step2', 'step3', 'step4'];
+  document.querySelectorAll('#dots .dot').forEach((d, i) => {
+    const on = t >= S[steps[i]][0], cur = on && t < S[steps[i]][1];
+    d.style.background = cur ? 'var(--claude)' : on ? 'rgba(217,119,87,.45)' : '#2A3040';
+    d.style.width = cur ? '60px' : '36px';
+  });
+  css($('hdr'), { op: pr(t, .3, .5) });
+  const cur = $('cursor');
+  if (cursorState && cursorState.op > 0) {
+    cur.style.display = 'block';
+    css(cur, { x: cursorState.x - 8, y: cursorState.y - 4, s: 1 - cursorState.press * .18, op: cursorState.op });
+  } else cur.style.display = 'none';
+  // shutter flash
+  $('flash').style.opacity = Math.max(bump(t, K.bShutter, .18) * .85, bump(t, K.bStatDel + .05, .14) * .35, bump(t, S.title[0] - .04, .14) * .5);
+}
+window.render = render;
+
+// safe-zone guides (preview only): ?guides
+if (location.search.includes('guides')) {
+  $('guides').innerHTML = `
+    <div class="g" style="left:0;top:0;width:1080px;height:220px">IG top bar (0–220)</div>
+    <div class="g" style="left:0;top:1500px;width:1080px;height:420px">caption · profile · audio (1500–1920)</div>
+    <div class="g" style="left:960px;top:980px;width:120px;height:520px;writing-mode:vertical-rl">like · comment · share</div>`;
+}
+render(parseFloat(new URLSearchParams(location.search).get('t') || '0'));
+</script>
+</body>
+</html>
