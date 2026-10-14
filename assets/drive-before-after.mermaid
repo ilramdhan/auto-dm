@@ -1,0 +1,37 @@
+flowchart LR
+  subgraph BEFORE["SEBELUM: My Drive (26 folder + 270 file lepas)"]
+    direction TB
+    B1["270 file lepas di root<br/>CV, KTP, screenshot, MGT, XYN, Untitled..."]
+    B2["Berkas Penting"]
+    B3["BackupIP · BackupPC · Backup_Account"]
+    B4["MGTHRIS (+SSL-2025) · Lanyard MGT"]
+    B5["Sertif Sinus · Foto 17 Aug · Safari · Tangerang Date"]
+    B6["Fintrack Backup · WebSmapol · GloryTest"]
+    B7["Mee · Google Earth · Wings Group · Envanto · SelfPod · Ikeunn"]
+    B8["cmms-backups · Second Brain Backup<br/>Colab Notebooks · Google AI Studio"]
+  end
+
+  subgraph AFTER["SESUDAH: My Drive (11 folder bernomor + 4 folder otomatis)"]
+    direction TB
+    A0["00 Private (restricted)<br/>Identity Cards · Recovery Codes · Finance · Secrets & SSL"]
+    A1["01 Personal<br/>Profile · Notes · Travel · Helping Others (Ike)"]
+    A2["02 Education<br/>Sinus (S1) + BEM · UT · Graduation · TOEFL/LPDP"]
+    A3["03 Certificates"]
+    A4["04 Career<br/>CV & Portfolio · Job Applications · Internships · MGT"]
+    A5["05 Bootcamps & Programs<br/>Bangkit · MSIB · SYNRGY 6 · Dicoding · Digistar"]
+    A6["06 Projects & Code<br/>XYN · CMMS · Fintrack · WebSmapol · Learning"]
+    A7["07 Backups<br/>Phone Backup · PC Backup"]
+    A8["08 Photos & Media<br/>Events & Trips · Screenshots · Misc"]
+    A9["09 Design Assets"]
+    A99["99 Archive & To Review<br/>_Duplicates (36) · _Unidentified (30)<br/>_Untitled (14) · _Suspicious (1) · _Empty"]
+    AS["Tetap di root (otomatis):<br/>cmms-backups · Second Brain Backup<br/>Colab Notebooks · Google AI Studio"]
+  end
+
+  B1 --> A0 & A1 & A4 & A5 & A6 & A8 & A99
+  B2 --> A0 & A2 & A3 & A4
+  B3 --> A7 & A0
+  B4 --> A4 & A0
+  B5 --> A99 & A8
+  B6 --> A6 & A4
+  B7 --> A99 & A9 & A1
+  B8 --> AS

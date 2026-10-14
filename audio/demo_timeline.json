@@ -1,0 +1,173 @@
+{
+ "duration": 35.7,
+ "music": {
+  "file": "audio/music_bed.wav",
+  "gain_db": -14,
+  "duck": [
+   [
+    10.0,
+    15.0,
+    -4
+   ]
+  ]
+ },
+ "events": [
+  {
+   "t": 0.5,
+   "sfx": "bass_hit",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 1.9,
+   "sfx": "click",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 3.3,
+   "sfx": "ding",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 4.7,
+   "sfx": "glitch",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 6.1,
+   "sfx": "impact",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 7.5,
+   "sfx": "key_enter",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 8.9,
+   "sfx": "key_space",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 10.3,
+   "sfx": "notif",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 11.7,
+   "sfx": "pop",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 13.1,
+   "sfx": "pop_hi",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 14.5,
+   "sfx": "riser",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 15.9,
+   "sfx": "shutter",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 17.3,
+   "sfx": "success",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 18.7,
+   "sfx": "swoosh_send",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 20.1,
+   "sfx": "toggle",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 21.5,
+   "sfx": "whoosh",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 22.9,
+   "sfx": "whoosh_fast",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 24.3,
+   "sfx": "whoosh_rev",
+   "gain_db": 0,
+   "pan": 0.0
+  },
+  {
+   "t": 25.7,
+   "typing": {
+    "chars": 60,
+    "cps": 22
+   },
+   "gain_db": -8
+  },
+  {
+   "t": 31.7,
+   "sfx": "key1",
+   "gain_db": -6,
+   "pan": -0.5
+  },
+  {
+   "t": 31.9,
+   "sfx": "key2",
+   "gain_db": -6,
+   "pan": -0.3
+  },
+  {
+   "t": 32.1,
+   "sfx": "key3",
+   "gain_db": -6,
+   "pan": -0.09999999999999998
+  },
+  {
+   "t": 32.3,
+   "sfx": "key4",
+   "gain_db": -6,
+   "pan": 0.10000000000000009
+  },
+  {
+   "t": 32.5,
+   "sfx": "key5",
+   "gain_db": -6,
+   "pan": 0.30000000000000004
+  },
+  {
+   "t": 32.7,
+   "sfx": "key6",
+   "gain_db": -6,
+   "pan": 0.5
+  },
+  {
+   "t": 33.7,
+   "sfx": "key",
+   "gain_db": -6
+  }
+ ]
+}
