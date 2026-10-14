@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.1.0...v0.2.0) (2026-10-14)
+
+
+### Features
+
+* add a landing page and a setup notice for missing env vars ([#34](https://github.com/ilramdhan/auto-reply-ig/issues/34)) ([a9676cc](https://github.com/ilramdhan/auto-reply-ig/commit/a9676ccf1cb9e48ceac24e9bcb4cfe3461279b15))
+
 ## 0.1.0 (2026-10-14)
 
 
