@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fail, ok } from "@/lib/action-result";
 import { changePasswordSchema, changeUsernameSchema } from "@/lib/validation/auth";
-import { apiKeyNameSchema, metaAppSchema, processingSchema } from "@/lib/validation/settings";
+import { apiKeyNameSchema, metaAppSchema, processingSchema, timeZoneSchema } from "@/lib/validation/settings";
 import { authedAction } from "@/server/actions/safe-action";
 import { createApiKey, revokeApiKey } from "@/server/api-keys";
 import { verifyPassword } from "@/server/auth/password";
@@ -148,6 +148,20 @@ export const revokeApiKeyAction = authedAction(
       throw new AppError("NOT_FOUND", "This key doesn't exist or was already revoked.");
     log.info("api_key.revoked", { apiKeyId: id });
     revalidatePath("/settings");
+    return ok();
+  },
+);
+
+/* -------------------------------- time zone ------------------------------- */
+
+export const saveTimeZoneAction = authedAction(
+  "settings",
+  "save_timezone",
+  timeZoneSchema,
+  async ({ timeZone }) => {
+    await setSetting("general.timezone", timeZone);
+    log.info("timezone.saved", { timeZone });
+    revalidatePath("/", "layout");
     return ok();
   },
 );

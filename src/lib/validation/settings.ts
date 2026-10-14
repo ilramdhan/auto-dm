@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidTimeZone } from "@/lib/timezone";
 
 export const metaAppSchema = z.object({
   appId: z
@@ -17,6 +18,10 @@ export const metaAppSchema = z.object({
 export const processingSchema = z.object({
   mode: z.enum(["webhook", "n8n"]),
   enabled: z.boolean(),
+});
+
+export const timeZoneSchema = z.object({
+  timeZone: z.string().trim().refine(isValidTimeZone, "Unknown time zone"),
 });
 
 export const apiKeyNameSchema = z.object({

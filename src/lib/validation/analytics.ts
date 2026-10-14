@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { addDaysYmd, DEFAULT_TIME_ZONE, diffDaysYmd, ymdInZone, zonedMidnight } from "@/lib/timezone";
 
 export const RANGE_PRESETS = ["7d", "30d", "90d", "custom"] as const;
 export type RangePreset = (typeof RANGE_PRESETS)[number];
@@ -17,10 +18,11 @@ export const analyticsFiltersSchema = z.object({
 export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
 
 export type ResolvedRange = {
-  /** Inclusive start (00:00 UTC). */
+  /** Inclusive start: 00:00 of the first day in `timeZone`, as a UTC instant. */
   from: Date;
-  /** Exclusive end (00:00 UTC of the day after the last day). */
+  /** Exclusive end: 00:00 of the day after the last day in `timeZone`. */
   to: Date;
+  timeZone: string;
   days: number;
   label: string;
   preset: RangePreset;
@@ -28,54 +30,50 @@ export type ResolvedRange = {
   toYmd: string;
 };
 
-const DAY = 24 * 60 * 60 * 1000;
-
 export function toYmd(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-function startOfUtcDay(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-}
-
-/** Turns filters into a concrete UTC day window. Custom ranges are clamped and ordered. */
+/**
+ * Turns filters into a concrete window of whole calendar days in `timeZone` (DST-safe).
+ * Custom ranges are ordered, clamped to today and to MAX_RANGE_DAYS.
+ */
 export function resolveRange(
   f: Pick<AnalyticsFilters, "range" | "from" | "to">,
   now = new Date(),
+  timeZone: string = DEFAULT_TIME_ZONE,
 ): ResolvedRange {
-  const today = startOfUtcDay(now);
+  const today = ymdInZone(now, timeZone);
   let preset: RangePreset = f.range;
-  let first: Date;
-  let last: Date;
-  if (preset === "custom" && f.from && f.to) {
-    first = new Date(`${f.from}T00:00:00Z`);
-    last = new Date(`${f.to}T00:00:00Z`);
-    if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) {
-      preset = "30d";
-      first = new Date(today.getTime() - 29 * DAY);
-      last = today;
-    } else {
-      if (first > last) [first, last] = [last, first];
-      if (last > today) last = today;
-      if ((last.getTime() - first.getTime()) / DAY + 1 > MAX_RANGE_DAYS)
-        first = new Date(last.getTime() - (MAX_RANGE_DAYS - 1) * DAY);
-    }
+  let first: string;
+  let last: string;
+  if (
+    preset === "custom" &&
+    f.from &&
+    f.to &&
+    !Number.isNaN(Date.parse(f.from)) &&
+    !Number.isNaN(Date.parse(f.to))
+  ) {
+    [first, last] = f.from <= f.to ? [f.from, f.to] : [f.to, f.from];
+    if (last > today) last = today;
+    if (first > last) first = last;
+    if (diffDaysYmd(first, last) + 1 > MAX_RANGE_DAYS) first = addDaysYmd(last, -(MAX_RANGE_DAYS - 1));
   } else {
     if (preset === "custom") preset = "30d";
     const n = preset === "7d" ? 7 : preset === "90d" ? 90 : 30;
-    first = new Date(today.getTime() - (n - 1) * DAY);
+    first = addDaysYmd(today, -(n - 1));
     last = today;
   }
-  const days = Math.round((last.getTime() - first.getTime()) / DAY) + 1;
-  const label = preset === "custom" ? `${toYmd(first)} – ${toYmd(last)}` : `Last ${days} days`;
+  const days = diffDaysYmd(first, last) + 1;
   return {
-    from: first,
-    to: new Date(last.getTime() + DAY),
+    from: zonedMidnight(first, timeZone),
+    to: zonedMidnight(addDaysYmd(last, 1), timeZone),
+    timeZone,
     days,
-    label,
+    label: preset === "custom" ? `${first} – ${last}` : `Last ${days} days`,
     preset,
-    fromYmd: toYmd(first),
-    toYmd: toYmd(last),
+    fromYmd: first,
+    toYmd: last,
   };
 }
 

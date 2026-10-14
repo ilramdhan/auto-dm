@@ -15,6 +15,7 @@ import { GRAPH_ERROR_HINTS, skipReasonLabel } from "@/lib/labels";
 import { formatNumber, timeAgo, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/server/auth/guard";
+import { getTimeZone } from "@/server/settings";
 import { listCampaignOptions } from "@/server/repos/campaigns";
 import {
   getDailySeries,
@@ -36,7 +37,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
   await requireUser();
   const sp = await searchParams;
   const filters = analyticsFiltersSchema.parse(sp);
-  const range = resolveRange(filters);
+  const range = resolveRange(filters, new Date(), await getTimeZone());
   const scope = { range, campaignId: filters.campaign };
 
   const [campaigns, kpis, series, statuses, content, keywords, skips, errors] = await Promise.all([
@@ -67,7 +68,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
     <div className="grid grid-cols-1 gap-6">
       <PageHeader
         title="Analytics"
-        description={`${range.label} · days in UTC`}
+        description={`${range.label} · days in ${range.timeZone}`}
         actions={
           <Button asChild variant="outline">
             <a href={`/analytics/export?${qs({})}`} download>

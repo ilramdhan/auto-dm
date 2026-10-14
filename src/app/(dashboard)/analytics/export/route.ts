@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { analyticsFiltersSchema, pct, resolveRange, toCsv } from "@/lib/validation/analytics";
 import { requireUser } from "@/server/auth/guard";
+import { getTimeZone } from "@/server/settings";
 import { getPerCampaign, getPerPost } from "@/server/repos/analytics";
 import { logger } from "@/server/log";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   await requireUser();
   const filters = analyticsFiltersSchema.parse(Object.fromEntries(req.nextUrl.searchParams));
-  const range = resolveRange(filters);
+  const range = resolveRange(filters, new Date(), await getTimeZone());
   const scope = { range, campaignId: filters.campaign };
   try {
     const rows = filters.group === "post" ? await getPerPost(scope, 5000) : await getPerCampaign(scope);

@@ -22,7 +22,30 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  const res = NextResponse.next();
+  // Per-request nonce CSP: Next.js applies the nonce to its own scripts when it sees this header on
+  // the request; our layout passes it to next-themes' inline script. Instagram media/avatars come
+  // from Meta's CDNs. Dev needs 'unsafe-eval' for React Refresh.
+  const nonce = btoa(crypto.randomUUID());
+  const dev = process.env.NODE_ENV !== "production";
+  const csp = [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://*.cdninstagram.com https://*.fbcdn.net",
+    "font-src 'self'",
+    `connect-src 'self'${dev ? " ws:" : ""}`,
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    ...(dev ? [] : ["upgrade-insecure-requests"]),
+  ].join("; ");
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set("Content-Security-Policy", csp);
   // Baseline security headers for HTML pages (API routes set their own).
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("X-Content-Type-Options", "nosniff");

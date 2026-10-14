@@ -1,3 +1,4 @@
+import { getTimeZone } from "@/server/settings";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -40,7 +41,7 @@ export default async function CampaignPage({
   await requireUser();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const range = resolveRange({ range: "30d" });
+  const range = resolveRange({ range: "30d" }, new Date(), await getTimeZone());
   const [campaign, rules, kpis, sp] = await Promise.all([
     getCampaign(id),
     listRules(id),

@@ -1,6 +1,7 @@
 import "server-only";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
+import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/timezone";
 import { decrypt, encrypt, randomToken } from "./crypto";
 import { db } from "./db/client";
 import { settings } from "./db/schema";
@@ -19,6 +20,11 @@ export const SETTINGS = {
   "processing.mode": { schema: z.enum(["webhook", "n8n"]), secret: false },
   /** Kill switch: when false, comments are logged but nothing is sent. */
   "processing.enabled": { schema: z.boolean(), secret: false },
+  /** IANA time zone used for calendar days in analytics and "today" on the dashboard. */
+  "general.timezone": {
+    schema: z.string().refine(isValidTimeZone, "Unknown time zone"),
+    secret: false,
+  },
 } as const;
 
 export type SettingKey = keyof typeof SETTINGS;
@@ -27,6 +33,7 @@ export type SettingValue<K extends SettingKey> = z.infer<(typeof SETTINGS)[K]["s
 const DEFAULTS: { [K in SettingKey]?: () => SettingValue<K> } = {
   "processing.mode": () => "webhook",
   "processing.enabled": () => true,
+  "general.timezone": () => DEFAULT_TIME_ZONE,
 };
 
 type Stored = { v: unknown } | { enc: string };
@@ -88,4 +95,9 @@ export async function getPublicSettings() {
       ? { configured: boolean }
       : { value: SettingValue<K> | undefined };
   };
+}
+
+/** Configured analytics/dashboard time zone (falls back to UTC). */
+export async function getTimeZone(): Promise<string> {
+  return (await getSetting("general.timezone")) ?? DEFAULT_TIME_ZONE;
 }
