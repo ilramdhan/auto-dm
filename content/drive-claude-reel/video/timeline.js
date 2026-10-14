@@ -54,9 +54,21 @@ const TL = {
     else TL.k[n] = Object.fromEntries(Object.entries(v).map(([kk, vv]) => [kk, w(vv)]));
   }
   TL.DURATION = w(TL.DURATION);
+  // Per-beat overrides in heard time (VO v2 raw + 0.6 s delay applied in the mix), placed on
+  // phrase pauses detected in the take where a linear warp drifted (step 2 tail, step 3, before/after).
+  Object.assign(TL.k, {
+    s2UrlStart: 20.0, s2Enter: 21.0, s2ExtClick: 22.8, s2Install: 24.3,
+    s3TypeStart: 27.3, s3TypeEnd: 41.6,
+    s3Lines: [[27.3, 30.6], [30.8, 32.8], [33.0, 34.8], [35.0, 37.0], [37.2, 39.0], [39.2, 41.6]],
+    s3Hl: { deep: 31.35, structure: 33.1, dup: 35.0, before: 40.0, del: 42.6, agents: 44.5, sonnet: 45.1, opus: 46.65 },
+    s3Send: 47.0,
+    bMorph: 64.25, bRows: 64.45,
+  });
+  TL.scenes.step2[1] = TL.scenes.step3[0] = 26.7;
+  TL.scenes.step3[1] = TL.SCAN[0] = TL.scenes.scan[0] = 47.55;
   const a = TL.SCAN[0];
   // VO v2: "Nah, Claude langsung kerja. Semua folder di-scan, isi file ... dibaca, terus tiap file dikasih label ..."
-  TL.k.scanBeam = [a + 1.2, a + 6.6]; TL.k.scanPeek = a + 3.4; TL.k.scanDone = a + 7.3;
+  TL.k.scanBeam = [a + 0.6, a + 6.0]; TL.k.scanPeek = a + 2.8; TL.k.scanDone = a + 6.7;
 })();
 
 // ---- sound design (consumed by build_audio.js -> audio/mix.py) ----
