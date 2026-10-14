@@ -19,7 +19,19 @@ See [docs/development.md](docs/development.md) for local Postgres and tunnelling
 2. Branch from `main`: `feat/<short-name>`, `fix/<short-name>`, `docs/<short-name>`, `chore/<short-name>`.
 3. Commit with [Conventional Commits](https://www.conventionalcommits.org): `feat(engine): add exact match mode`, `fix(ui): label for keyword input`.
 4. Run **`pnpm check`** (lint + typecheck + tests) before pushing. Format with `pnpm format`.
-5. Open a PR using the template. Keep it focused; update `CHANGELOG.md` (under `[Unreleased]`) and docs.
+5. Open a PR using the template. Keep it focused and update the docs.
+
+### PR titles and merging
+
+PRs are **squash-merged**, so the **PR title becomes the commit message and the changelog entry**. It must be a
+Conventional Commit: `type(scope): subject` with type one of `feat`, `fix`, `perf`, `refactor`, `docs`, `test`,
+`build`, `ci`, `chore`, `revert`, `style`, and a subject starting in lowercase (for example
+`fix(engine): ignore replies from the account owner`). Mark breaking changes with `!` (`feat!:`) and a
+`BREAKING CHANGE:` footer. A CI check enforces this. Do not edit `CHANGELOG.md`; it is generated.
+
+### Releases
+
+Maintainers release by merging the automated Release PR. See [docs/releasing.md](docs/releasing.md).
 
 ## Database migrations
 
@@ -52,11 +64,15 @@ tokens or secrets in fixtures.
 
 - [ ] `pnpm check` passes
 - [ ] Tests added/updated
-- [ ] Docs and `CHANGELOG.md` updated
+- [ ] PR title is a valid Conventional Commit
+- [ ] Docs updated (`CHANGELOG.md` is generated, do not edit)
 - [ ] No secrets, tokens or personal data in code, logs or screenshots
 - [ ] New inputs validated with Zod; mutations call `requireUser()`
 - [ ] UI changes checked with keyboard and in dark mode
 
 ## Labels
 
-`good first issue`, `help wanted`, `bug`, `enhancement`, `docs`, `meta-api` (Instagram/Meta behaviour), `needs-repro`.
+Defined in [.github/labels.yml](.github/labels.yml) and synced automatically. Pull requests are labelled by
+changed paths ([.github/labeler.yml](.github/labeler.yml)). Common ones: `good first issue`, `help wanted`,
+`bug`, `enhancement`, `documentation`, `setup`, `meta-api` (Instagram/Meta behaviour), `needs-triage`
+(new issues, awaiting review), and area labels such as `ui`, `engine`, `database`, `docker`, `n8n`.

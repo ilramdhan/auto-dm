@@ -7,6 +7,8 @@
 | [configuration.md](configuration.md)     | Environment variables and in-app settings                    |
 | [n8n.md](n8n.md)                         | Optional n8n relay workflow                                  |
 | [architecture.md](architecture.md)       | Modules, data model, request flows, security                 |
+| [docker.md](docker.md)                   | Self-host with Docker Compose, GHCR image, HTTPS, backups    |
+| [releasing.md](releasing.md)             | Versioning, release process, Docker tags, rollback           |
 | [development.md](development.md)         | Local setup, scripts, tests, structure                       |
 | [troubleshooting.md](troubleshooting.md) | Webhook, token, DM and migration problems                    |
 

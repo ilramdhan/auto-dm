@@ -6,6 +6,8 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ilramdhan/auto-reply-ig)](https://github.com/ilramdhan/auto-reply-ig/releases)
+[![Docker image](https://img.shields.io/badge/ghcr.io-ilramdhan%2Fauto--reply--ig-2496ed?logo=docker&logoColor=white)](https://github.com/ilramdhan/auto-reply-ig/pkgs/container/auto-reply-ig)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?logo=nextdotjs)](https://nextjs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
@@ -42,6 +44,17 @@ An open-source alternative to ManyChat-style "comment to DM" tools, with no per-
 3. Open your new URL and log in with `admin` / `changeme123`. You are **forced to change the password** immediately.
 4. Go to **Settings → Instagram** and follow the [Meta setup guide](docs/meta-setup.md) (about 15 minutes).
 5. Create your first campaign, comment the keyword from another account, and watch the **Activity** page.
+
+### Or self-host with Docker
+
+```bash
+git clone https://github.com/ilramdhan/auto-reply-ig.git && cd auto-reply-ig
+cp .env.example .env     # set APP_SECRET, CRON_SECRET (and APP_URL for your public HTTPS URL)
+docker compose up -d     # pulls ghcr.io/ilramdhan/auto-reply-ig, http://localhost:3000
+```
+
+Meta webhooks need HTTPS, so put a reverse proxy in front. See [docs/docker.md](docs/docker.md). Versions and
+release process: [docs/releasing.md](docs/releasing.md).
 
 ## Local development
 

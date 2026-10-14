@@ -17,6 +17,11 @@
 3. **Vercel**: Add New -> Project -> import your fork. Framework: Next.js. Add env vars: `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `APP_SECRET`, `CRON_SECRET` (`openssl rand -hex 32`).
 4. Deploy. Check build logs for the migration step.
 
+## Option C: Docker
+
+Run the published image `ghcr.io/ilramdhan/auto-reply-ig` with Docker Compose on any VPS (app, Postgres and
+a cron sidecar included). See [docker.md](docker.md).
+
 ## Cron
 
 `vercel.json` registers a daily call to `/api/cron/refresh-tokens` (Hobby allows once per day). Vercel

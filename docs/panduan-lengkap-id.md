@@ -203,6 +203,12 @@ App tetap yang mencocokkan keyword dan mengirim balasan; n8n hanya meneruskan ev
 - [ ] Komentar dari akun tester → muncul di Activity sebagai **Sent**
 - [ ] (Publik) App Review + Live mode
 
+## Alternatif: Docker / VPS
+
+Jika tidak ingin memakai Vercel + Supabase, aplikasi bisa dijalankan di VPS sendiri dengan Docker Compose
+(image siap pakai di `ghcr.io/ilramdhan/auto-reply-ig`, sudah termasuk Postgres dan cron refresh token).
+Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengkap: [docker.md](docker.md).
+
 ## 13. Masalah umum
 
 | Gejala                                  | Penyebab & solusi                                                                                                                    |
