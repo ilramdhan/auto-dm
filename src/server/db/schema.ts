@@ -56,7 +56,7 @@ export const settings = pgTable("settings", {
   ...timestamps,
 });
 
-/** API keys for machine clients (n8n). Only a SHA-256 hash is stored. */
+/** API keys for machine clients (n8n). Only a keyed HMAC-SHA256 hash is stored (see crypto.tokenHash). */
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),

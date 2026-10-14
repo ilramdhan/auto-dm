@@ -32,7 +32,7 @@ service by exhausting free-tier quotas; issues requiring a compromised admin acc
   **AES-256-GCM**. The key is derived with **HKDF** from `APP_SECRET`; it is never stored.
 - Passwords are hashed with **argon2id**; sessions are httpOnly signed cookies with a `session_version`
   so password changes revoke old sessions. Login attempts are rate limited.
-- API keys (n8n) are stored only as SHA-256 hashes; plaintext is shown once.
+- API keys (n8n) are stored only as keyed HMAC-SHA256 hashes (key derived from `APP_SECRET`); plaintext is shown once.
 - Meta webhooks are verified with **`X-Hub-Signature-256`** (HMAC-SHA256 over the raw body, timing-safe
   comparison) before any parsing. Cron routes require `CRON_SECRET`.
 - **Row Level Security** is enabled on every table with no policies, so the Supabase anon/public key

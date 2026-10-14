@@ -2,7 +2,7 @@ import "server-only";
 import {
   createCipheriv,
   createDecipheriv,
-  createHash,
+  createHmac,
   hkdfSync,
   randomBytes,
   timingSafeEqual,
@@ -10,7 +10,7 @@ import {
 import { env } from "@/env";
 
 /** Derive purpose-specific 32-byte keys from APP_SECRET (HKDF-SHA256). */
-export function deriveKey(purpose: "session" | "secrets"): Buffer {
+export function deriveKey(purpose: "session" | "secrets" | "api-keys"): Buffer {
   return Buffer.from(hkdfSync("sha256", env().APP_SECRET, "auto-reply-ig", `v1:${purpose}`, 32));
 }
 
@@ -35,8 +35,14 @@ export function decrypt(payload: string): string {
   return Buffer.concat([decipher.update(Buffer.from(ct, "base64url")), decipher.final()]).toString("utf8");
 }
 
-export function sha256Hex(input: string): string {
-  return createHash("sha256").update(input).digest("hex");
+/**
+ * Lookup hash for high-entropy machine tokens (API keys: 256 random bits). Keyed HMAC-SHA256
+ * with a key derived from APP_SECRET, so a leaked database alone cannot be used to test key
+ * guesses. Deterministic on purpose (keys are looked up by hash); a slow password KDF is
+ * unnecessary for random 256-bit tokens. Human passwords use argon2id (server/auth/password.ts).
+ */
+export function tokenHash(token: string): string {
+  return createHmac("sha256", deriveKey("api-keys")).update(token, "utf8").digest("hex");
 }
 
 export function safeEqual(a: string, b: string): boolean {

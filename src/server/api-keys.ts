@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
-import { sha256Hex } from "./crypto";
+import { tokenHash } from "./crypto";
 import { db } from "./db/client";
 import { apiKeys } from "./db/schema";
 
@@ -31,7 +31,7 @@ export async function createApiKey(name: string): Promise<{ id: string; key: str
   const key = `${API_KEY_PREFIX}${randomBytes(32).toString("base64url")}`;
   const [row] = await db
     .insert(apiKeys)
-    .values({ name: trimmed, prefix: key.slice(0, DISPLAY_PREFIX_LENGTH), keyHash: sha256Hex(key) })
+    .values({ name: trimmed, prefix: key.slice(0, DISPLAY_PREFIX_LENGTH), keyHash: tokenHash(key) })
     .returning({ id: apiKeys.id });
   if (!row) throw new Error("Failed to create API key");
   return { id: row.id, key };
@@ -83,7 +83,7 @@ export async function verifyApiKey(
   const [row] = await db
     .select({ id: apiKeys.id, name: apiKeys.name, lastUsedAt: apiKeys.lastUsedAt })
     .from(apiKeys)
-    .where(and(eq(apiKeys.keyHash, sha256Hex(key)), isNull(apiKeys.revokedAt)))
+    .where(and(eq(apiKeys.keyHash, tokenHash(key)), isNull(apiKeys.revokedAt)))
     .limit(1);
   if (!row) return null;
   const now = new Date();
