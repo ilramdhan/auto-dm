@@ -32,7 +32,7 @@ Model policy (cost/context): **Sonnet** = light tasks (docs, templates, config, 
 src/env.ts, src/server/db/*, src/server/crypto.ts, src/server/settings.ts   → Phase 0 (lead)
 src/server/instagram/*, src/server/engine/*, src/server/api-keys.ts,
 src/app/api/**                                                             → Engine agent
-src/server/auth/*, src/middleware.ts, src/components/**, src/lib/validation/*,
+src/server/auth/*, src/proxy.ts, src/components/**, src/lib/validation/*,
 src/server/repos/*, src/app/(auth)/**, src/app/(dashboard)/**, src/app/layout.tsx,
 src/app/page.tsx, src/app/globals.css                                      → UI agent
 n8n/*, src/server/n8n/*                                                     → n8n agent
@@ -83,7 +83,7 @@ SECURITY.md, ACCESSIBILITY.md, CHANGELOG.md, vercel.json                    → 
 
 - [x] shadcn primitives in `src/components/ui/*` (button, input, label, textarea, card, badge, switch, checkbox, radio-group, select, tabs, dialog, alert-dialog, sheet, dropdown-menu, table, tooltip, alert, skeleton, separator, sonner, form, avatar, scroll-area, popover)
 - [x] App shell: responsive sidebar (sheet on mobile), theme toggle, skip-link, accessible landmarks
-- [x] Auth: first-run bootstrap (default creds) → forced password change, argon2id, jose session cookie, `session_version`, login rate-limit, middleware + `requireUser()`
+- [x] Auth: first-run bootstrap (default creds) → forced password change, argon2id, jose session cookie, `session_version`, login rate-limit, proxy (formerly middleware) + `requireUser()`
 - [x] Dashboard: setup checklist (Meta app → connect IG → webhook → first campaign), stats, 14-day mini chart
 - [x] Campaigns: list, create (media picker or "all posts"), edit, activate/deactivate, delete, per-campaign KPIs
 - [x] Rules editor: keyword chips, match mode, public-reply variants, DM text with variables + 1000-char counter, link button, once-per-user, priority, "test a comment" simulator

@@ -46,3 +46,8 @@ export function fromDateTimeLocal(value: string): string {
 export function truncate(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
+
+/** Whole days from `now` until `date` (negative when in the past). */
+export function daysUntil(date: Date | string, now: Date = new Date()): number {
+  return Math.round((new Date(date).getTime() - now.getTime()) / 86_400_000);
+}

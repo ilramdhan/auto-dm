@@ -7,6 +7,10 @@ updates:
     # Matches pnpm's minimumReleaseAge (pnpm-workspace.yaml): only propose releases >= 7 days old.
     cooldown:
       default-days: 7
+    ignore:
+      # Types must match the Node runtime major (22, see .nvmrc / Dockerfile).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]

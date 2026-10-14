@@ -1,7 +1,14 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { Controller, useFieldArray, useForm, type FieldErrors, type Resolver } from "react-hook-form";
+import {
+  Controller,
+  useFieldArray,
+  useForm,
+  useWatch,
+  type FieldErrors,
+  type Resolver,
+} from "react-hook-form";
 import { Info, Link2, Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -99,11 +106,11 @@ export function RuleForm({
     defaultValues,
     resolver: ruleResolver,
   });
-  const { register, control, handleSubmit, watch, setError, setValue, getValues, formState } = form;
+  const { register, control, handleSubmit, setError, setValue, getValues, formState } = form;
   const errors = formState.errors;
   const replies = useFieldArray({ control, name: "publicReplies" });
-  const dm = watch("dmMessage") ?? "";
-  const matchMode = watch("matchMode");
+  const dm = useWatch({ control, name: "dmMessage" }) ?? "";
+  const matchMode = useWatch({ control, name: "matchMode" });
   const dmRegister = register("dmMessage");
 
   function insertVariable(token: string) {

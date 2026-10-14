@@ -1,6 +1,6 @@
 # CLAUDE.md — working rules for AI agents and contributors
 
-auto-reply-ig: Instagram comment-keyword → public reply + DM automation. Next.js 15 (App Router) +
+auto-reply-ig: Instagram comment-keyword → public reply + DM automation. Next.js 16 (App Router) +
 Supabase Postgres (Drizzle) + shadcn/ui. Read `plan.md` for architecture and module ownership.
 
 ## Commands
