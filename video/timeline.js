@@ -13,8 +13,13 @@ const TL = {
     before: [53.4, 62.6],
     cta:    [62.6, 71.5],
   },
-  // analysis scene inserted into the VO pause after step 3 (VO padded with silence)
-  INS_AT: 46.6, INS: 5.5,
+  // Design was authored against VO v1; WARP maps those times onto VO v2 (Voice Memos take).
+  // Anchors = section starts found in VO v2 via pause + syllable-count alignment.
+  // Branch A (before the analysis scene) and branch B (after it).
+  WARP_SPLIT: 46.6,
+  WARP_A: [[0, 0], [0.44, 0.32], [6.28, 5.62], [11.52, 11.76], [18.58, 18.0], [25.66, 26.42], [46.6, 46.95]],
+  WARP_B: [[46.6, 55.0], [47.11, 55.27], [53.75, 61.47], [55.58, 63.72], [62.81, 69.65], [70.3, 76.27], [71.5, 77.6]],
+  SCAN: [46.95, 55.0],
   // key beats
   k: {
     onePrompt: 10.0,
@@ -30,16 +35,28 @@ const TL = {
   },
 };
 
-// shift everything after the insert point, then add the analysis scene
+// warp design times onto VO v2, then add the analysis scene
 (() => {
-  const sh = v => (v >= TL.INS_AT - 1e-6 ? +(v + TL.INS).toFixed(3) : v);
-  for (const n in TL.scenes) TL.scenes[n] = TL.scenes[n].map(sh);
-  TL.scenes.step3[1] = TL.INS_AT;
-  TL.scenes.scan = [TL.INS_AT, TL.INS_AT + TL.INS];
-  for (const n in TL.k) if (typeof TL.k[n] === 'number') TL.k[n] = sh(TL.k[n]);
-  TL.DURATION = +(TL.DURATION + TL.INS).toFixed(3);
-  const a = TL.INS_AT;
-  TL.k.scanBeam = [a + .9, a + 4.4]; TL.k.scanPeek = a + 2.3; TL.k.scanDone = a + 4.8;
+  const lin = (pts, v) => {
+    for (let i = 1; i < pts.length; i++) if (v <= pts[i][0] || i === pts.length - 1) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      return +(y0 + (v - x0) * (y1 - y0) / (x1 - x0)).toFixed(3);
+    }
+  };
+  const w = v => (v < TL.WARP_SPLIT - 1e-6 ? lin(TL.WARP_A, v) : lin(TL.WARP_B, v));
+  for (const n in TL.scenes) TL.scenes[n] = TL.scenes[n].map(w);
+  TL.scenes.step3[1] = TL.SCAN[0];
+  TL.scenes.scan = TL.SCAN.slice();
+  for (const n in TL.k) {
+    const v = TL.k[n];
+    if (typeof v === 'number') TL.k[n] = w(v);
+    else if (Array.isArray(v)) TL.k[n] = v.map(r => r.map(w));
+    else TL.k[n] = Object.fromEntries(Object.entries(v).map(([kk, vv]) => [kk, w(vv)]));
+  }
+  TL.DURATION = w(TL.DURATION);
+  const a = TL.SCAN[0];
+  // VO v2: "Nah, Claude langsung kerja. Semua folder di-scan, isi file ... dibaca, terus tiap file dikasih label ..."
+  TL.k.scanBeam = [a + 1.2, a + 6.6]; TL.k.scanPeek = a + 3.4; TL.k.scanDone = a + 7.3;
 })();
 
 // ---- sound design (consumed by build_audio.js -> audio/mix.py) ----
