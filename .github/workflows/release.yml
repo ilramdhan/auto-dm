@@ -21,10 +21,12 @@ jobs:
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           # Optional: a fine-grained PAT (contents + pull requests: write) lets CI run on the release PR.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          # Pin the base branch so releases never depend on the repo's default-branch setting.
+          target-branch: main
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 

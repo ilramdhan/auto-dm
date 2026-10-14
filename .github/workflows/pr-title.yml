@@ -29,5 +29,8 @@ jobs:
             revert
             style
           requireScope: false
+          # Dependabot titles ("chore(deps): Bump x from 1 to 2") are generated; skip them.
+          ignoreLabels: |
+            dependencies
           subjectPattern: ^(?![A-Z]).+$
           subjectPatternError: 'Start the subject with a lowercase letter, e.g. "feat: add story-reply triggers".'
