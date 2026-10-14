@@ -10,6 +10,7 @@ on:
       - "docker-entrypoint.sh"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "next.config.ts"
       - "scripts/**"
   push:

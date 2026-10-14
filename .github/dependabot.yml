@@ -4,6 +4,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Matches pnpm's minimumReleaseAge (pnpm-workspace.yaml): only propose releases >= 7 days old.
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: [minor, patch]

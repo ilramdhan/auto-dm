@@ -44,3 +44,12 @@ Vitest in `tests/` and next to modules. DB tests use `TEST_DATABASE_URL`. Pure l
 ## Structure
 
 See [architecture.md](architecture.md) and [CLAUDE.md](../CLAUDE.md). Contribution rules: [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Dependency policy
+
+`pnpm-workspace.yaml` sets `minimumReleaseAge: 10080`: pnpm only resolves package versions that
+have been published for at least **7 days**, which protects against freshly published malicious
+releases. Dependabot uses the same 7-day cooldown. If `pnpm add` fails with
+`ERR_PNPM_NO_MATURE_MATCHING_VERSION`, pick a slightly older version. For an urgent security fix,
+add the package to `minimumReleaseAgeExclude` in `pnpm-workspace.yaml` in the same PR and explain
+why.

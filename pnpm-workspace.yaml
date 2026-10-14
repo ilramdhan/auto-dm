@@ -1,0 +1,4 @@
+# pnpm settings (no workspace packages).
+# Supply-chain guard: only resolve package versions published at least 7 days ago
+# (in minutes). Dependabot uses the same cooldown (see .github/dependabot.yml).
+minimumReleaseAge: 10080

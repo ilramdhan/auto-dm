@@ -2,7 +2,7 @@ name: Dependency review
 
 on:
   pull_request:
-    paths: ["package.json", "pnpm-lock.yaml"]
+    paths: ["package.json", "pnpm-lock.yaml", "pnpm-workspace.yaml"]
 
 permissions:
   contents: read
