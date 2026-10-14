@@ -1,0 +1,56 @@
+name: Setup / deployment help
+description: Stuck while installing, deploying or connecting Instagram
+labels: ["question", "setup", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Follow [docs/panduan-lengkap-id.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/panduan-lengkap-id.md) (Bahasa Indonesia) or [docs/meta-setup.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/meta-setup.md) first. Writing in English or Bahasa Indonesia is fine.
+
+        **Do not paste tokens, app secrets, `APP_SECRET` or `DATABASE_URL`.**
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I read docs/troubleshooting.md and searched existing issues.
+          required: true
+        - label: I removed all secrets from this report.
+          required: true
+  - type: input
+    id: step
+    attributes:
+      label: Which step are you stuck at?
+      description: Guide and step/section name or number.
+      placeholder: "panduan-lengkap-id.md, section 8 (Webhook)"
+    validations:
+      required: true
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment type
+      options:
+        - Vercel + Supabase
+        - Docker / Docker Compose (VPS)
+        - Local development
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: seen
+    attributes:
+      label: What do you see?
+      description: Error messages, screenshots (redacted) and what you already tried.
+    validations:
+      required: true
+  - type: textarea
+    id: health
+    attributes:
+      label: Output of /api/health
+      description: Open `https://your-domain/api/health` and paste the JSON.
+      render: json
+  - type: textarea
+    id: logs
+    attributes:
+      label: Build / runtime logs (redacted)
+      render: shell

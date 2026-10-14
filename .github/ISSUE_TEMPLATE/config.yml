@@ -2,7 +2,13 @@ blank_issues_enabled: false
 contact_links:
   - name: Security vulnerability
     url: https://github.com/ilramdhan/auto-reply-ig/security/advisories/new
-    about: Report privately, never in a public issue.
-  - name: Questions and help
-    url: https://github.com/ilramdhan/auto-reply-ig/blob/main/SUPPORT.md
-    about: Read the docs and support guide first.
+    about: Report privately. Never in a public issue.
+  - name: Question / how do I...?
+    url: https://github.com/ilramdhan/auto-reply-ig/discussions/categories/q-a
+    about: Ask the community in GitHub Discussions (Q&A).
+  - name: Idea / brainstorm
+    url: https://github.com/ilramdhan/auto-reply-ig/discussions/categories/ideas
+    about: Float an idea before opening a formal feature request.
+  - name: Read the docs
+    url: https://github.com/ilramdhan/auto-reply-ig/tree/main/docs
+    about: Setup, Meta configuration, Docker and troubleshooting guides.

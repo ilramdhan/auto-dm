@@ -1,0 +1,31 @@
+name: Documentation
+description: Something in the docs is wrong, unclear or missing
+labels: ["documentation", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Small fixes are welcome as a pull request directly. Do not include tokens or secrets.
+  - type: input
+    id: page
+    attributes:
+      label: Docs page
+      description: File or link, e.g. `docs/deployment.md`.
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What is wrong or missing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contribution
+      options:
+        - label: I would like to fix this myself.

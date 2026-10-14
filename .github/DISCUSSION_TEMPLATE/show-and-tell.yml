@@ -1,0 +1,15 @@
+title: "[Show] "
+body:
+  - type: markdown
+    attributes:
+      value: Show how you use auto-reply-ig. Please blur or omit tokens, secrets and private user data in screenshots.
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you build or set up?
+    validations:
+      required: true
+  - type: textarea
+    id: links
+    attributes:
+      label: Links or screenshots

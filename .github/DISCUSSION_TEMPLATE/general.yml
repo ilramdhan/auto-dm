@@ -1,0 +1,11 @@
+title: ""
+body:
+  - type: markdown
+    attributes:
+      value: For anything that is not a question, idea or showcase. Do not paste tokens or secrets.
+  - type: textarea
+    id: body
+    attributes:
+      label: What's on your mind?
+    validations:
+      required: true

@@ -1,0 +1,75 @@
+name: Instagram / Meta API issue
+description: Webhook, permission, token or DM errors coming from Meta
+labels: ["meta-api", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        See [docs/meta-setup.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/meta-setup.md) and [docs/troubleshooting.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/troubleshooting.md) first. Many Meta errors come from app mode or missing permissions.
+
+        **Do not paste access tokens, app secrets or full webhook payloads.**
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you submit
+      options:
+        - label: I searched existing issues and checked the Meta setup guide.
+          required: true
+        - label: I removed all tokens and secrets from this report.
+          required: true
+  - type: input
+    id: code
+    attributes:
+      label: Error code and message from the Activity page
+      placeholder: "code 10 - Application does not have permission for this action"
+    validations:
+      required: true
+  - type: dropdown
+    id: appmode
+    attributes:
+      label: Meta app mode
+      options:
+        - Development
+        - Live
+    validations:
+      required: true
+  - type: dropdown
+    id: access
+    attributes:
+      label: Access level
+      options:
+        - Standard Access
+        - Advanced Access
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: permissions
+    attributes:
+      label: Permissions granted
+      description: e.g. `instagram_business_basic`, `instagram_business_manage_comments`, `instagram_business_manage_messages`.
+    validations:
+      required: true
+  - type: dropdown
+    id: account
+    attributes:
+      label: Does the commenter have a role on the app (tester/admin)?
+      options:
+        - "Yes"
+        - "No"
+        - Not sure
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened and what did you expect?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version or commit
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted log snippet
+      render: shell

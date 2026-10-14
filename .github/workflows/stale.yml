@@ -1,0 +1,36 @@
+name: Stale
+
+on:
+  schedule:
+    - cron: "23 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          days-before-issue-stale: 60
+          days-before-issue-close: 14
+          days-before-pr-stale: 45
+          days-before-pr-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "security,help wanted,good first issue,pinned"
+          exempt-pr-labels: "security,pinned"
+          stale-issue-message: >
+            Hi! This issue has had no activity for 60 days, so it is marked as stale.
+            If it still matters, please leave a comment with any new information
+            and it will stay open. Otherwise it will be closed in 14 days. Thanks for your help!
+          close-issue-message: >
+            Closing due to inactivity. Feel free to reopen with fresh details, we're happy to look again.
+          stale-pr-message: >
+            Thanks for the contribution! This pull request has had no activity for 45 days.
+            Please rebase or comment if you are still working on it, or it will be closed in 14 days.
+          close-pr-message: >
+            Closing due to inactivity. You are welcome to reopen or send a new PR any time.

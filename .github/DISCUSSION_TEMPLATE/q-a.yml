@@ -1,0 +1,26 @@
+title: "[Q&A] "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [docs](https://github.com/ilramdhan/auto-reply-ig/tree/main/docs) and [troubleshooting](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/troubleshooting.md) first. **Never paste tokens or secrets.**
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you tried?
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment type
+      options:
+        - Vercel + Supabase
+        - Docker / Docker Compose
+        - Local development
+        - Other

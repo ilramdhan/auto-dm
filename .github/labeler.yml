@@ -1,0 +1,43 @@
+ui:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/components/**"
+          - "src/app/(dashboard)/**"
+          - "src/app/(auth)/**"
+
+engine:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "src/server/engine/**"
+          - "src/server/instagram/**"
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "drizzle/**"
+          - "src/server/db/**"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "Dockerfile"
+          - "docker-compose.yml"
+          - ".dockerignore"
+          - "docker-entrypoint.sh"
+
+n8n:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "n8n/**"
+          - "src/server/n8n/**"

@@ -1,24 +1,50 @@
 name: Feature request
-description: Suggest an idea
-labels: ["enhancement"]
+description: Suggest an idea or improvement
+labels: ["enhancement", "needs-triage"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Not sure yet? Start a conversation in [Ideas](https://github.com/ilramdhan/auto-reply-ig/discussions/categories/ideas).
+
+        Do not paste tokens or secrets.
   - type: textarea
     id: problem
     attributes:
       label: Problem or use case
+      description: What are you trying to do and what gets in the way?
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
       label: Proposed solution
+      description: How should it work? Sketches and examples help.
+    validations:
+      required: true
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Campaigns / keyword rules
+        - Replies / DMs
+        - Dashboard UI
+        - Activity / analytics
+        - Auth / security
+        - Deployment / Docker
+        - n8n
+        - Documentation
+        - Other
+    validations:
+      required: true
   - type: checkboxes
     id: contribute
     attributes:
       label: Contribution
       options:
-        - label: I would like to work on this
+        - label: I would like to work on this myself (see CONTRIBUTING.md).

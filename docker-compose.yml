@@ -1,0 +1,50 @@
+# Self-hosted stack: app + Postgres. Usage:
+#   cp .env.example .env   # set APP_SECRET (openssl rand -base64 48) and CRON_SECRET
+#   docker compose up -d   # app on http://localhost:3000
+# Behind HTTPS (required by Meta webhooks) set APP_URL to your public URL.
+services:
+  app:
+    image: ghcr.io/ilramdhan/auto-reply-ig:latest
+    build: .
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgres://autodm:autodm@db:5432/autodm
+      APP_SECRET: ${APP_SECRET:?set APP_SECRET in .env}
+      APP_URL: ${APP_URL:-http://localhost:3000}
+      CRON_SECRET: ${CRON_SECRET:-}
+      ADMIN_DEFAULT_USERNAME: ${ADMIN_DEFAULT_USERNAME:-admin}
+      ADMIN_DEFAULT_PASSWORD: ${ADMIN_DEFAULT_PASSWORD:-changeme123}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # Daily Instagram token refresh (Vercel Cron does this on Vercel). Requires CRON_SECRET.
+  cron:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      CRON_SECRET: ${CRON_SECRET:-}
+    command: >
+      sh -c 'echo "17 3 * * * wget -q -O- --header=\"Authorization: Bearer $$CRON_SECRET\" http://app:3000/api/cron/refresh-tokens" > /etc/crontabs/root && crond -f -l 8'
+    depends_on:
+      - app
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autodm
+      POSTGRES_PASSWORD: autodm
+      POSTGRES_DB: autodm
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autodm -d autodm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:

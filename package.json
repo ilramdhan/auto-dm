@@ -1,6 +1,6 @@
 {
   "name": "auto-reply-ig",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -48,6 +48,7 @@
     "@types/react-dom": "^19",
     "dotenv": "^18.0.8",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.28",
     "prettier": "^3.9.10",
