@@ -26,7 +26,7 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Set by middleware (CSP nonce). Reading headers also keeps every page dynamic so each
+  // Set by the proxy (src/proxy.ts, CSP nonce). Reading headers also keeps every page dynamic so each
   // response gets a fresh nonce.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (

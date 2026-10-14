@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { ExternalLink, Globe, ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -66,14 +66,14 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
       endsAt: "",
     },
   });
-  const { register, control, handleSubmit, watch, setError, setValue, formState } = form;
+  const { register, control, handleSubmit, setError, setValue, formState } = form;
   useEffect(() => {
     if (initial?.startsAt) setValue("startsAt", toDateTimeLocal(initial.startsAt));
     if (initial?.endsAt) setValue("endsAt", toDateTimeLocal(initial.endsAt));
   }, [initial?.startsAt, initial?.endsAt, setValue]);
   const errors = formState.errors;
-  const target = watch("target");
-  const media = watch("media");
+  const target = useWatch({ control, name: "target" });
+  const media = useWatch({ control, name: "media" });
 
   const onSubmit = handleSubmit((v) => {
     const payload = {

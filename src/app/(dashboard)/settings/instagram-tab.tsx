@@ -57,6 +57,8 @@ type Account = {
   name: string | null;
   profilePictureUrl: string | null;
   tokenExpiresAt: Date | null;
+  /** Computed on the server so render stays pure. */
+  tokenDaysLeft: number | null;
 };
 
 export function InstagramTab(props: {
@@ -228,9 +230,7 @@ function MetaAppCard({
 function ConnectionCard({ account, configured }: { account: Account | null; configured: boolean }) {
   const router = useRouter();
   const [pending, start] = useTransition();
-  const daysLeft = account?.tokenExpiresAt
-    ? Math.round((new Date(account.tokenExpiresAt).getTime() - Date.now()) / 86_400_000)
-    : null;
+  const daysLeft = account?.tokenDaysLeft ?? null;
 
   return (
     <Card>

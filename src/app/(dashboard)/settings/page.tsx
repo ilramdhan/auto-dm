@@ -1,3 +1,4 @@
+import { daysUntil } from "@/lib/format";
 import type { Metadata } from "next";
 import { KeyRound, Settings2, Workflow } from "lucide-react";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,6 +104,7 @@ export default async function SettingsPage({
                     name: account.name,
                     profilePictureUrl: account.profilePictureUrl,
                     tokenExpiresAt: account.tokenExpiresAt,
+                    tokenDaysLeft: account.tokenExpiresAt ? daysUntil(account.tokenExpiresAt) : null,
                   }
                 : null
             }
