@@ -137,6 +137,23 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code
 
 [MIT](LICENSE) © 2026 Ilham Ramadhan ([@ilramdhan](https://github.com/ilramdhan), [ilramdhan.dev](https://ilramdhan.dev), Instagram [@ilramadhan_](https://instagram.com/ilramadhan_)).
 
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/ilramdhan">
+        <img src="https://avatars.githubusercontent.com/u/80036757?v=4" width="80" alt="" /><br />
+        <sub><b>Ilham Ramadhan</b></sub>
+      </a><br />
+      <sub>Creator &amp; maintainer</sub>
+    </td>
+  </tr>
+</table>
+
+Want to see your name here? Read [CONTRIBUTING.md](CONTRIBUTING.md) and open a pull request.
+The full list is on the [contributors graph](https://github.com/ilramdhan/auto-reply-ig/graphs/contributors).
+
 ## Acknowledgements
 
 [Next.js](https://nextjs.org), [shadcn/ui](https://ui.shadcn.com), [Drizzle ORM](https://orm.drizzle.team), [Supabase](https://supabase.com), [Vercel](https://vercel.com), [n8n](https://n8n.io), and Meta's Instagram Platform.
