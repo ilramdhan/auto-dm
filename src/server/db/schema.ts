@@ -146,6 +146,9 @@ export const deliveryStatus = pgEnum("delivery_status", [
   "failed",
 ]);
 
+/** Outcome of each individual action, so analytics can report reply vs DM success separately. */
+export const actionStatus = pgEnum("action_status", ["not_attempted", "sent", "failed"]);
+
 export const deliverySource = pgEnum("delivery_source", ["webhook", "n8n", "manual"]);
 
 /**
@@ -167,8 +170,14 @@ export const deliveries = pgTable(
     matchedKeyword: text("matched_keyword"),
     status: deliveryStatus("status").notNull().default("received"),
     skipReason: text("skip_reason"),
+    publicReplyStatus: actionStatus("public_reply_status").notNull().default("not_attempted"),
     publicReplyId: text("public_reply_id"),
+    dmStatus: actionStatus("dm_status").notNull().default("not_attempted"),
     dmMessageId: text("dm_message_id"),
+    /** Graph API error code of the last failure (e.g. 10, 551) for grouping in analytics. */
+    errorCode: text("error_code"),
+    /** End-to-end processing time in ms. */
+    durationMs: integer("duration_ms"),
     error: text("error"),
     attempts: integer("attempts").notNull().default(0),
     source: deliverySource("source").notNull().default("webhook"),
@@ -180,6 +189,8 @@ export const deliveries = pgTable(
     index("deliveries_rule_commenter_idx").on(t.ruleId, t.commenterId),
     index("deliveries_created_idx").on(t.createdAt),
     index("deliveries_status_idx").on(t.status),
+    index("deliveries_campaign_created_idx").on(t.campaignId, t.createdAt),
+    index("deliveries_media_created_idx").on(t.mediaId, t.createdAt),
   ],
 );
 

@@ -93,18 +93,18 @@ SECURITY.md, ACCESSIBILITY.md, CHANGELOG.md, vercel.json                    → 
 
 ## Phase 1C — n8n workflow · n8n agent (Sonnet)
 
-- [ ] Importable workflow JSON (`n8n/auto-reply-ig.workflow.json`): verify relay (GET) + event relay (POST, raw body + signature) + result branch (notify-on-failure placeholder)
-- [ ] `buildN8nWorkflow({ appUrl })` generator used by Settings download
-- [ ] `docs/n8n.md` step-by-step (import, credentials, Meta callback URL → n8n, test)
+- [x] Importable workflow JSON (`n8n/auto-reply-ig.workflow.json`): verify relay (GET) + event relay (POST, raw body + signature) + result branch (notify-on-failure placeholder)
+- [x] `buildN8nWorkflow({ appUrl })` generator used by Settings download
+- [x] `docs/n8n.md` step-by-step (import, credentials, Meta callback URL → n8n, test)
 
 ## Phase 1D — Docs, OSS hygiene, research · Docs agent (Sonnet)
 
-- [ ] Research & verify 2026 Meta requirements (permissions, app review/Live mode, Private Replies limits, webhooks, rate limits) → `docs/meta-setup.md`
-- [ ] README (features, screenshots placeholders, 1-click Deploy to Vercel + Supabase, quick start, architecture diagram, FAQ incl. "is it free/unlimited?")
-- [ ] CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), LICENSE (MIT), SECURITY, ACCESSIBILITY, CHANGELOG, SUPPORT
-- [ ] `docs/` (architecture, deployment, configuration, development, troubleshooting), `.claude/rules/*`
-- [ ] `.github/` issue & PR templates, CI workflow (lint, typecheck, test, build with Postgres service), dependabot, CODEOWNERS placeholder
-- [ ] `vercel.json` (cron, function config)
+- [x] Research & verify 2026 Meta requirements (permissions, app review/Live mode, Private Replies limits, webhooks, rate limits) → `docs/meta-setup.md`
+- [x] README (features, screenshots placeholders, 1-click Deploy to Vercel + Supabase, quick start, architecture diagram, FAQ incl. "is it free/unlimited?")
+- [x] CONTRIBUTING, CODE_OF_CONDUCT (Contributor Covenant 2.1), LICENSE (MIT), SECURITY, ACCESSIBILITY, CHANGELOG, SUPPORT
+- [x] `docs/` (architecture, deployment, configuration, development, troubleshooting), `.claude/rules/*`
+- [x] `.github/` issue & PR templates, CI workflow (lint, typecheck, test, build with Postgres service), dependabot, CODEOWNERS placeholder
+- [x] `vercel.json` (cron, function config)
 
 ## Phase 2 — Integration & QA · Lead (Opus)
 
@@ -125,3 +125,5 @@ SECURITY.md, ACCESSIBILITY.md, CHANGELOG.md, vercel.json                    → 
 | Date | Phase | Note |
 |---|---|---|
 | 2026-10-14 | 0 | Foundation done; migrations verified on local Postgres 16 |
+| 2026-10-14 | 1D | Docs, OSS files, CI, vercel.json done. Meta facts partly unverified (⚠ in docs/meta-setup.md): App Review need for public comments, button in private reply, rate limits, Graph version |
+| 2026-10-14 | 1C | n8n workflow JSON, `buildN8nWorkflow` + tests, `docs/n8n.md` done |
