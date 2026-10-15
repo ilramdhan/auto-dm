@@ -17,7 +17,12 @@ import { chromium, type Page } from "playwright";
 /** The small slice of sharp's API this script uses (sharp ships with Next, see scripts/brand/banner.tsx). */
 type SharpPipeline = {
   resize(width: number): SharpPipeline;
-  png(options: { compressionLevel: number; palette?: boolean; quality?: number; dither?: number }): SharpPipeline;
+  png(options: {
+    compressionLevel: number;
+    palette?: boolean;
+    quality?: number;
+    dither?: number;
+  }): SharpPipeline;
   toBuffer(): Promise<Buffer>;
 };
 type SharpFactory = (input: Buffer) => SharpPipeline;
