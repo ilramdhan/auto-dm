@@ -60,7 +60,7 @@ describe("checkForUpdates", () => {
     const r = await checkForUpdates();
     expect(r.ok && r.updateAvailable).toBe(true);
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit & { next?: unknown }];
-    expect(url).toBe("https://api.github.com/repos/ilramdhan/autodm/releases?per_page=5");
+    expect(url).toBe("https://api.github.com/repos/ilramdhan/auto-dm/releases?per_page=5");
     expect(init.headers).toMatchObject({
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",

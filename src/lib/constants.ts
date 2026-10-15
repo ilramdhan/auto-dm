@@ -1,5 +1,5 @@
 export const APP_NAME = "AutoDM";
-export const REPO_URL = "https://github.com/ilramdhan/autodm";
+export const REPO_URL = "https://github.com/ilramdhan/auto-dm";
 
 /** Meta limits (Instagram API with Instagram Login). */
 export const DM_MAX_CHARS = 1000;
