@@ -19,7 +19,8 @@
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "brand:icons": "tsx scripts/brand/generate.ts",
     "brand:banner": "tsx scripts/brand/banner.tsx",
-    "demo:seed": "tsx --conditions=react-server scripts/demo/seed.ts"
+    "demo:seed": "tsx --conditions=react-server scripts/demo/seed.ts",
+    "demo:screenshots": "tsx scripts/demo/screenshots.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -52,6 +53,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "playwright": "^1.64.0",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",

@@ -53,8 +53,16 @@ pnpm db:migrate && pnpm demo:seed
 APP_URL=https://autodm.example.com pnpm build && pnpm start   # log in as admin / demo-password-2026
 ```
 
-Capture at 1440px wide (390px for mobile) with `deviceScaleFactor: 2`, downscale to 1600px wide and
-save as palette PNG (sharp, as in `scripts/brand/banner.tsx`) to keep each file around 100 KB.
+Then retake all eight screenshots with one command (Playwright, Chromium must be installed:
+`pnpm exec playwright install chromium`):
+
+```bash
+SCREENSHOT_BASE_URL=http://localhost:3000 pnpm demo:screenshots
+```
+
+`scripts/demo/screenshots.ts` logs in as `admin` (override the password with `DEMO_PASSWORD`), captures at
+1440px wide (390px for mobile) with `deviceScaleFactor: 2`, light theme except `dashboard-dark`, downscales to
+1600px wide and saves palette PNGs (sharp, as in `scripts/brand/banner.tsx`) to keep each file around 100 KB.
 
 ## Testing
 
