@@ -72,7 +72,8 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         actions={
           <Button asChild variant="outline">
             <a href={`/analytics/export?${qs({})}`} download>
-              <Download aria-hidden /> Export CSV
+              <Download aria-hidden /> Download CSV
+              <span className="sr-only"> of {range.label.toLowerCase()} analytics</span>
             </a>
           </Button>
         }

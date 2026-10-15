@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Info, MessageSquareText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Info, MessageSquareText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DeliveryStatusBadge } from "@/components/delivery-status-badge";
 import { DeleteCommenterButton } from "@/components/data-deletion/delete-commenter";
+import { CSV_ROW_LIMIT } from "@/lib/csv";
 import { ACTIVITY_PAGE_SIZE, activityFiltersSchema } from "@/lib/validation/activity";
 import { formatDateTime, formatNumber, timeAgo } from "@/lib/format";
 import { skipReasonLabel } from "@/lib/labels";
@@ -67,21 +68,42 @@ export default async function ActivityPage({
   const page = Math.min(filters.page, pages);
   const hasFilters = !!(filters.status || filters.campaign || filters.q);
 
-  const pageHref = (p: number) => {
+  const filterParams = () => {
     const sp = new URLSearchParams();
     if (filters.status) sp.set("status", filters.status);
     if (filters.campaign) sp.set("campaign", filters.campaign);
     if (filters.q) sp.set("q", filters.q);
+    return sp;
+  };
+  const pageHref = (p: number) => {
+    const sp = filterParams();
     if (p > 1) sp.set("page", String(p));
     const qs = sp.toString();
     return qs ? `/activity?${qs}` : "/activity";
   };
+  const exportQs = filterParams().toString();
+  const exportHref = exportQs ? `/activity/export?${exportQs}` : "/activity/export";
 
   return (
     <div className="grid grid-cols-1 gap-6">
       <PageHeader
         title="Activity"
         description="Every comment received and what the automation did with it."
+        actions={
+          <div className="flex flex-col items-start gap-1 sm:items-end">
+            <Button asChild variant="outline">
+              <a href={exportHref} download>
+                <Download aria-hidden /> Download CSV
+                <span className="sr-only"> of activity{hasFilters ? " (current filters)" : ""}</span>
+              </a>
+            </Button>
+            {total > CSV_ROW_LIMIT ? (
+              <p className="text-muted-foreground text-xs">
+                Showing the first {formatNumber(CSV_ROW_LIMIT)} rows of {formatNumber(total)} in the CSV.
+              </p>
+            ) : null}
+          </div>
+        }
       />
       <ActivityFilters
         status={filters.status}

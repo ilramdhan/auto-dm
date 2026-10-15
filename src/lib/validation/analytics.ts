@@ -80,15 +80,3 @@ export function resolveRange(
 export function pct(part: number, whole: number): number | null {
   return whole > 0 ? Math.round((part / whole) * 1000) / 10 : null;
 }
-
-/** RFC 4180 CSV cell; also neutralizes spreadsheet formula injection. */
-export function csvCell(value: unknown): string {
-  if (value === null || value === undefined) return "";
-  let s = value instanceof Date ? value.toISOString() : String(value);
-  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
-  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-}
-
-export function toCsv(rows: unknown[][]): string {
-  return rows.map((r) => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
-}

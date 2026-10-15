@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { analyticsFiltersSchema, pct, resolveRange, toCsv } from "@/lib/validation/analytics";
+import { appSlug, CSV_ROW_LIMIT, csvHeaders, formatCsvDateTime, toCsv } from "@/lib/csv";
+import { analyticsFiltersSchema, pct, resolveRange } from "@/lib/validation/analytics";
 import { requireUser } from "@/server/auth/guard";
 import { getTimeZone } from "@/server/settings";
 import { getPerCampaign, getPerPost } from "@/server/repos/analytics";
@@ -14,7 +15,8 @@ export async function GET(req: NextRequest) {
   const range = resolveRange(filters, new Date(), await getTimeZone());
   const scope = { range, campaignId: filters.campaign };
   try {
-    const rows = filters.group === "post" ? await getPerPost(scope, 5000) : await getPerCampaign(scope);
+    const rows =
+      filters.group === "post" ? await getPerPost(scope, CSV_ROW_LIMIT) : await getPerCampaign(scope);
     const csv = toCsv([
       [
         "content",
@@ -28,7 +30,7 @@ export async function GET(req: NextRequest) {
         "dms_sent",
         "dms_failed",
         "success_rate_pct",
-        "last_activity",
+        `last_activity (${range.timeZone})`,
       ],
       ...rows.map((r) => [
         r.name,
@@ -42,17 +44,11 @@ export async function GET(req: NextRequest) {
         r.dmsSent,
         r.dmsFailed,
         pct(r.delivered, r.matched),
-        r.lastActivity,
+        formatCsvDateTime(r.lastActivity, range.timeZone),
       ]),
     ]);
-    const filename = `auto-reply-ig-${filters.group}-${range.fromYmd}_${range.toYmd}.csv`;
-    return new NextResponse(csv, {
-      headers: {
-        "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "no-store",
-      },
-    });
+    const filename = `${appSlug()}-analytics-${filters.group}-${range.fromYmd}_${range.toYmd}.csv`;
+    return new NextResponse(csv, { headers: csvHeaders(filename) });
   } catch (err) {
     logger("analytics").error("export.failed", { err });
     return NextResponse.json({ error: "Export failed" }, { status: 500 });

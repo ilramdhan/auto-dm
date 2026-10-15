@@ -216,6 +216,10 @@ Instagram di-connect ulang.
 4. Tes sungguhan: komentar `DRIVE` dari **akun lain yang sudah jadi Instagram Tester** (selama app
    masih Development mode). Lihat hasilnya di **Activity** dan **Analytics**.
 
+   Butuh datanya di spreadsheet? Klik **Download CSV** di halaman **Activity** (mengikuti filter yang
+   sedang aktif) atau **Analytics** (mengikuti rentang tanggal). File berformat UTF-8 (bisa langsung
+   dibuka di Excel), waktu memakai zona waktu di Settings, dan maksimal 50.000 baris per unduhan.
+
 ## 10. Supaya berlaku untuk semua orang (Live mode + App Review)
 
 Selama app di **Development mode**, hanya akun dengan role di app (tester/admin) yang memicu webhook.

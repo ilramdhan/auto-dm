@@ -70,6 +70,8 @@ ignored, so a comment is never replied to twice.
 ## Security model
 
 - Single admin; every mutation calls `requireUser()`. Machine routes: API key, Meta signature, or `CRON_SECRET`.
+- CSV exports (`/activity/export`, `/analytics/export`) are `requireUser()`-guarded GET route handlers built
+  with `src/lib/csv.ts` (RFC 4180, UTF-8 BOM, formula-injection guard, 50,000-row cap, dates in the configured time zone).
 - Secrets encrypted (AES-256-GCM, key from HKDF(`APP_SECRET`)); never sent to the browser or logged.
 - RLS enabled, no policies: the Supabase REST anon key sees nothing. The app uses a server-side Postgres connection.
 - Outbound hosts: `graph.instagram.com` / `api.instagram.com` (Instagram API) and the fixed

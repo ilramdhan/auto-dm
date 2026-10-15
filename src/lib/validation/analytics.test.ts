@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { analyticsFiltersSchema, csvCell, pct, resolveRange, toCsv } from "./analytics";
+import { analyticsFiltersSchema, pct, resolveRange } from "./analytics";
 
 const NOW = new Date("2026-10-14T15:30:00Z");
 
@@ -30,18 +30,7 @@ describe("resolveRange", () => {
   });
 });
 
-describe("csv", () => {
-  it("quotes and neutralizes formulas", () => {
-    expect(csvCell('a,"b"')).toBe('"a,""b"""');
-    expect(csvCell("=HYPERLINK()")).toBe("'=HYPERLINK()");
-    expect(csvCell(null)).toBe("");
-    expect(
-      toCsv([
-        ["a", 1],
-        ["b", 2],
-      ]),
-    ).toBe("a,1\r\nb,2\r\n");
-  });
+describe("pct", () => {
   it("pct handles zero", () => {
     expect(pct(1, 0)).toBeNull();
     expect(pct(1, 3)).toBe(33.3);
