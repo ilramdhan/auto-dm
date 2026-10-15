@@ -17,7 +17,9 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:studio": "drizzle-kit studio",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "brand:icons": "tsx scripts/brand/generate.ts"
+    "brand:icons": "tsx scripts/brand/generate.ts",
+    "brand:banner": "tsx scripts/brand/banner.tsx",
+    "demo:seed": "tsx --conditions=react-server scripts/demo/seed.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

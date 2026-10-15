@@ -26,7 +26,8 @@ Without `APP_URL` (and outside Vercel) canonical links and social-card URLs cann
 - The dashboard can be installed as an app (web app manifest at `/manifest.webmanifest`, start URL
   `/dashboard`). A small service worker (`public/sw.js`) only shows an offline page when the network is
   down; it never caches pages or API responses.
-- Icons are generated from `src/lib/brand-mark.ts` with `pnpm brand:icons` (see `scripts/brand/`).
+- Icons are generated from `src/lib/brand-mark.ts` with `pnpm brand:icons` (see `scripts/brand/`); the
+  README banner and GitHub social preview (`docs/assets/`) with `pnpm brand:banner`.
 
 ## In-app settings (Settings page)
 

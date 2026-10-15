@@ -1,23 +1,31 @@
 <div align="center">
 
-# auto-reply-ig
-
-**Comment a keyword on your Instagram post, get a public reply and a DM automatically. Free, self-hosted, open source.**
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.png" />
+  <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.png" />
+  <img src="docs/assets/banner-light.png" width="100%" alt="auto-reply-ig: comment a keyword on Instagram, get a public reply and a DM automatically. Free, self-hosted, open source." />
+</picture>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ilramdhan/auto-reply-ig)](https://github.com/ilramdhan/auto-reply-ig/releases)
 [![Docker image](https://img.shields.io/badge/ghcr.io-ilramdhan%2Fauto--reply--ig-2496ed?logo=docker&logoColor=white)](https://github.com/ilramdhan/auto-reply-ig/pkgs/container/auto-reply-ig)
-[![Next.js](https://img.shields.io/badge/Next.js-15-black.svg?logo=nextdotjs)](https://nextjs.org)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black.svg?logo=nextdotjs)](https://nextjs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-An open-source alternative to ManyChat-style "comment to DM" tools, with no per-contact pricing.
+**[Docs](docs/README.md)** · **[Deploy](#deploy-in-5-minutes)** · **[Panduan Bahasa Indonesia](docs/panduan-lengkap-id.md)** · **[Discussions](https://github.com/ilramdhan/auto-reply-ig/discussions)**
 
 </div>
 
-<!-- Replace with real screenshots: docs/assets/dashboard.png, campaign-editor.png, activity-log.png -->
+When someone comments a keyword like `GUIDE` on your post or reel, auto-reply-ig replies under the
+comment and sends them a private DM with your link, using the official Instagram API. It is an
+open-source alternative to ManyChat-style "comment to DM" tools: no per-contact pricing, you host it
+yourself (free on Vercel + Supabase, or Docker), your data stays in your own database, and it can plug
+into n8n.
 
-![Dashboard screenshot placeholder](docs/assets/dashboard.png)
+<p align="center">
+  <img src="docs/assets/screenshots/dashboard-light.png" width="860" alt="auto-reply-ig dashboard with demo data: comments today, DMs sent, failed and skipped counts, a 14-day chart of comments vs DMs, and recent activity" />
+</p>
 
 ## Features
 
@@ -32,6 +40,50 @@ An open-source alternative to ManyChat-style "comment to DM" tools, with no per-
 - **Automatic token refresh** (daily cron), so the 60-day Instagram token never expires on you.
 - **Optional n8n relay** if you want to extend flows with your own nodes.
 - Accessible, responsive UI with dark mode ([ACCESSIBILITY.md](ACCESSIBILITY.md)).
+
+## Screenshots
+
+All screenshots use fake demo data ([`scripts/demo/seed.ts`](scripts/demo/seed.ts)).
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/campaign-rule-editor.png"><img src="docs/assets/screenshots/campaign-rule-editor.png" alt="Campaign page with the rule editor open: keywords drive, template and folder, whole-word match mode, three public reply variants and the DM text" /></a>
+      <br /><sub><b>Campaign rules.</b> Keywords, match mode, random public replies and the DM, with a dry-run tester.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/activity.png"><img src="docs/assets/screenshots/activity.png" alt="Activity log listing each comment with commenter, comment text, campaign and rule, matched keyword, and a status badge such as Sent, Partial, Skipped or Failed" /></a>
+      <br /><sub><b>Activity.</b> Every comment, what matched and what was sent, with skip reasons and errors.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/analytics.png"><img src="docs/assets/screenshots/analytics.png" alt="Analytics page for a 14-day range: totals for comments, keyword matches, replies and DMs, a daily line chart and an outcome donut chart" /></a>
+      <br /><sub><b>Analytics.</b> Match rate, reply and DM success, outcomes, per-campaign and per-keyword tables, CSV export.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/settings-instagram.png"><img src="docs/assets/screenshots/settings-instagram.png" alt="Instagram settings tab: Meta app credentials with the secret stored encrypted, the connected @yourbrand account with token expiry, and the webhook callback URL and verify token" /></a>
+      <br /><sub><b>Settings.</b> Meta app credentials, Instagram connection and webhook details to copy into Meta.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/assets/screenshots/dashboard-dark.png"><img src="docs/assets/screenshots/dashboard-dark.png" alt="The dashboard in dark mode" /></a>
+      <br /><sub><b>Dark mode.</b> Follows your system setting, or toggle it.</sub>
+    </td>
+    <td width="50%" valign="top" align="center">
+      <a href="docs/assets/screenshots/dashboard-mobile.png"><img src="docs/assets/screenshots/dashboard-mobile.png" width="220" alt="The dashboard on a 390 pixel wide phone screen, with stat cards in a two-column grid and the 14-day chart" /></a>
+      <br /><sub><b>Mobile.</b> Responsive and installable as an app.</sub>
+    </td>
+  </tr>
+</table>
+
+<details>
+<summary>Landing page</summary>
+
+<img src="docs/assets/screenshots/landing.png" alt="Public landing page: Turn Instagram comments into replies and DMs, automatically, with sign-in and setup guide buttons and a three-step how it works section" />
+
+</details>
 
 ## Deploy in 5 minutes
 

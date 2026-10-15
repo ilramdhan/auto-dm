@@ -2,11 +2,15 @@ import { ImageResponse } from "next/og";
 import { BRAND_GRADIENT, brandMarkDataUri, THEME_COLORS } from "@/lib/brand-mark";
 import { OG_SIZE, SITE } from "@/lib/seo";
 
-/** Shared by src/app/opengraph-image.tsx and src/app/twitter-image.tsx (1200x630). */
+/**
+ * Shared by src/app/opengraph-image.tsx and src/app/twitter-image.tsx (1200x630), and by
+ * scripts/brand/banner.tsx for the GitHub social preview (1280x640). The layout is fluid, so any
+ * size close to 2:1 works.
+ */
 
 const gradient = `linear-gradient(135deg, ${BRAND_GRADIENT.map((s) => `${s.color} ${s.offset * 100}%`).join(", ")})`;
 
-export function renderOgImage(): ImageResponse {
+export function renderOgImage(size: { width: number; height: number } = OG_SIZE): ImageResponse {
   const logo = brandMarkDataUri();
   return new ImageResponse(
     <div
@@ -62,6 +66,6 @@ export function renderOgImage(): ImageResponse {
         />
       </div>
     </div>,
-    { ...OG_SIZE },
+    { ...size },
   );
 }

@@ -36,6 +36,25 @@ Expose port 3000 with `cloudflared tunnel --url http://localhost:3000` or `ngrok
 | `pnpm format`                                     | Prettier                                                  |
 | `pnpm db:generate` / `db:migrate` / `db:studio`   | Drizzle                                                   |
 | `pnpm build`                                      | migrate + `next build`; `pnpm build:app` skips migrations |
+| `pnpm brand:icons` / `brand:banner`               | Regenerate icons / README banner and social preview       |
+| `pnpm demo:seed`                                  | Fake demo data for screenshots (see below)                |
+
+## Demo data for screenshots
+
+`scripts/demo/seed.ts` fills a **separate** database with fake data (a `@yourbrand` account with a dummy
+token, three campaigns, ~150 comments from invented usernames over the last 14 days) so the README
+screenshots in `docs/assets/screenshots/` never show real accounts. It wipes the app tables first and
+refuses to run unless the database name contains `demo`.
+
+```bash
+createdb autodm_demo
+export DATABASE_URL=postgres://postgres:postgres@localhost:5432/autodm_demo
+pnpm db:migrate && pnpm demo:seed
+APP_URL=https://autoreply.example.com pnpm build && pnpm start   # log in as admin / demo-password-2026
+```
+
+Capture at 1440px wide (390px for mobile) with `deviceScaleFactor: 2`, downscale to 1600px wide and
+save as palette PNG (sharp, as in `scripts/brand/banner.tsx`) to keep each file around 100 KB.
 
 ## Testing
 
