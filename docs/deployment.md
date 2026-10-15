@@ -104,6 +104,13 @@ Meta secret and Instagram token can no longer be decrypted (you would have to en
    >
    > Starting fresh? Create the Supabase project in the region closest to your audience (e.g.
    > Singapore for Indonesia) and pick the matching Vercel region.
+   >
+   > To check later: **Settings → About → Server** shows the region the app runs in and the measured
+   > database latency.
+
+   Optional: turn on **Skew Protection** (Vercel → Project → Settings → Advanced, where your plan
+   offers it) so tabs left open during a deploy keep working. Without it AutoDM reloads such a tab
+   once by itself and shows "Updated to a new version".
 
 Added or changed a variable after deploying? Vercel does not apply it to the running version:
 **Deployments → ⋯ on the latest → Redeploy**.
@@ -239,7 +246,7 @@ new migrations during the build. Read the release notes first and back up the da
 major version.
 
 **Settings → About** shows the running version (plus commit and environment on Vercel), whether a
-newer release exists and the latest release notes. The check calls the public GitHub Releases API
+newer release exists, the latest release notes, and the server region with the database latency. The check calls the public GitHub Releases API
 from the server, cached for 6 hours; if GitHub can't be reached it just says so.
 
 ### Notes

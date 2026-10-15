@@ -4,7 +4,7 @@
 
 ```
 src/app/            routes only: (auth), (dashboard), api/
-src/server/db/      Drizzle schema + client
+src/server/db/      Drizzle schema + client; retry.ts retries reads once on dropped connections
 src/server/auth/    argon2id, jose session cookie, requireUser()
 src/server/instagram/  Graph API client, OAuth, token refresh, media listing
 src/server/engine/  matching, templating, once-per-user, delivery pipeline
@@ -12,6 +12,7 @@ src/server/repos/   data access for the UI
 src/server/n8n/     workflow generator
 src/server/settings.ts  typed SETTINGS registry (encrypted secrets)
 src/server/updates.ts   app version + GitHub Releases update check (Settings → About)
+src/server/diagnostics.ts  DB ping + server region (Settings → About, /api/health)
 src/server/crypto.ts    AES-256-GCM, HKDF, sha256, timing-safe compare
 src/components/     shadcn/ui + app components
 ```
@@ -54,6 +55,10 @@ the original raw body and original `X-Hub-Signature-256`. Same engine, `source =
 
 **Token refresh**: `GET /api/cron/refresh-tokens` (Bearer `CRON_SECRET`) runs daily and refreshes
 tokens nearing expiry. **Health**: `GET /api/health`.
+
+**Recovery**: read paths retry once on connection-level errors (`withDbRetry`); error boundaries
+re-render once, and reload once on version skew after a deploy (`src/lib/error-recovery.ts`,
+guarded in `sessionStorage`).
 
 **Meta deauthorize / data deletion**: `POST /api/instagram/deauthorize` and
 `POST /api/instagram/data-deletion` receive a form-encoded `signed_request` (HMAC-SHA256 with the app

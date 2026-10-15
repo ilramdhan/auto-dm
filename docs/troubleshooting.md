@@ -8,15 +8,53 @@ Supabase integration, which provides `POSTGRES_URL`) and `APP_SECRET` (at least 
 **redeploy**. Migrations run during the build, so a build without a database URL creates no tables.
 The home page and `/login` list which variables are missing.
 
+## "Something went wrong" with a Reference number
+
+The number under the message (for example `Reference: 1375619067`) is the error **digest**. The
+server logs the real error under that digest; the browser only gets the number, so no internals leak.
+
+1. Open **Vercel → Project → Logs** (Docker: `docker compose logs app`) and search for the number,
+   or for `"digest":"1375619067"`.
+2. The matching line is `request.unhandled_error`. It shows the error name and code, the path, the
+   method and the route. Typical causes:
+   - `CONNECTION_CLOSED`, `ECONNRESET`, `CONNECT_TIMEOUT`: the database connection dropped. The app
+     retries reads once by itself (look for `db.retry` just before), so a remaining error means the
+     database was really unreachable: check `DATABASE_URL`, that the Supabase project is not paused,
+     and the region (next section).
+   - `ChunkLoadError` or `Server Action … was not found`: the tab ran an older version after a deploy
+     (see "Error after a new deploy").
+3. Still stuck? Open an issue with the log line (never paste tokens or the full `DATABASE_URL`).
+
+The page tries to recover by itself before showing the card: it re-renders once with fresh data (at
+most once every 30 seconds per page), so a one-off failure on the first load after a quiet period
+usually goes unnoticed. The card only appears when the retry also failed.
+
+## Error after a new deploy (until a hard reload)
+
+A tab that was open during a deploy still runs the old JavaScript. Its old chunks and Server Action
+ids no longer exist on the new deployment ("version skew"). AutoDM detects `ChunkLoadError`, unknown
+Server Actions and deployment mismatches, reloads the page once (at most once every 5 minutes per tab)
+and shows **Updated to a new version**. If it happens again within that window the error card offers
+a **Reload page** button.
+
+On Vercel you can avoid most of this with **Skew Protection** (Vercel → Project → Settings → Advanced
+→ Skew Protection, on plans that include it): requests from an old tab keep going to the old
+deployment for a while. It is optional; the automatic reload covers plans without it.
+
 ## Dashboard is slow or stuck on loading skeletons
 
-Almost always the Vercel function region is far from the database. Open `/api/health` twice: the
-second `latencyMs` should be under ~50. If it is 150+, set **Vercel → Project → Settings →
+Almost always the Vercel function region is far from the database. **Settings → About → Server**
+shows the server region and the database latency (one `select 1`); anything marked **Slow** (150 ms or
+more) is a region mismatch. You can also open `/api/health` twice: the second `latencyMs` should be
+under ~50 (the response's `Server-Timing` header shows the same number in DevTools). If it is 150+, set **Vercel → Project → Settings →
 Functions → Function Region** to the region of your Supabase project (the pooler host shows it, e.g.
 `aws-0-ap-southeast-2` → `syd1`) and redeploy. See [deployment.md](deployment.md) step 3.
 
 If pages end in an error instead, check **Vercel → Logs**: a wrong `DATABASE_URL` now fails after 10
-seconds instead of hanging. `DATABASE_URL` must be the **Transaction pooler** (port 6543); the
+seconds instead of hanging. Two warnings help here: `db.slow` (a read took 1.5 s or more) and
+`dashboard.slow_shell` (the session and status data for a dashboard page took 1 s or more, with the
+`region`). Pages you opened in the last 30 seconds come back instantly from the browser's router
+cache, and sidebar links prefetch their loading state. `DATABASE_URL` must be the **Transaction pooler** (port 6543); the
 Session pooler (5432) is only for `DATABASE_URL_UNPOOLED`.
 
 ## Webhook does not fire (no rows in Activity)
@@ -88,7 +126,7 @@ Every event is one JSON line:
 
 **Searching:**
 
-- `scope`: `"scope":"webhook"`, `engine`, `graph`, `n8n`, `cron`, `oauth`, `auth`, `health`, `app`.
+- `scope`: `"scope":"webhook"`, `engine`, `graph`, `n8n`, `cron`, `oauth`, `auth`, `health`, `app`, `db`.
 - `requestId`: the `x-vercel-id` of the request (or `x-request-id`, else a random UUID). The webhook, n8n, cron and
   OAuth routes log it on every line, including the background processing of a comment, so search the id to see its whole journey.
 - Error "Reference": the code shown on the "Something went wrong" page is the error digest. Search it
