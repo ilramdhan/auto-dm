@@ -406,3 +406,27 @@ Log aplikasi (format JSON) ada di **Vercel → Project → Logs**; cari `scope` 
 `engine`, `auth`. Setiap permintaan punya `requestId`, dan halaman error menampilkan kode **Reference**
 (digest): cari kode itu di log untuk menemukan penyebabnya. Token, secret, password, dan isi webhook tidak
 pernah dicatat. Atur detail log dengan env `LOG_LEVEL` (`debug`, `info`, `warn`, `error`).
+
+### Aplikasi yang di-install terlihat macet setelah update
+
+Aplikasi yang di-install (Add to Home Screen di iOS/Android, atau PWA di desktop) jarang dimuat ulang:
+ia melanjutkan halaman lama dari memori, sehingga setelah deploy baru ia bisa tetap menjalankan
+JavaScript lama terhadap server baru. Gejalanya: semua halaman hanya menampilkan skeleton (kotak abu-abu
+saat memuat), atau tombol **Sign out** tidak melakukan apa-apa.
+
+AutoDM sekarang menangani ini sendiri:
+
+- Saat aplikasi kembali ke depan (paling sering sekali per menit) dan setiap 5 menit selama terbuka,
+  aplikasi membandingkan build-nya dengan build server (`/api/version`). Kalau ada versi baru, halaman
+  dimuat ulang sekali dan muncul **Updated to a new version**.
+- Kalau membuka halaman lebih dari 10 detik, aplikasi memeriksa versi baru (dan memuat ulang kalau ada);
+  kalau tidak ada, muncul **This page is taking too long to load** dengan tombol **Reload**.
+- **Sign out** sekarang berupa form biasa ke `/api/auth/logout`, jadi tetap berfungsi di build lama dan
+  tanpa JavaScript.
+- Service worker baru memuat ulang halaman sekali saat mengambil alih, dan aplikasi meminta service
+  worker baru setiap kali kembali ke depan.
+
+Muat ulang otomatis paling banyak sekali per 5 menit per jendela, jadi tidak akan berulang terus. Kalau
+masih macet, tutup aplikasi sepenuhnya (geser keluar dari app switcher) lalu buka lagi, atau tekan
+tombol **Reload**. Membuka `/api/version` menampilkan `buildId` yang sedang berjalan di server; nilainya
+berubah setiap deploy.

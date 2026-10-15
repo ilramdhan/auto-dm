@@ -41,6 +41,30 @@ On Vercel you can avoid most of this with **Skew Protection** (Vercel → Projec
 → Skew Protection, on plans that include it): requests from an old tab keep going to the old
 deployment for a while. It is optional; the automatic reload covers plans without it.
 
+## The installed app looks stuck after an update
+
+An installed app (Add to Home Screen on iOS or Android, or an installed desktop PWA) is rarely
+reloaded: it resumes the old page from memory, so after a deploy it can keep running the old
+JavaScript against the new server. Symptoms: every page stays on loading skeletons, or **Sign out**
+does nothing.
+
+AutoDM now handles this by itself:
+
+- When the app comes back to the foreground (at most once a minute) and every 5 minutes while it is
+  open, it compares its own build with the server's (`/api/version`). If a new version was deployed
+  it reloads once and shows **Updated to a new version**.
+- If opening a page takes longer than 10 seconds, it checks for a new version (and reloads if there
+  is one); otherwise it shows **This page is taking too long to load** with a **Reload** button.
+- **Sign out** is a plain form post to `/api/auth/logout`, so it works even on an old build and
+  without JavaScript.
+- A new service worker reloads the page once when it takes over, and the app asks for a new service
+  worker every time it returns to the foreground.
+
+The automatic reload happens at most once every 5 minutes per window, so it can never loop. If the
+app still looks stuck, close it completely (swipe it away in the app switcher) and open it again, or
+pull to refresh / press the **Reload** button. Opening `/api/version` shows the `buildId` the server
+runs; it changes with every deploy.
+
 ## Dashboard is slow or stuck on loading skeletons
 
 Almost always the Vercel function region is far from the database. **Settings → About → Server**

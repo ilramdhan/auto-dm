@@ -58,7 +58,11 @@ tokens nearing expiry. **Health**: `GET /api/health`.
 
 **Recovery**: read paths retry once on connection-level errors (`withDbRetry`); error boundaries
 re-render once, and reload once on version skew after a deploy (`src/lib/error-recovery.ts`,
-guarded in `sessionStorage`).
+guarded in `sessionStorage`). Open tabs and installed apps also compare their build id (inlined as
+`NEXT_PUBLIC_BUILD_ID` in `next.config.ts`) with `GET /api/version` when they return to the
+foreground and every 5 minutes, and a navigation watchdog offers a reload after 10 s
+(`src/lib/app-update.ts`). Sign out is a plain form post to `POST /api/auth/logout` (same-origin
+check), so it works on a stale bundle.
 
 **Meta deauthorize / data deletion**: `POST /api/instagram/deauthorize` and
 `POST /api/instagram/data-deletion` receive a form-encoded `signed_request` (HMAC-SHA256 with the app
