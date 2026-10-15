@@ -53,6 +53,8 @@ import {
   revealVerifyTokenAction,
   saveMetaAppAction,
 } from "./actions";
+import { WebhookDiagnosticsCard, type WebhookRequestView } from "./webhook-diagnostics-card";
+import type { SubscriptionStatus } from "@/lib/webhook-diagnostics";
 
 type Account = {
   username: string;
@@ -81,6 +83,8 @@ export function InstagramTab(props: {
   mode: "webhook" | "n8n";
   metaReview: MetaReviewUrls;
   contactConfigured: boolean;
+  webhookRequests: WebhookRequestView[];
+  subscription: SubscriptionStatus | null;
 }) {
   const configured = !!props.appId && props.appSecretConfigured;
   return (
@@ -92,6 +96,13 @@ export function InstagramTab(props: {
       />
       <ConnectionCard account={props.account} configured={configured} />
       <WebhookCard webhookUrl={props.webhookUrl} receivedEvents={props.receivedEvents} mode={props.mode} />
+      <WebhookDiagnosticsCard
+        requests={props.webhookRequests}
+        subscription={props.subscription}
+        accountConnected={!!props.account}
+        webhookUrl={props.webhookUrl}
+        mode={props.mode}
+      />
       <MetaReviewCard urls={props.metaReview} contactConfigured={props.contactConfigured} />
     </div>
   );
@@ -475,7 +486,9 @@ function WebhookCard({
             Subscribe to the <code className="text-foreground">comments</code> field.
           </li>
           <li>
-            Connect your account above (this also subscribes it to webhooks), then comment on a post to test.
+            Connect your account above (this also subscribes it to webhooks), then comment on a post from a{" "}
+            <strong className="text-foreground">second account</strong> to test: the connected account&apos;s
+            own comments are ignored.
           </li>
         </ol>
       </CardContent>

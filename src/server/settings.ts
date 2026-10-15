@@ -22,6 +22,17 @@ export const SETTINGS = {
   "meta.appSecret": { schema: z.string().min(16).max(128), secret: true },
   /** Token Meta echoes back when verifying the webhook subscription. Auto-generated. */
   "webhook.verifyToken": { schema: z.string().min(16).max(128), secret: true },
+  /** Result of the last `POST /me/subscribed_apps` (Connect or "Re-subscribe webhooks"). Diagnostics only. */
+  "webhook.subscription": {
+    schema: z.object({
+      ok: z.boolean(),
+      at: z.iso.datetime(),
+      source: z.enum(["connect", "manual"]),
+      fields: z.array(z.string().max(64)).max(20).optional(),
+      error: z.string().max(300).optional(),
+    }),
+    secret: false,
+  },
   /** `webhook` = this app receives Meta webhooks directly. `n8n` = n8n relays them. */
   "processing.mode": { schema: z.enum(["webhook", "n8n"]), secret: false },
   /** Kill switch: when false, comments are logged but nothing is sent. */

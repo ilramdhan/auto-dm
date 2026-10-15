@@ -33,16 +33,17 @@ Without `APP_URL` (and outside Vercel) canonical links and social-card URLs cann
 
 Stored in the `settings` table; secret ones are encrypted. Defined in `src/server/settings.ts`.
 
-| Key                        | Secret | Description                                                                                                                                                        |
-| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `meta.appId`               | no     | Numeric Meta/Instagram app id                                                                                                                                      |
-| `meta.appSecret`           | yes    | Meta app secret                                                                                                                                                    |
-| `webhook.verifyToken`      | yes    | Auto-generated; paste into Meta webhook config                                                                                                                     |
-| `processing.mode`          | no     | `webhook` (default) or `n8n`                                                                                                                                       |
-| `processing.enabled`       | no     | Kill switch (default on)                                                                                                                                           |
-| `processing.retentionDays` | no     | Days to keep comment records before the daily cron deletes them: `30`, `90`, `180`, `365` (default) or `0` = keep forever (Settings → Processing → Data retention) |
-| `general.timezone`         | no     | IANA time zone for Analytics days and "Comments today" (default `UTC`; Settings → Processing)                                                                      |
-| `general.operatorName`     | no     | Your name or business name, shown on the public `/privacy` and `/data-deletion` pages (Settings → Account → Public contact)                                        |
-| `general.contactEmail`     | no     | Public contact email for privacy questions and deletion requests, shown on the same pages                                                                          |
+| Key                        | Secret | Description                                                                                                                                                         |
+| -------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `meta.appId`               | no     | Numeric Meta/Instagram app id                                                                                                                                       |
+| `meta.appSecret`           | yes    | Meta app secret                                                                                                                                                     |
+| `webhook.verifyToken`      | yes    | Auto-generated; paste into Meta webhook config                                                                                                                      |
+| `webhook.subscription`     | no     | Last webhook subscription result (`ok`, time, `connect`/`manual`, subscribed fields, error). Written on Connect and by Settings → Instagram → Re-subscribe webhooks |
+| `processing.mode`          | no     | `webhook` (default) or `n8n`                                                                                                                                        |
+| `processing.enabled`       | no     | Kill switch (default on)                                                                                                                                            |
+| `processing.retentionDays` | no     | Days to keep comment records before the daily cron deletes them: `30`, `90`, `180`, `365` (default) or `0` = keep forever (Settings → Processing → Data retention)  |
+| `general.timezone`         | no     | IANA time zone for Analytics days and "Comments today" (default `UTC`; Settings → Processing)                                                                       |
+| `general.operatorName`     | no     | Your name or business name, shown on the public `/privacy` and `/data-deletion` pages (Settings → Account → Public contact)                                         |
+| `general.contactEmail`     | no     | Public contact email for privacy questions and deletion requests, shown on the same pages                                                                           |
 
 Campaigns, rules and API keys are managed in their own pages.

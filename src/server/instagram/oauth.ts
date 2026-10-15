@@ -4,10 +4,14 @@ import { z } from "zod";
 import { appUrl } from "@/env";
 import { deriveKey, randomToken, safeEqual } from "@/server/crypto";
 import type { InstagramAccount } from "@/server/db/schema";
-import { getSettings } from "@/server/settings";
+import type { SubscriptionStatus } from "@/lib/webhook-diagnostics";
+import { logger } from "@/server/log";
+import { getSettings, setSetting } from "@/server/settings";
 import { tokenResponseSchema, upsertAccount } from "./account";
 import { IG_AUTHORIZE_URL, IG_LONG_TOKEN_URL, IG_SCOPES, IG_SHORT_TOKEN_URL } from "./constants";
-import { GraphApiError, graphId, graphRequest } from "./graph";
+import { GraphApiError, graphId, graphRequest, safeErrorMessage } from "./graph";
+
+const log = logger("oauth");
 
 export const OAUTH_STATE_COOKIE = "ig_oauth_state";
 export const OAUTH_STATE_MAX_AGE_S = 10 * 60;
@@ -170,12 +174,26 @@ export async function completeOAuth(rawCode: string): Promise<ConnectResult> {
     expiresInSeconds: longToken.expires_in ?? null,
   });
 
-  const subscribed = await subscribeToWebhooks(longToken.access_token);
-  return { account, subscribed };
+  const status = await subscribeAndRecord(longToken.access_token, "connect");
+  return { account, subscribed: status.ok };
 }
 
 /** Subscribes the app to the account's `comments` webhook field. Returns false on failure. */
 export async function subscribeToWebhooks(accessToken: string): Promise<boolean> {
+  return (await subscribeWithDetails(accessToken)).ok;
+}
+
+const subscribedAppsSchema = z.object({
+  data: z.array(z.looseObject({ subscribed_fields: z.array(z.string()).optional() })).optional(),
+});
+
+/**
+ * `POST /me/subscribed_apps?subscribed_fields=comments`, then (best-effort) reads back the
+ * subscribed fields. Never throws for Graph API errors; the error text is token-free.
+ */
+export async function subscribeWithDetails(
+  accessToken: string,
+): Promise<{ ok: boolean; fields?: string[]; error?: string }> {
   try {
     const res = await graphRequest({
       method: "POST",
@@ -185,9 +203,44 @@ export async function subscribeToWebhooks(accessToken: string): Promise<boolean>
       schema: subscribeSchema,
       idempotent: true,
     });
-    return res.success !== false;
+    if (res.success === false) return { ok: false, error: "Instagram answered success: false" };
   } catch (err) {
-    if (err instanceof GraphApiError) return false;
+    if (err instanceof GraphApiError) return { ok: false, error: safeErrorMessage(err, [accessToken], 300) };
     throw err;
   }
+  try {
+    const current = await graphRequest({
+      path: "/me/subscribed_apps",
+      accessToken,
+      schema: subscribedAppsSchema,
+      retries: 0,
+      timeoutMs: 5_000,
+    });
+    const fields = [...new Set((current.data ?? []).flatMap((d) => d.subscribed_fields ?? []))].slice(0, 20);
+    return { ok: true, fields };
+  } catch {
+    return { ok: true };
+  }
+}
+
+/** Subscribes and persists the outcome in the `webhook.subscription` setting (best-effort). */
+export async function subscribeAndRecord(
+  accessToken: string,
+  source: SubscriptionStatus["source"],
+): Promise<SubscriptionStatus> {
+  const result = await subscribeWithDetails(accessToken);
+  const status: SubscriptionStatus = {
+    ok: result.ok,
+    at: new Date().toISOString(),
+    source,
+    ...(result.fields ? { fields: result.fields } : {}),
+    ...(result.error ? { error: result.error } : {}),
+  };
+  try {
+    await setSetting("webhook.subscription", status);
+  } catch (err) {
+    log.warn("webhook.subscription_record_failed", { err: safeErrorMessage(err) });
+  }
+  log.info("webhook.subscribed", { ok: status.ok, source, fields: status.fields });
+  return status;
 }

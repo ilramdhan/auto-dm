@@ -19,7 +19,8 @@ import { createSession } from "@/server/auth/session";
 import { getUserById, updatePassword, updateUsername } from "@/server/auth/users";
 import { randomToken } from "@/server/crypto";
 import { AppError } from "@/server/errors";
-import { disconnectAccount } from "@/server/instagram/account";
+import { disconnectAccount, getAccessToken, getActiveAccount } from "@/server/instagram/account";
+import { subscribeAndRecord } from "@/server/instagram/oauth";
 import { logger } from "@/server/log";
 import { ensureVerifyToken, setSetting } from "@/server/settings";
 
@@ -129,6 +130,27 @@ export const disconnectInstagramAction = authedAction(
     log.info("instagram.disconnected", {});
     revalidatePath("/", "layout");
     return ok();
+  },
+);
+
+/** Calls `POST /me/subscribed_apps?subscribed_fields=comments` again and stores the outcome. */
+export const resubscribeWebhooksAction = authedAction(
+  "settings",
+  "resubscribe_webhooks",
+  z.object({}),
+  async () => {
+    const account = await getActiveAccount();
+    if (!account || !account.accessTokenEnc) {
+      throw new AppError("NOT_CONFIGURED", "Connect an Instagram account first.");
+    }
+    const status = await subscribeAndRecord(getAccessToken(account), "manual");
+    revalidatePath("/settings");
+    if (!status.ok) {
+      return fail(
+        `Instagram refused the subscription${status.error ? `: ${status.error}` : "."} Reconnect the account and try again.`,
+      );
+    }
+    return ok({ fields: status.fields ?? null });
   },
 );
 

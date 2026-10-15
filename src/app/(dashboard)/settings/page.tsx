@@ -13,6 +13,7 @@ import { listApiKeys } from "@/server/api-keys";
 import { getActiveAccount } from "@/server/instagram/account";
 import { oauthRedirectUri } from "@/server/instagram/oauth";
 import { hasAnyDelivery } from "@/server/repos/deliveries";
+import { listWebhookRequests } from "@/server/repos/webhook-requests";
 import { getPublicSettings } from "@/server/settings";
 import { AccountTab } from "./account-tab";
 import { InstagramTab } from "./instagram-tab";
@@ -42,12 +43,13 @@ export default async function SettingsPage({
   searchParams: Promise<{ tab?: string; connected?: string; error?: string; warning?: string }>;
 }) {
   const user = await requireUser();
-  const [sp, settings, account, apiKeys, anyDelivery] = await Promise.all([
+  const [sp, settings, account, apiKeys, anyDelivery, webhookRequests] = await Promise.all([
     searchParams,
     getPublicSettings(),
     getActiveAccount(),
     listApiKeys(),
     hasAnyDelivery(),
+    listWebhookRequests(undefined, 60),
   ]);
 
   const flashes: Flash[] = [];
@@ -61,7 +63,8 @@ export default async function SettingsPage({
     flashes.push({
       type: "warning",
       message: "Couldn't subscribe to comment webhooks",
-      description: "Check the webhook settings in your Meta app, then reconnect.",
+      description:
+        "Check the webhook settings in your Meta app, then use “Re-subscribe webhooks” under Webhook diagnostics.",
     });
   if (sp.error)
     flashes.push({
@@ -135,6 +138,18 @@ export default async function SettingsPage({
             contactConfigured={
               !!settings["general.operatorName"].value && !!settings["general.contactEmail"].value
             }
+            webhookRequests={webhookRequests.map((r) => ({
+              id: r.id,
+              kind: r.kind,
+              source: r.source,
+              result: r.result,
+              statusCode: r.statusCode,
+              entries: r.entries,
+              commentEvents: r.commentEvents,
+              matchedEntries: r.matchedEntries,
+              createdAt: r.createdAt,
+            }))}
+            subscription={settings["webhook.subscription"].value ?? null}
           />
         </TabsContent>
         <TabsContent value="processing">
