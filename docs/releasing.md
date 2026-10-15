@@ -34,6 +34,7 @@ The `1.0.0` release is cut deliberately (see "Forcing a version").
 ### Docker tags
 
 Image: `ghcr.io/ilramdhan/autodm` (linux/amd64 and linux/arm64, with SBOM and provenance).
+Built on native amd64 and arm64 runners (no QEMU). To re-publish a release image, run Actions → Docker → Run workflow with `version` set (e.g. `0.6.0`).
 
 | Event            | Tags                                                   |
 | ---------------- | ------------------------------------------------------ |
