@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { after } from "next/server";
+import { Suspense } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PageHeader } from "@/components/page-header";
-import { KpiGrid } from "@/components/analytics/kpi-grid";
-import { ContentTable } from "@/components/analytics/content-table";
-import { CommentsVsDmsChart } from "@/components/analytics/comments-dms-chart";
-import { StatusBreakdown } from "@/components/charts/status-breakdown";
-import { BarList } from "@/components/charts/bar-list";
+import { SectionSkeleton } from "@/components/section-skeleton";
 import { analyticsFiltersSchema, resolveRange } from "@/lib/validation/analytics";
-import { GRAPH_ERROR_HINTS, skipReasonLabel } from "@/lib/labels";
-import { formatNumber, timeAgo, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { requireUser } from "@/server/auth/guard";
 import { getTimeZone } from "@/server/settings";
@@ -20,36 +15,59 @@ import { listCampaignOptions } from "@/server/repos/campaigns";
 import {
   getDailySeries,
   getKeywordBreakdown,
-  getKpis,
+  getOverview,
   getPerCampaign,
   getPerPost,
-  getStatusBreakdown,
   getTopErrors,
-  getTopSkipReasons,
 } from "@/server/repos/analytics";
+import { startTimer, watchSections } from "@/server/diagnostics";
+import { logger } from "@/server/log";
 import { AnalyticsFilters } from "./filters";
+import {
+  ContentSection,
+  ErrorsSection,
+  KeywordsSection,
+  KpiSection,
+  KpiSkeleton,
+  OutcomeSection,
+  SeriesSection,
+  SkipReasonsSection,
+  TableSkeleton,
+} from "./sections";
 
 export const metadata: Metadata = { title: "Analytics" };
 
 type SP = Record<string, string | string[] | undefined>;
 
+/**
+ * Streams: the header and filters render as soon as the session and time zone are known; every
+ * section below sits in its own <Suspense> and appears when its query finishes (#86). All queries
+ * start here, at once, so they run in parallel; the components only await them.
+ */
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<SP> }) {
-  await requireUser();
-  const sp = await searchParams;
+  const startedAt = startTimer();
+  // The time zone is not sensitive and nothing renders before requireUser() resolves, so both go out
+  // together (the session lookup is also memoized from the layout).
+  const [, sp, timeZone] = await Promise.all([requireUser(), searchParams, getTimeZone()]);
   const filters = analyticsFiltersSchema.parse(sp);
-  const range = resolveRange(filters, new Date(), await getTimeZone());
+  const range = resolveRange(filters, new Date(), timeZone);
   const scope = { range, campaignId: filters.campaign };
 
-  const [campaigns, kpis, series, statuses, content, keywords, skips, errors] = await Promise.all([
-    listCampaignOptions(),
-    getKpis(scope),
-    getDailySeries(scope),
-    getStatusBreakdown(scope),
-    filters.group === "post" ? getPerPost(scope) : getPerCampaign(scope),
-    getKeywordBreakdown(scope),
-    getTopSkipReasons(scope),
-    getTopErrors(scope),
-  ]);
+  const campaigns = listCampaignOptions();
+  const overview = getOverview(scope);
+  const series = getDailySeries(scope);
+  const content = filters.group === "post" ? getPerPost(scope) : getPerCampaign(scope);
+  const keywords = getKeywordBreakdown(scope);
+  const errors = getTopErrors(scope);
+
+  after(
+    watchSections(
+      { campaigns, overview, series, content, keywords, errors },
+      (info) =>
+        logger("analytics").warn("analytics.slow", { ...info, rangeDays: range.days, group: filters.group }),
+      { startedAt },
+    ),
+  );
 
   const qs = (extra: Record<string, string>) => {
     const p = new URLSearchParams();
@@ -92,7 +110,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         <h2 id="kpi-heading" className="sr-only">
           Key metrics
         </h2>
-        <KpiGrid k={kpis} />
+        <Suspense fallback={<KpiSkeleton />}>
+          <KpiSection overview={overview} />
+        </Suspense>
       </section>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -102,7 +122,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <CardDescription>Per day, {range.label.toLowerCase()}</CardDescription>
           </CardHeader>
           <CardContent>
-            <CommentsVsDmsChart data={series} />
+            <Suspense fallback={<SectionSkeleton label="daily chart" className="h-[220px]" />}>
+              <SeriesSection series={series} />
+            </Suspense>
           </CardContent>
         </Card>
         <Card>
@@ -111,7 +133,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <CardDescription>Final status of each comment</CardDescription>
           </CardHeader>
           <CardContent>
-            <StatusBreakdown data={statuses} />
+            <Suspense fallback={<SectionSkeleton label="outcome breakdown" className="h-64" />}>
+              <OutcomeSection overview={overview} />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
@@ -144,7 +168,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           </CardAction>
         </CardHeader>
         <CardContent>
-          <ContentTable rows={content} />
+          <Suspense fallback={<TableSkeleton label="per-content table" />}>
+            <ContentSection content={content} />
+          </Suspense>
         </CardContent>
       </Card>
 
@@ -154,47 +180,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
           <CardDescription>Which keywords people comment, and what was delivered.</CardDescription>
         </CardHeader>
         <CardContent>
-          {keywords.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">
-              No keyword matches in this period.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Keyword</TableHead>
-                  <TableHead className="hidden sm:table-cell">Rule · campaign</TableHead>
-                  <TableHead className="text-right">Matches</TableHead>
-                  <TableHead className="text-right">DMs sent</TableHead>
-                  <TableHead className="hidden text-right sm:table-cell">Replies</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {keywords.map((k) => (
-                  <TableRow key={`${k.ruleId}-${k.keyword}`}>
-                    <TableCell>
-                      <span className="bg-secondary rounded px-1.5 py-0.5 font-mono text-xs">
-                        {k.keyword}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground hidden max-w-64 truncate sm:table-cell">
-                      {k.ruleName ?? "Deleted rule"} · {k.campaignName ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">{formatNumber(k.matches)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatNumber(k.dmsSent)}
-                      {k.dmsFailed ? (
-                        <span className="text-destructive text-xs"> ({k.dmsFailed} failed)</span>
-                      ) : null}
-                    </TableCell>
-                    <TableCell className="hidden text-right tabular-nums sm:table-cell">
-                      {formatNumber(k.repliesSent)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+          <Suspense fallback={<TableSkeleton label="keywords" rows={3} />}>
+            <KeywordsSection keywords={keywords} />
+          </Suspense>
         </CardContent>
       </Card>
 
@@ -205,11 +193,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <CardDescription>Why comments didn&apos;t trigger an action.</CardDescription>
           </CardHeader>
           <CardContent>
-            <BarList
-              color="var(--muted-foreground)"
-              emptyText="Nothing skipped in this period."
-              items={skips.map((s) => ({ key: s.reason, label: skipReasonLabel(s.reason), value: s.count }))}
-            />
+            <Suspense fallback={<TableSkeleton label="skip reasons" rows={3} />}>
+              <SkipReasonsSection overview={overview} />
+            </Suspense>
           </CardContent>
         </Card>
         <Card>
@@ -218,21 +204,9 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
             <CardDescription>Grouped by Instagram API error code.</CardDescription>
           </CardHeader>
           <CardContent>
-            <BarList
-              color="var(--destructive)"
-              emptyText="No errors in this period."
-              items={errors.map((e) => ({
-                key: e.code,
-                label: (
-                  <>
-                    <span className="font-mono text-xs">#{e.code}</span>{" "}
-                    {GRAPH_ERROR_HINTS[e.code] ?? (e.sample ? truncate(e.sample, 60) : "Error")}
-                  </>
-                ),
-                value: e.count,
-                hint: e.last ? `Last seen ${timeAgo(e.last)}` : undefined,
-              }))}
-            />
+            <Suspense fallback={<TableSkeleton label="errors" rows={3} />}>
+              <ErrorsSection errors={errors} />
+            </Suspense>
           </CardContent>
         </Card>
       </div>

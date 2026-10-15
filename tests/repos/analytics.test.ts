@@ -86,9 +86,61 @@ describe.skipIf(!BASE)("analytics queries (Postgres integration)", () => {
     expect((await repos.getPerPost(scope))[0]?.comments).toBe(4);
     expect((await repos.getKeywordBreakdown(scope))[0]?.keyword).toBe("drive");
     expect((await repos.getTopErrors(scope))[0]?.code).toBe("551");
-    expect((await repos.getTopSkipReasons(scope))[0]?.reason).toBe("no_match");
-    expect((await repos.getStatusBreakdown(scope)).length).toBeGreaterThan(0);
     expect((await repos.getKpis({ ...scope, campaignId: CAMPAIGN })).comments).toBe(4);
+  });
+
+  it("returns KPIs, outcome breakdown and skip reasons from one overview query", async () => {
+    const scope = { range: range({ range: "30d" }, NOW, "Asia/Jakarta") };
+    const overview = await repos.getOverview(scope);
+    expect(overview.kpis).toEqual(await repos.getKpis(scope));
+    expect(overview.kpis).toMatchObject({
+      comments: 4,
+      delivered: 2,
+      failed: 1,
+      skipped: 1,
+      avgDurationMs: 500,
+    });
+    expect(overview.statuses).toEqual([
+      { status: "sent", count: 2 },
+      { status: "skipped", count: 1 },
+      { status: "failed", count: 1 },
+    ]);
+    expect(overview.skips).toEqual([{ reason: "no_match", count: 1 }]);
+
+    // Campaign filter applies to the skip-reason subquery too.
+    const other = await repos.getOverview({ ...scope, campaignId: "33333333-3333-4333-8333-333333333333" });
+    expect(other).toEqual({
+      kpis: expect.objectContaining({ comments: 0, avgDurationMs: null }),
+      statuses: [],
+      skips: [],
+    });
+
+    // Empty range: no rows, no nulls leaking out.
+    const empty = await repos.getOverview({
+      range: range({ range: "custom", from: "2020-01-01", to: "2020-01-02" }, NOW, "UTC"),
+    });
+    expect(empty.statuses).toEqual([]);
+    expect(empty.skips).toEqual([]);
+  });
+
+  it("adds the unassigned row to the per-campaign table", async () => {
+    const scope = { range: range({ range: "30d" }, NOW, "Asia/Jakarta") };
+    const { default: postgres } = await import("postgres");
+    const sql = postgres(process.env.DATABASE_URL!, { max: 1, onnotice: () => {} });
+    await sql`insert into deliveries (comment_id, status, created_at) values ('c-unassigned', 'skipped', '2026-10-14T12:00:00Z')`;
+    try {
+      const rows = await repos.getPerCampaign(scope);
+      expect(rows.map((r) => [r.key, r.comments])).toEqual([
+        [CAMPAIGN, 4],
+        ["unassigned", 1],
+      ]);
+      expect((await repos.getPerCampaign({ ...scope, campaignId: CAMPAIGN })).map((r) => r.key)).toEqual([
+        CAMPAIGN,
+      ]);
+    } finally {
+      await sql`delete from deliveries where comment_id = 'c-unassigned'`;
+      await sql.end();
+    }
   });
 
   it("counts 'today' from local midnight on the dashboard", async () => {

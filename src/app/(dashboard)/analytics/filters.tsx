@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Suspense, use, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { RangePreset } from "@/lib/validation/analytics";
 
 const ALL = "__all";
+
+type CampaignOption = { id: string; name: string };
 
 export function AnalyticsFilters({
   range,
@@ -22,7 +24,8 @@ export function AnalyticsFilters({
   from: string;
   to: string;
   campaign?: string;
-  campaigns: { id: string; name: string }[];
+  /** Streamed: the date range is usable before the campaign list arrives. */
+  campaigns: Promise<CampaignOption[]>;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -102,19 +105,17 @@ export function AnalyticsFilters({
       ) : null}
       <div className="grid gap-1.5">
         <Label htmlFor="campaign-filter">Campaign</Label>
-        <Select value={campaign ?? ALL} onValueChange={(v) => push({ campaign: v === ALL ? undefined : v })}>
-          <SelectTrigger id="campaign-filter" className="w-full sm:w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>All campaigns</SelectItem>
-            {campaigns.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Suspense
+          fallback={
+            <Select disabled value={campaign ?? ALL}>
+              <SelectTrigger id="campaign-filter" className="w-full sm:w-56" aria-busy="true">
+                <SelectValue placeholder="Loading campaigns…">Loading campaigns…</SelectValue>
+              </SelectTrigger>
+            </Select>
+          }
+        >
+          <CampaignSelect campaigns={campaigns} value={campaign} onChange={(v) => push({ campaign: v })} />
+        </Suspense>
       </div>
       {pending ? (
         <span className="text-muted-foreground flex h-9 items-center gap-2 text-sm" role="status">
@@ -122,5 +123,32 @@ export function AnalyticsFilters({
         </span>
       ) : null}
     </div>
+  );
+}
+
+function CampaignSelect({
+  campaigns,
+  value,
+  onChange,
+}: {
+  campaigns: Promise<CampaignOption[]>;
+  value?: string;
+  onChange: (campaign: string | undefined) => void;
+}) {
+  const options = use(campaigns);
+  return (
+    <Select value={value ?? ALL} onValueChange={(v) => onChange(v === ALL ? undefined : v)}>
+      <SelectTrigger id="campaign-filter" className="w-full sm:w-56">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={ALL}>All campaigns</SelectItem>
+        {options.map((c) => (
+          <SelectItem key={c.id} value={c.id}>
+            {c.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

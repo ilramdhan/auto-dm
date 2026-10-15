@@ -4,7 +4,7 @@ import { db, retryable } from "@/server/db/client";
 import { campaigns, deliveries, rules } from "@/server/db/schema";
 import { addDaysYmd } from "@/lib/timezone";
 import type { ResolvedRange } from "@/lib/validation/analytics";
-import type { DeliveryStatusValue } from "@/lib/validation/activity";
+import { DELIVERY_STATUSES, type DeliveryStatusValue } from "@/lib/validation/activity";
 
 /**
  * All aggregation happens in Postgres (`count(*) filter (where …)`, `date_trunc`), scoped by the
@@ -51,38 +51,37 @@ export type Kpis = {
   avgDurationMs: number | null;
 };
 
+const kpiSelection = {
+  comments: agg.comments,
+  matched: agg.matched,
+  repliesSent: agg.repliesSent,
+  repliesFailed: agg.repliesFailed,
+  dmsSent: agg.dmsSent,
+  dmsFailed: agg.dmsFailed,
+  delivered: agg.delivered,
+  partial: agg.partial,
+  failed: agg.failed,
+  skipped: agg.skipped,
+  avgDurationMs: sql<number | null>`round(avg(${d.durationMs}))::int`,
+};
+
+const EMPTY_KPIS: Kpis = {
+  comments: 0,
+  matched: 0,
+  repliesSent: 0,
+  repliesFailed: 0,
+  dmsSent: 0,
+  dmsFailed: 0,
+  delivered: 0,
+  partial: 0,
+  failed: 0,
+  skipped: 0,
+  avgDurationMs: null,
+};
+
 async function getKpisQuery(scope: AnalyticsScope): Promise<Kpis> {
-  const [row] = await db
-    .select({
-      comments: agg.comments,
-      matched: agg.matched,
-      repliesSent: agg.repliesSent,
-      repliesFailed: agg.repliesFailed,
-      dmsSent: agg.dmsSent,
-      dmsFailed: agg.dmsFailed,
-      delivered: agg.delivered,
-      partial: agg.partial,
-      failed: agg.failed,
-      skipped: agg.skipped,
-      avgDurationMs: sql<number | null>`round(avg(${d.durationMs}))::int`,
-    })
-    .from(d)
-    .where(scopeWhere(scope));
-  return (
-    row ?? {
-      comments: 0,
-      matched: 0,
-      repliesSent: 0,
-      repliesFailed: 0,
-      dmsSent: 0,
-      dmsFailed: 0,
-      delivered: 0,
-      partial: 0,
-      failed: 0,
-      skipped: 0,
-      avgDurationMs: null,
-    }
-  );
+  const [row] = await db.select(kpiSelection).from(d).where(scopeWhere(scope));
+  return row ?? EMPTY_KPIS;
 }
 export const getKpis = retryable("analytics.getKpis", getKpisQuery);
 
@@ -108,17 +107,63 @@ async function getDailySeriesQuery(scope: AnalyticsScope): Promise<DayPoint[]> {
 }
 export const getDailySeries = retryable("analytics.getDailySeries", getDailySeriesQuery);
 
-async function getStatusBreakdownQuery(
-  scope: AnalyticsScope,
-): Promise<{ status: DeliveryStatusValue; count: number }[]> {
-  return db
-    .select({ status: d.status, count: sql<number>`count(*)::int` })
-    .from(d)
-    .where(scopeWhere(scope))
-    .groupBy(d.status)
-    .orderBy(sql`count(*) desc`);
+export type StatusCount = { status: DeliveryStatusValue; count: number };
+export type SkipReasonCount = { reason: string; count: number };
+
+/** Statuses with at least one comment, most frequent first (ties keep the lifecycle order). */
+export function statusBreakdownFromCounts(counts: Record<DeliveryStatusValue, number>): StatusCount[] {
+  return DELIVERY_STATUSES.map((status) => ({ status, count: counts[status] ?? 0 }))
+    .filter((s) => s.count > 0)
+    .sort((a, b) => b.count - a.count);
 }
-export const getStatusBreakdown = retryable("analytics.getStatusBreakdown", getStatusBreakdownQuery);
+
+const SKIP_REASON_LIMIT = 8;
+
+export type Overview = { kpis: Kpis; statuses: StatusCount[]; skips: SkipReasonCount[] };
+
+/**
+ * KPIs, the outcome (status) breakdown and the top skip reasons in ONE round trip: the first two are
+ * `count(*) filter (…)` over the same rows, the skip reasons an uncorrelated `json_agg` subquery on the
+ * same scope (planned once as an InitPlan). Replaces three separate queries on the analytics page (#86).
+ */
+async function getOverviewQuery(scope: AnalyticsScope): Promise<Overview> {
+  const where = scopeWhere(scope);
+  const skipsSql = sql<SkipReasonCount[] | null>`(
+    select json_agg(json_build_object('reason', s.reason, 'count', s.count) order by s.count desc, s.reason)
+    from (
+      select coalesce(${d.skipReason}, 'unknown') as reason, count(*)::int as count
+      from ${d}
+      where ${and(where, eq(d.status, "skipped"))}
+      group by 1
+      order by 2 desc, 1
+      limit ${SKIP_REASON_LIMIT}
+    ) s
+  )`;
+  const [row] = await db
+    .select({
+      ...kpiSelection,
+      received: sql<number>`count(${d.id}) filter (where ${d.status} = 'received')::int`,
+      processing: sql<number>`count(${d.id}) filter (where ${d.status} = 'processing')::int`,
+      skips: skipsSql,
+    })
+    .from(d)
+    .where(where);
+  if (!row) return { kpis: EMPTY_KPIS, statuses: [], skips: [] };
+  const { received, processing, skips, ...kpis } = row;
+  return {
+    kpis,
+    statuses: statusBreakdownFromCounts({
+      received,
+      processing,
+      skipped: kpis.skipped,
+      sent: kpis.delivered,
+      partial: kpis.partial,
+      failed: kpis.failed,
+    }),
+    skips: skips ?? [],
+  };
+}
+export const getOverview = retryable("analytics.getOverview", getOverviewQuery);
 
 export type ContentRow = {
   key: string;
@@ -145,27 +190,36 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
     gte(d.createdAt, scope.range.from),
     lt(d.createdAt, scope.range.to),
   );
-  const rows = await db
-    .select({
-      id: campaigns.id,
-      name: campaigns.name,
-      mediaId: campaigns.mediaId,
-      thumbnailUrl: campaigns.mediaThumbnailUrl,
-      permalink: campaigns.mediaPermalink,
-      comments: agg.comments,
-      matched: agg.matched,
-      repliesSent: agg.repliesSent,
-      repliesFailed: agg.repliesFailed,
-      dmsSent: agg.dmsSent,
-      dmsFailed: agg.dmsFailed,
-      delivered: agg.delivered,
-      lastActivity: agg.lastActivity,
-    })
-    .from(campaigns)
-    .leftJoin(d, joinOn)
-    .where(scope.campaignId ? eq(campaigns.id, scope.campaignId) : undefined)
-    .groupBy(campaigns.id)
-    .orderBy(sql`count(${d.id}) desc`, campaigns.name);
+  // Both queries go out together (two pooled connections) instead of one after the other.
+  const [rows, unassigned] = await Promise.all([
+    db
+      .select({
+        id: campaigns.id,
+        name: campaigns.name,
+        mediaId: campaigns.mediaId,
+        thumbnailUrl: campaigns.mediaThumbnailUrl,
+        permalink: campaigns.mediaPermalink,
+        comments: agg.comments,
+        matched: agg.matched,
+        repliesSent: agg.repliesSent,
+        repliesFailed: agg.repliesFailed,
+        dmsSent: agg.dmsSent,
+        dmsFailed: agg.dmsFailed,
+        delivered: agg.delivered,
+        lastActivity: agg.lastActivity,
+      })
+      .from(campaigns)
+      .leftJoin(d, joinOn)
+      .where(scope.campaignId ? eq(campaigns.id, scope.campaignId) : undefined)
+      .groupBy(campaigns.id)
+      .orderBy(sql`count(${d.id}) desc`, campaigns.name),
+    scope.campaignId
+      ? Promise.resolve([])
+      : db
+          .select({ comments: agg.comments, lastActivity: agg.lastActivity })
+          .from(d)
+          .where(and(scopeWhere(scope), isNull(d.campaignId))),
+  ]);
 
   const out: ContentRow[] = rows.map((r) => ({
     key: r.id,
@@ -185,33 +239,25 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
     lastActivity: r.lastActivity ? new Date(r.lastActivity) : null,
   }));
 
-  if (!scope.campaignId) {
-    const [u] = await db
-      .select({
-        comments: agg.comments,
-        lastActivity: agg.lastActivity,
-      })
-      .from(d)
-      .where(and(scopeWhere(scope), isNull(d.campaignId)));
-    if (u && u.comments > 0) {
-      out.push({
-        key: "unassigned",
-        campaignId: null,
-        name: "No matching campaign",
-        mediaId: null,
-        thumbnailUrl: null,
-        permalink: null,
-        allPosts: false,
-        comments: u.comments,
-        matched: 0,
-        repliesSent: 0,
-        repliesFailed: 0,
-        dmsSent: 0,
-        dmsFailed: 0,
-        delivered: 0,
-        lastActivity: u.lastActivity ? new Date(u.lastActivity) : null,
-      });
-    }
+  const [u] = unassigned;
+  if (u && u.comments > 0) {
+    out.push({
+      key: "unassigned",
+      campaignId: null,
+      name: "No matching campaign",
+      mediaId: null,
+      thumbnailUrl: null,
+      permalink: null,
+      allPosts: false,
+      comments: u.comments,
+      matched: 0,
+      repliesSent: 0,
+      repliesFailed: 0,
+      dmsSent: 0,
+      dmsFailed: 0,
+      delivered: 0,
+      lastActivity: u.lastActivity ? new Date(u.lastActivity) : null,
+    });
   }
   return out;
 }
@@ -295,24 +341,9 @@ async function getKeywordBreakdownQuery(scope: AnalyticsScope, limit = 50): Prom
 }
 export const getKeywordBreakdown = retryable("analytics.getKeywordBreakdown", getKeywordBreakdownQuery);
 
-async function getTopSkipReasonsQuery(
-  scope: AnalyticsScope,
-  limit = 8,
-): Promise<{ reason: string; count: number }[]> {
-  return db
-    .select({ reason: sql<string>`coalesce(${d.skipReason}, 'unknown')`, count: sql<number>`count(*)::int` })
-    .from(d)
-    .where(and(scopeWhere(scope), eq(d.status, "skipped")))
-    .groupBy(sql`1`)
-    .orderBy(sql`count(*) desc`)
-    .limit(limit);
-}
-export const getTopSkipReasons = retryable("analytics.getTopSkipReasons", getTopSkipReasonsQuery);
+export type TopError = { code: string; count: number; sample: string | null; last: Date | null };
 
-async function getTopErrorsQuery(
-  scope: AnalyticsScope,
-  limit = 8,
-): Promise<{ code: string; count: number; sample: string | null; last: Date | null }[]> {
+async function getTopErrorsQuery(scope: AnalyticsScope, limit = 8): Promise<TopError[]> {
   const rows = await db
     .select({
       code: sql<string>`coalesce(${d.errorCode}, 'unknown')`,

@@ -43,6 +43,10 @@ deployment for a while. It is optional; the automatic reload covers plans withou
 
 ## Dashboard is slow or stuck on loading skeletons
 
+> **Check the region first: Settings → About → Server.** If the database latency there is marked
+> **Slow**, every query on every page pays that delay, and no amount of tuning helps until the Vercel
+> function region matches the Supabase region.
+
 Almost always the Vercel function region is far from the database. **Settings → About → Server**
 shows the server region and the database latency (one `select 1`); anything marked **Slow** (150 ms or
 more) is a region mismatch. You can also open `/api/health` twice: the second `latencyMs` should be
@@ -51,9 +55,12 @@ Functions → Function Region** to the region of your Supabase project (the pool
 `aws-0-ap-southeast-2` → `syd1`) and redeploy. See [deployment.md](deployment.md) step 3.
 
 If pages end in an error instead, check **Vercel → Logs**: a wrong `DATABASE_URL` now fails after 10
-seconds instead of hanging. Two warnings help here: `db.slow` (a read took 1.5 s or more) and
+seconds instead of hanging. These warnings help: `db.slow` (a read took 1.5 s or more),
 `dashboard.slow_shell` (the session and status data for a dashboard page took 1 s or more, with the
-`region`). Pages you opened in the last 30 seconds come back instantly from the browser's router
+`region`), and `analytics.slow` / `dashboard.slow` (the Analytics or Dashboard page's sections took
+1.5 s or more in total, with `durationMs`, the time of each section and the `region`). The Dashboard and
+Analytics pages stream: the header and filters show at once and each card fills in when its own data
+arrives, so one slow query no longer holds back the whole page. Pages you opened in the last 30 seconds come back instantly from the browser's router
 cache, and sidebar links prefetch their loading state. `DATABASE_URL` must be the **Transaction pooler** (port 6543); the
 Session pooler (5432) is only for `DATABASE_URL_UNPOOLED`.
 
