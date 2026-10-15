@@ -12,7 +12,7 @@ import { DeleteCommenterButton } from "@/components/data-deletion/delete-comment
 import { CSV_ROW_LIMIT } from "@/lib/csv";
 import { ACTIVITY_PAGE_SIZE, activityFiltersSchema } from "@/lib/validation/activity";
 import { formatDateTime, formatNumber, timeAgo } from "@/lib/format";
-import { skipReasonLabel } from "@/lib/labels";
+import { skipReasonExplanation, skipReasonLabel } from "@/lib/labels";
 import { requireUser } from "@/server/auth/guard";
 import { listCampaignOptions } from "@/server/repos/campaigns";
 import { listDeliveries, type DeliveryRow } from "@/server/repos/deliveries";
@@ -24,6 +24,16 @@ function detail(d: DeliveryRow): string | null {
   if (d.error) return d.errorCode ? `Error ${d.errorCode}: ${d.error}` : d.error;
   if (d.status === "skipped") return skipReasonLabel(d.skipReason);
   return null;
+}
+
+/** Actionable explanation shown inline for confusing skip reasons (e.g. own_comment). */
+function explanation(d: DeliveryRow): string | null {
+  return d.status === "skipped" ? skipReasonExplanation(d.skipReason) : null;
+}
+
+function Explanation({ d, className }: { d: DeliveryRow; className?: string }) {
+  const text = explanation(d);
+  return text ? <p className={className ?? "text-muted-foreground max-w-64 text-xs"}>{text}</p> : null;
 }
 
 function StatusCell({ d }: { d: DeliveryRow }) {
@@ -128,7 +138,7 @@ export default async function ActivityPage({
               </Button>
             ) : (
               <Button asChild variant="outline">
-                <Link href="/settings?tab=instagram#webhook">Check webhook setup</Link>
+                <Link href="/settings?tab=instagram#webhook-diagnostics">Check webhook setup</Link>
               </Button>
             )
           }
@@ -200,6 +210,7 @@ export default async function ActivityPage({
                         <div className="grid gap-0.5">
                           <StatusCell d={d} />
                           <Outcome d={d} />
+                          <Explanation d={d} />
                         </div>
                       </TableCell>
                       <TableCell className="pr-4 text-right">
@@ -243,6 +254,7 @@ export default async function ActivityPage({
                 {detail(d) ? (
                   <p className="text-muted-foreground mt-2 border-t pt-2 text-xs break-words">{detail(d)}</p>
                 ) : null}
+                <Explanation d={d} className="text-muted-foreground mt-1 text-xs break-words" />
               </li>
             ))}
           </ul>

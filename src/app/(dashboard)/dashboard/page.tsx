@@ -70,9 +70,10 @@ export default async function DashboardPage({
     },
     {
       title: "Configure the webhook",
-      description: "Add the callback URL and verify token in Meta. Done once the first comment arrives.",
+      description:
+        "Add the callback URL and verify token in Meta. Done once the first comment from a second account arrives.",
       done: anyDelivery,
-      href: "/settings?tab=instagram#webhook",
+      href: "/settings?tab=instagram#webhook-diagnostics",
       cta: "Show webhook details",
     },
     {
@@ -293,6 +294,16 @@ export default async function DashboardPage({
             <div className="text-muted-foreground flex flex-col items-center gap-2 rounded-lg border border-dashed px-4 py-10 text-center text-sm">
               <MessageSquareText className="size-6" aria-hidden />
               <p>No comments yet. Once your webhook is connected, new comments show up here.</p>
+              <p className="max-w-md text-xs">
+                To test, comment from a second account (your own account&apos;s comments are ignored). In
+                Development mode it must be an accepted Instagram Tester.{" "}
+                <Link
+                  href="/settings?tab=instagram#webhook-diagnostics"
+                  className="text-foreground font-medium underline underline-offset-4"
+                >
+                  Webhook diagnostics
+                </Link>
+              </p>
             </div>
           ) : (
             <ul className="divide-y">

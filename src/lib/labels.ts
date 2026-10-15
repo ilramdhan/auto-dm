@@ -16,6 +16,30 @@ export function skipReasonLabel(reason: string | null | undefined): string {
   return SKIP_REASON_LABELS[reason] ?? reason.replace(/_/g, " ");
 }
 
+/**
+ * Longer, actionable explanations for skip reasons that commonly confuse people testing their setup
+ * (shown inline in Activity). Reasons without an entry only show their short label.
+ */
+export const SKIP_REASON_EXPLANATIONS: Record<string, string> = {
+  own_comment:
+    "You commented with the connected account, and its own comments are never answered (this also stops reply loops). Test with a second account that's an Instagram Tester of your app.",
+  account_mismatch:
+    "This comment was sent for a different Instagram account than the one connected. Reconnect the account you're testing with in Settings → Instagram.",
+  no_match:
+    "No active rule's keyword matched this comment. Check the campaign's post, its schedule, the keywords and the match mode with “Test a comment”.",
+  processing_disabled:
+    "A rule matched, but automation is paused, so nothing was sent. Turn it back on in Settings → Processing.",
+  no_account:
+    "No Instagram account was connected when the comment arrived. Connect one in Settings → Instagram.",
+  already_delivered:
+    "This person already got this rule's DM and “Once per user” is on. Test with another account or turn it off.",
+};
+
+/** Explanation for a skip reason, or `null` when there is nothing more to say than the label. */
+export function skipReasonExplanation(reason: string | null | undefined): string | null {
+  return reason ? (SKIP_REASON_EXPLANATIONS[reason] ?? null) : null;
+}
+
 /** Common Graph API error codes worth explaining in the UI. */
 export const GRAPH_ERROR_HINTS: Record<string, string> = {
   "4": "App rate limit reached — wait and retry",

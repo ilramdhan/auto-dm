@@ -130,6 +130,11 @@ export function TestCommentBox({ campaignId }: { campaignId: string }) {
             )
           ) : null}
         </div>
+        <p className="text-muted-foreground border-t pt-3 text-xs">
+          Testing on Instagram? Comment from a <strong className="text-foreground">second account</strong>:
+          comments by the connected account are ignored. While your Meta app is in Development mode, that
+          account must be an accepted Instagram Tester.
+        </p>
       </CardContent>
     </Card>
   );
