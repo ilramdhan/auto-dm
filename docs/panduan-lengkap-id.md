@@ -208,9 +208,10 @@ Agar komentar **publik** diproses:
 1. Di app: **Settings → Account → Public contact** → isi nama kamu (atau nama bisnis) dan email
    kontak → **Save contact**. Keduanya tampil di halaman publik kebijakan privasi dan penghapusan
    data (selama kosong, halaman memakai kalimat umum "the operator of this site").
-2. Keempat URL di bawah bisa disalin dari **Settings → Instagram → Meta app review**. Di Meta →
+2. Semua URL di bawah bisa disalin dari **Settings → Instagram → Meta app review**. Di Meta →
    **App settings → Basic**:
    - **Privacy Policy URL**: `https://<app>/privacy`
+   - **Terms of Service URL** (opsional, disarankan): `https://<app>/terms`
    - **User data deletion** → pilih **Data deletion instructions URL** → `https://<app>/data-deletion`
    - lengkapi juga ikon app (1024x1024) dan kategori → **Save changes**.
 3. Di Meta → **Instagram → API setup with Instagram login → 3. Set up Instagram business login →

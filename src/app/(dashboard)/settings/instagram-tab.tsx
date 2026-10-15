@@ -65,6 +65,7 @@ type Account = {
 
 export type MetaReviewUrls = {
   privacyPolicy: string;
+  termsOfService: string;
   dataDeletionInstructions: string;
   deauthorizeCallback: string;
   dataDeletionCallback: string;
@@ -528,7 +529,7 @@ function MetaReviewCard({ urls, contactConfigured }: { urls: MetaReviewUrls; con
               App settings → Basic
             </h3>
             <p className="text-muted-foreground text-xs">
-              In your Meta app open App settings → Basic and fill in these two fields.
+              In your Meta app open App settings → Basic and fill in these fields.
             </p>
           </div>
           <CopyField
@@ -536,6 +537,12 @@ function MetaReviewCard({ urls, contactConfigured }: { urls: MetaReviewUrls; con
             label="Privacy Policy URL"
             value={urls.privacyPolicy}
             help="Paste into “Privacy Policy URL”."
+          />
+          <CopyField
+            id="meta-terms-url"
+            label="Terms of Service URL"
+            value={urls.termsOfService}
+            help="Paste into “Terms of Service URL” (optional in Meta, but recommended)."
           />
           <CopyField
             id="meta-deletion-instructions-url"

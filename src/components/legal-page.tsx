@@ -3,7 +3,26 @@ import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { APP_NAME, REPO_URL } from "@/lib/constants";
 
-/** Layout for the public /privacy and /data-deletion pages (no sign-in needed). */
+const LEGAL_LINKS = [
+  { href: "/privacy", label: "Privacy policy" },
+  { href: "/terms", label: "Terms of service" },
+  { href: "/data-deletion", label: "Data deletion" },
+] as const;
+
+/** Links to the public legal pages; used in every public footer. */
+export function LegalNav({ className }: { className?: string }) {
+  return (
+    <nav aria-label="Legal" className={className ?? "flex flex-wrap justify-center gap-x-4 gap-y-1"}>
+      {LEGAL_LINKS.map((l) => (
+        <Link key={l.href} href={l.href} className="underline underline-offset-4">
+          {l.label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
+
+/** Layout for the public /privacy, /terms and /data-deletion pages (no sign-in needed). */
 export function LegalPage({
   title,
   intro,
@@ -31,14 +50,7 @@ export function LegalPage({
         <div className="mt-8 grid gap-8">{children}</div>
       </main>
       <footer className="text-muted-foreground border-t px-4 py-6 text-center text-xs">
-        <nav aria-label="Legal" className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
-          <Link href="/privacy" className="underline underline-offset-4">
-            Privacy policy
-          </Link>
-          <Link href="/data-deletion" className="underline underline-offset-4">
-            Data deletion
-          </Link>
-        </nav>
+        <LegalNav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1" />
         <p>
           Powered by{" "}
           <a href={REPO_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">

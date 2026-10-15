@@ -184,9 +184,9 @@ Before the Live toggle works, Meta needs a privacy policy and data deletion hand
 provides both:
 
 1. **Settings → Account → Public contact**: enter your name (or business name) and a contact email.
-2. **Settings → Instagram → Meta app review** lists four URLs. Paste the **Privacy Policy URL**
-   (`/privacy`) and **Data deletion instructions URL** (`/data-deletion`) into Meta → **App
-   settings → Basic**, and the **Deauthorize callback URL** and **Data deletion request URL** into
+2. **Settings → Instagram → Meta app review** lists the URLs. Paste the **Privacy Policy URL**
+   (`/privacy`), **Terms of Service URL** (`/terms`) and **Data deletion instructions URL**
+   (`/data-deletion`) into Meta → **App settings → Basic**, and the **Deauthorize callback URL** and **Data deletion request URL** into
    **Instagram → API setup with Instagram login → Business login settings**.
 
 Steps and the honest state of what Meta requires:

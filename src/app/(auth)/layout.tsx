@@ -1,4 +1,5 @@
 import { Brand } from "@/components/brand";
+import { LegalNav } from "@/components/legal-page";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -18,8 +19,9 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       >
         <div className="w-full max-w-sm">{children}</div>
       </main>
-      <footer className="text-muted-foreground px-4 pb-6 text-center text-xs">
-        Self-hosted · Open source · Your data stays in your database
+      <footer className="text-muted-foreground grid gap-2 px-4 pb-6 text-center text-xs">
+        <LegalNav />
+        <p>Self-hosted · Open source · Your data stays in your database</p>
       </footer>
     </div>
   );

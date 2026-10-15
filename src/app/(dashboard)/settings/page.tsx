@@ -118,6 +118,7 @@ export default async function SettingsPage({
             mode={settings["processing.mode"].value ?? "webhook"}
             metaReview={{
               privacyPolicy: `${base}/privacy`,
+              termsOfService: `${base}/terms`,
               dataDeletionInstructions: `${base}/data-deletion`,
               deauthorizeCallback: `${base}/api/instagram/deauthorize`,
               dataDeletionCallback: `${base}/api/instagram/data-deletion`,

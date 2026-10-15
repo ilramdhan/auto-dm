@@ -127,6 +127,7 @@ serves both; **Settings → Instagram → Meta app review** lists all four URLs 
    (until you do, the pages use generic wording like "the operator of this site").
 2. Meta dashboard → **App settings → Basic**:
    - **Privacy Policy URL**: `{APP_URL}/privacy`
+   - **Terms of Service URL** (optional, recommended): `{APP_URL}/terms`
    - **User data deletion**: choose **Data deletion instructions URL** and paste
      `{APP_URL}/data-deletion`
    - also set a **Category** and an app icon (1024x1024), then save.
