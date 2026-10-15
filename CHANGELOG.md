@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/ilramdhan/auto-reply-ig/compare/v0.5.0...v0.5.1) (2026-10-15)
+
+
+### Documentation
+
+* README banner, screenshots and social preview ([#61](https://github.com/ilramdhan/auto-reply-ig/issues/61)) ([88f56c7](https://github.com/ilramdhan/auto-reply-ig/commit/88f56c70162e2ec457de3750f1e32db9b85c0d7d)), closes [#52](https://github.com/ilramdhan/auto-reply-ig/issues/52)
+
 ## [0.5.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.4.0...v0.5.0) (2026-10-15)
 
 
