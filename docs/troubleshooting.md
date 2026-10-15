@@ -8,6 +8,17 @@ Supabase integration, which provides `POSTGRES_URL`) and `APP_SECRET` (at least 
 **redeploy**. Migrations run during the build, so a build without a database URL creates no tables.
 The home page and `/login` list which variables are missing.
 
+## Dashboard is slow or stuck on loading skeletons
+
+Almost always the Vercel function region is far from the database. Open `/api/health` twice: the
+second `latencyMs` should be under ~50. If it is 150+, set **Vercel → Project → Settings →
+Functions → Function Region** to the region of your Supabase project (the pooler host shows it, e.g.
+`aws-0-ap-southeast-2` → `syd1`) and redeploy. See [deployment.md](deployment.md) step 3.
+
+If pages end in an error instead, check **Vercel → Logs**: a wrong `DATABASE_URL` now fails after 10
+seconds instead of hanging. `DATABASE_URL` must be the **Transaction pooler** (port 6543); the
+Session pooler (5432) is only for `DATABASE_URL_UNPOOLED`.
+
 ## Webhook does not fire (no rows in Activity)
 
 1. **App mode**: in Development mode only app-role users trigger webhooks. Switch to **Live** ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).

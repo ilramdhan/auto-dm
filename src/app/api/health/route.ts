@@ -15,7 +15,13 @@ export async function GET() {
   try {
     await db.execute(sql`select 1`);
     return NextResponse.json(
-      { status: "ok", db: "ok", latencyMs: Date.now() - started },
+      {
+        status: "ok",
+        db: "ok",
+        latencyMs: Date.now() - started,
+        // Where this function runs (Vercel sets it). Compare with the database region when pages are slow.
+        region: process.env.VERCEL_REGION ?? null,
+      },
       { headers: noStore() },
     );
   } catch (err) {

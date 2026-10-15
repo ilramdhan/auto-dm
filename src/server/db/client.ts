@@ -12,7 +12,14 @@ const globalForDb = globalThis as unknown as { __pg?: postgres.Sql };
 
 function client(): postgres.Sql {
   if (!globalForDb.__pg) {
-    globalForDb.__pg = postgres(env().DATABASE_URL, { prepare: false, max: 5, idle_timeout: 20 });
+    // connect_timeout: fail fast (error page) instead of leaving pages on their loading skeleton
+    // when the database is unreachable.
+    globalForDb.__pg = postgres(env().DATABASE_URL, {
+      prepare: false,
+      max: 5,
+      idle_timeout: 20,
+      connect_timeout: 10,
+    });
   }
   return globalForDb.__pg;
 }

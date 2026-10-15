@@ -121,6 +121,22 @@ Instagram di-connect ulang.
    API key n8n diisi **di dalam app** nanti (tersimpan terenkripsi di database), bukan di Vercel.
 
 4. **Deploy**. Di log build harus muncul `[migrate] Database is up to date.`
+
+   > **Samakan region, kalau tidak semua halaman lambat.** Secara default Vercel menjalankan fungsi
+   > di Washington, AS (`iad1`). Jika Supabase ada di Sydney/Singapura, setiap query bolak-balik
+   > keliling dunia (~200 ms per query, satu halaman bisa belasan query) sehingga dashboard lama dan
+   > hanya menampilkan skeleton. Atur **Vercel → Project → Settings → Functions → Function Region**
+   > sesuai region database, lalu **Redeploy**:
+   >
+   > | Region Supabase (terlihat di host pooler) | Function Region Vercel |
+   > | ----------------------------------------- | ---------------------- |
+   > | `ap-southeast-1` (Singapura)              | `sin1` Singapore       |
+   > | `ap-southeast-2` (Sydney)                 | `syd1` Sydney          |
+   > | `ap-northeast-1` (Tokyo)                  | `hnd1` Tokyo           |
+   > | `us-east-1`                               | `iad1` Washington      |
+   >
+   > Cek: buka `/api/health` dua kali; `latencyMs` di panggilan kedua harus di bawah ~50.
+
 5. Cek kesehatan: buka `https://<app-kamu>.vercel.app/api/health` → `{"status":"ok","db":"ok",…}`.
    Kalau `503`: `DATABASE_URL` atau password salah; lihat **Vercel → Logs**.
 6. Buka `https://<app-kamu>.vercel.app/`. Muncul landing page dengan tombol **Sign in**. Kalau muncul

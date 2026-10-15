@@ -86,6 +86,25 @@ Meta secret and Instagram token can no longer be decrypted (you would have to en
 4. Click **Deploy**. In the build log you should see `[migrate] Database is up to date.` followed by
    the Next.js build.
 
+   > **Match the regions, or every page will be slow.** Vercel runs functions in Washington, D.C.
+   > (`iad1`) by default. If your Supabase project is elsewhere, every database query crosses the
+   > world (~200 ms each, and a page runs a dozen). Set **Vercel → Project → Settings → Functions →
+   > Function Region** to the region next to your database, then redeploy:
+   >
+   > | Supabase region (in the pooler host) | Vercel function region  |
+   > | ------------------------------------ | ----------------------- |
+   > | `ap-southeast-1` (Singapore)         | `sin1` Singapore        |
+   > | `ap-southeast-2` (Sydney)            | `syd1` Sydney           |
+   > | `ap-northeast-1` (Tokyo)             | `hnd1` Tokyo            |
+   > | `ap-south-1` (Mumbai)                | `bom1` Mumbai           |
+   > | `eu-central-1` (Frankfurt)           | `fra1` Frankfurt        |
+   > | `eu-west-2` (London)                 | `lhr1` London           |
+   > | `us-east-1` (N. Virginia)            | `iad1` Washington, D.C. |
+   > | `us-west-1` (N. California)          | `sfo1` San Francisco    |
+   >
+   > Starting fresh? Create the Supabase project in the region closest to your audience (e.g.
+   > Singapore for Indonesia) and pick the matching Vercel region.
+
 Added or changed a variable after deploying? Vercel does not apply it to the running version:
 **Deployments → ⋯ on the latest → Redeploy**.
 
@@ -98,10 +117,11 @@ Added or changed a variable after deploying? Vercel does not apply it to the run
 Use your **production** domain (Vercel → Project → Domains, e.g. `https://my-replies.vercel.app`).
 Preview URLs with long random names are not meant for Meta.
 
-| Open                          | Expect                                 | If not                                                       |
-| ----------------------------- | -------------------------------------- | ------------------------------------------------------------ |
-| `https://<domain>/api/health` | `{"status":"ok","db":"ok",…}`          | `503`: wrong `DATABASE_URL` or password; check Vercel → Logs |
-| `https://<domain>/`           | Landing page with a **Sign in** button | A yellow **Setup needed** box lists the missing variables    |
+| Open                          | Expect                                                        | If not                                                           |
+| ----------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `https://<domain>/api/health` | `{"status":"ok","db":"ok",…}`                                 | `503`: wrong `DATABASE_URL` or password; check Vercel → Logs     |
+| `latencyMs` in that response  | under ~50 (refresh once: the first call opens the connection) | 150+: function region doesn't match the database region (step 3) |
+| `https://<domain>/`           | Landing page with a **Sign in** button                        | A yellow **Setup needed** box lists the missing variables        |
 
 ## 5. First login
 
