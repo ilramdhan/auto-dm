@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/ilramdhan/auto-dm/compare/v0.5.1...v0.6.0) (2026-10-15)
+
+
+### Features
+
+* auto-delete comment records after a configurable retention period ([#77](https://github.com/ilramdhan/auto-dm/issues/77)) ([a3ecbeb](https://github.com/ilramdhan/auto-dm/commit/a3ecbeb5f1b3a4d247b80a78180a7338f9e19883)), closes [#66](https://github.com/ilramdhan/auto-dm/issues/66)
+* download Activity and Analytics as CSV ([#79](https://github.com/ilramdhan/auto-dm/issues/79)) ([72e943f](https://github.com/ilramdhan/auto-dm/commit/72e943fbd245920e6c0ccd1474de8c999852faca)), closes [#65](https://github.com/ilramdhan/auto-dm/issues/65)
+* rename the project to AutoDM (slug: autodm) ([#76](https://github.com/ilramdhan/auto-dm/issues/76)) ([70c711b](https://github.com/ilramdhan/auto-dm/commit/70c711b9e066a6d3f43195b378782df9dcde5dd0)), closes [#63](https://github.com/ilramdhan/auto-dm/issues/63)
+* **site:** full public website with features, setup guide, pricing and FAQ ([#84](https://github.com/ilramdhan/auto-dm/issues/84)) ([8bb1e1c](https://github.com/ilramdhan/auto-dm/commit/8bb1e1ce716b968a26db3eed3e13b4fd2aa4d627))
+* **webhook:** show recent webhook deliveries and explain why a comment did nothing ([#83](https://github.com/ilramdhan/auto-dm/issues/83)) ([4e8a7e2](https://github.com/ilramdhan/auto-dm/commit/4e8a7e2d03de7a1a06dca284abb1923420cbd041))
+
+
+### Bug Fixes
+
+* recover from stale DB connections and version skew on first load ([#85](https://github.com/ilramdhan/auto-dm/issues/85)) ([fef1766](https://github.com/ilramdhan/auto-dm/commit/fef17662245cbfa79f51382d9af1b63eb1ab0687))
+
+
+### Documentation
+
+* retake README screenshots with the AutoDM name ([#82](https://github.com/ilramdhan/auto-dm/issues/82)) ([678ded7](https://github.com/ilramdhan/auto-dm/commit/678ded7568d43aa17c9875ed6c5c9a881fea0bef))
+
 ## [0.5.1](https://github.com/ilramdhan/auto-reply-ig/compare/v0.5.0...v0.5.1) (2026-10-15)
 
 
