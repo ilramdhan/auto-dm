@@ -82,6 +82,8 @@ docker compose ps                           # shows (healthy)
 
 ## Upgrading
 
+**Settings → About** tells you when a newer release exists and shows its notes.
+
 ```bash
 # 1. read CHANGELOG.md for breaking changes, and back up the database (below)
 # 2. bump the tag in docker-compose.yml (or keep :latest), then

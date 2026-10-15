@@ -1,6 +1,7 @@
 import { daysUntil } from "@/lib/format";
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { KeyRound, Settings2, Workflow } from "lucide-react";
+import { Info, KeyRound, Settings2, Workflow } from "lucide-react";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { UrlTabs } from "@/components/url-tabs";
@@ -18,10 +19,11 @@ import { InstagramTab } from "./instagram-tab";
 import { ProcessingTab } from "./processing-tab";
 import { TimeZoneCard } from "./timezone-card";
 import { N8nTab } from "./n8n-tab";
+import { AboutTab, AboutTabSkeleton, AboutUpdateMarker } from "./about-tab";
 
 export const metadata: Metadata = { title: "Settings" };
 
-const TABS = ["account", "instagram", "processing", "n8n"] as const;
+const TABS = ["account", "instagram", "processing", "n8n", "about"] as const;
 
 const OAUTH_ERRORS: Record<string, string> = {
   missing_app_credentials: "Add your Meta App ID and App Secret first.",
@@ -75,7 +77,7 @@ export default async function SettingsPage({
       <PageHeader title="Settings" description="Account, Instagram connection and automation behaviour." />
       <UrlTabs defaultValue="account" values={TABS} className="gap-6">
         <div className="overflow-x-auto">
-          <TabsList className="w-full sm:w-max">
+          <TabsList className="w-max min-w-full sm:min-w-0">
             <TabsTrigger value="account">
               <KeyRound className="hidden sm:block" aria-hidden /> Account
             </TabsTrigger>
@@ -87,6 +89,12 @@ export default async function SettingsPage({
             </TabsTrigger>
             <TabsTrigger value="n8n">
               <Workflow className="hidden sm:block" aria-hidden /> n8n
+            </TabsTrigger>
+            <TabsTrigger value="about">
+              <Info className="hidden sm:block" aria-hidden /> About
+              <Suspense fallback={null}>
+                <AboutUpdateMarker />
+              </Suspense>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -139,6 +147,11 @@ export default async function SettingsPage({
         </TabsContent>
         <TabsContent value="n8n">
           <N8nTab keys={apiKeys} appUrl={base} mode={settings["processing.mode"].value ?? "webhook"} />
+        </TabsContent>
+        <TabsContent value="about">
+          <Suspense fallback={<AboutTabSkeleton />}>
+            <AboutTab timeZone={settings["general.timezone"].value ?? "UTC"} />
+          </Suspense>
         </TabsContent>
       </UrlTabs>
     </div>

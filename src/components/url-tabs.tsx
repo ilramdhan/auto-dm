@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs } from "@/components/ui/tabs";
 
@@ -20,8 +21,15 @@ export function UrlTabs({
   const params = useSearchParams();
   const current = params.get("tab");
   const value = current && values.includes(current) ? current : defaultValue;
+  const root = useRef<HTMLDivElement>(null);
+  // On narrow screens the tab strip scrolls sideways; keep the active tab visible (e.g. ?tab=about).
+  useEffect(() => {
+    const active = root.current?.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
+    active?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [value]);
   return (
     <Tabs
+      ref={root}
       value={value}
       className={className}
       onValueChange={(v) => {

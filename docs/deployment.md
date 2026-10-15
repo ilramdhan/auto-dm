@@ -238,6 +238,10 @@ GitHub → your fork → **Sync fork** (or `git pull upstream main` and push). V
 new migrations during the build. Read the release notes first and back up the database before a
 major version.
 
+**Settings → About** shows the running version (plus commit and environment on Vercel), whether a
+newer release exists and the latest release notes. The check calls the public GitHub Releases API
+from the server, cached for 6 hours; if GitHub can't be reached it just says so.
+
 ### Notes
 
 Supabase Free pauses projects after about a week without activity; the daily cron call keeps it

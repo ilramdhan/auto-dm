@@ -11,6 +11,7 @@ src/server/engine/  matching, templating, once-per-user, delivery pipeline
 src/server/repos/   data access for the UI
 src/server/n8n/     workflow generator
 src/server/settings.ts  typed SETTINGS registry (encrypted secrets)
+src/server/updates.ts   app version + GitHub Releases update check (Settings → About)
 src/server/crypto.ts    AES-256-GCM, HKDF, sha256, timing-safe compare
 src/components/     shadcn/ui + app components
 ```
@@ -71,4 +72,6 @@ ignored, so a comment is never replied to twice.
 - Single admin; every mutation calls `requireUser()`. Machine routes: API key, Meta signature, or `CRON_SECRET`.
 - Secrets encrypted (AES-256-GCM, key from HKDF(`APP_SECRET`)); never sent to the browser or logged.
 - RLS enabled, no policies: the Supabase REST anon key sees nothing. The app uses a server-side Postgres connection.
+- Outbound hosts: `graph.instagram.com` / `api.instagram.com` (Instagram API) and the fixed
+  `api.github.com` releases URL for the Settings → About update check (cached 6 h, fails closed).
 - See [SECURITY.md](../SECURITY.md).

@@ -328,6 +328,12 @@ Jika tidak ingin memakai Vercel + Supabase, aplikasi bisa dijalankan di VPS send
 (image siap pakai di `ghcr.io/ilramdhan/auto-reply-ig`, sudah termasuk Postgres dan cron refresh token).
 Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengkap: [docker.md](docker.md).
 
+## Memperbarui aplikasi
+
+Buka **Settings → About** untuk melihat versi yang berjalan, apakah ada rilis baru, dan catatan
+rilisnya. Vercel: di GitHub buka fork Anda → **Sync fork** → Vercel otomatis redeploy dan menjalankan
+migrasi. Docker: `docker compose pull && docker compose up -d`. Detail: [deployment.md](deployment.md#upgrading).
+
 ## 13. Masalah umum
 
 | Gejala                                  | Penyebab & solusi                                                                                                                    |
