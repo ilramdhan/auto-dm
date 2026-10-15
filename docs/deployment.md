@@ -223,7 +223,7 @@ Steps and the honest state of what Meta requires:
 
 ## Other hosting: Docker
 
-Run the published image `ghcr.io/ilramdhan/autodm` with Docker Compose on any VPS (app,
+Run the published image `ghcr.io/ilramdhan/auto-dm` with Docker Compose on any VPS (app,
 Postgres and a cron sidecar included). See [docker.md](docker.md).
 
 ## Reference

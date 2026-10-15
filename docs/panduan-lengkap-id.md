@@ -343,11 +343,11 @@ mengubah body request. Detail & troubleshooting: [n8n.md](n8n.md).
 ## Alternatif: Docker / VPS
 
 Jika tidak ingin memakai Vercel + Supabase, aplikasi bisa dijalankan di VPS sendiri dengan Docker Compose
-(image siap pakai di `ghcr.io/ilramdhan/autodm`, sudah termasuk Postgres dan cron refresh token).
+(image siap pakai di `ghcr.io/ilramdhan/auto-dm`, sudah termasuk Postgres dan cron refresh token).
 Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengkap: [docker.md](docker.md).
 
 > **Dulu bernama `auto-reply-ig`.** Proyek ini sekarang bernama **AutoDM**. Link GitHub lama dan fork
-> otomatis dialihkan. Pengguna Docker: ganti image ke `ghcr.io/ilramdhan/autodm`; image lama
+> otomatis dialihkan. Pengguna Docker: ganti image ke `ghcr.io/ilramdhan/auto-dm`; image lama
 > `ghcr.io/ilramdhan/auto-reply-ig` tidak lagi diperbarui. Database, pengaturan, API key dan login tetap jalan.
 
 ## Memperbarui aplikasi

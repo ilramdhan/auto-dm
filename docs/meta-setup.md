@@ -7,7 +7,7 @@ so you stay in full control of your data.
 > **Verification status.** Written October 2026 from Meta's developer documentation and secondary
 > sources. The Meta developer site could not be fetched directly while writing, so items marked
 > **⚠ verify** come from search snippets or third parties. Meta changes its dashboard often; if a
-> label differs slightly, look for the closest match and please [open an issue](https://github.com/ilramdhan/autodm/issues).
+> label differs slightly, look for the closest match and please [open an issue](https://github.com/ilramdhan/auto-dm/issues).
 
 ## What you need first
 

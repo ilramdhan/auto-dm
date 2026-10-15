@@ -1,17 +1,17 @@
 # Self-hosting with Docker
 
 Run AutoDM on any VPS or home server with Docker Compose. The image is published to GHCR:
-`ghcr.io/ilramdhan/autodm`.
+`ghcr.io/ilramdhan/auto-dm`.
 
 > **Renamed from `auto-reply-ig`.** Images up to the rename were published as
 > `ghcr.io/ilramdhan/auto-reply-ig`, which no longer receives updates. Change `image:` in your
-> `docker-compose.yml` to `ghcr.io/ilramdhan/autodm:latest` (or a pinned version), then
+> `docker-compose.yml` to `ghcr.io/ilramdhan/auto-dm:latest` (or a pinned version), then
 > `docker compose pull && docker compose up -d`. The database volume, `.env` and data are unchanged.
 
 ## Quick start
 
 ```bash
-git clone https://github.com/ilramdhan/autodm.git && cd autodm
+git clone https://github.com/ilramdhan/auto-dm.git && cd auto-dm
 cp .env.example .env
 # edit .env: set APP_SECRET (openssl rand -base64 48), CRON_SECRET (openssl rand -hex 32), APP_URL
 docker compose up -d
@@ -36,7 +36,7 @@ Images are multi-arch (amd64, arm64) and ship an SBOM and provenance attestation
 ```yaml
 services:
   app:
-    image: ghcr.io/ilramdhan/autodm:0.2.0
+    image: ghcr.io/ilramdhan/auto-dm:0.2.0
 ```
 
 ## Environment variables
