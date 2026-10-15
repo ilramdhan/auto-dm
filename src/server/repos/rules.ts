@@ -1,21 +1,23 @@
 import "server-only";
 import { and, asc, desc, eq } from "drizzle-orm";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { rules, type Rule } from "@/server/db/schema";
 import type { RuleData } from "@/lib/validation/rule";
 
-export async function listRules(campaignId: string): Promise<Rule[]> {
+async function listRulesQuery(campaignId: string): Promise<Rule[]> {
   return db
     .select()
     .from(rules)
     .where(eq(rules.campaignId, campaignId))
     .orderBy(desc(rules.priority), asc(rules.createdAt));
 }
+export const listRules = retryable("rules.listRules", listRulesQuery);
 
-export async function getRule(id: string): Promise<Rule | undefined> {
+async function getRuleQuery(id: string): Promise<Rule | undefined> {
   const [row] = await db.select().from(rules).where(eq(rules.id, id)).limit(1);
   return row;
 }
+export const getRule = retryable("rules.getRule", getRuleQuery);
 
 export async function createRule(campaignId: string, data: RuleData): Promise<Rule> {
   const [row] = await db

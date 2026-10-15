@@ -1,6 +1,6 @@
 import "server-only";
 import { gte, sql } from "drizzle-orm";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { deliveries } from "@/server/db/schema";
 import { DEFAULT_TIME_ZONE, ymdInZone, zonedMidnight } from "@/lib/timezone";
 
@@ -14,7 +14,7 @@ export type DashboardStats = {
   skipped7d: number;
 };
 
-export async function getDashboardStats(
+async function getDashboardStatsQuery(
   now = new Date(),
   timeZone: string = DEFAULT_TIME_ZONE,
 ): Promise<DashboardStats> {
@@ -33,3 +33,4 @@ export async function getDashboardStats(
     .where(gte(deliveries.createdAt, week));
   return row ?? { commentsToday: 0, comments7d: 0, dmsSent7d: 0, replies7d: 0, failed7d: 0, skipped7d: 0 };
 }
+export const getDashboardStats = retryable("stats.getDashboardStats", getDashboardStatsQuery);

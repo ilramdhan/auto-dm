@@ -9,7 +9,7 @@ import {
   retentionDaysSchema,
 } from "@/lib/validation/settings";
 import { decrypt, encrypt, randomToken } from "./crypto";
-import { db } from "./db/client";
+import { db, withDbRetry } from "./db/client";
 import { settings } from "./db/schema";
 
 /**
@@ -59,13 +59,17 @@ function decode<K extends SettingKey>(key: K, raw: unknown): SettingValue<K> | u
 }
 
 export async function getSetting<K extends SettingKey>(key: K): Promise<SettingValue<K> | undefined> {
-  const [row] = await db.select().from(settings).where(eq(settings.key, key)).limit(1);
+  const [row] = await withDbRetry(() => db.select().from(settings).where(eq(settings.key, key)).limit(1), {
+    label: "settings.getSetting",
+  });
   if (row) return decode(key, row.value);
   return DEFAULTS[key]?.() as SettingValue<K> | undefined;
 }
 
 export async function getSettings<K extends SettingKey>(keys: K[]): Promise<{ [P in K]?: SettingValue<P> }> {
-  const rows = await db.select().from(settings).where(inArray(settings.key, keys));
+  const rows = await withDbRetry(() => db.select().from(settings).where(inArray(settings.key, keys)), {
+    label: "settings.getSettings",
+  });
   const out: Record<string, unknown> = {};
   for (const key of keys) {
     const row = rows.find((r) => r.key === key);

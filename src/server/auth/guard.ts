@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
-import { db } from "@/server/db/client";
+import { db, withDbRetry } from "@/server/db/client";
 import { users } from "@/server/db/schema";
 import { readSession } from "./session";
 
@@ -20,16 +20,21 @@ export type SessionUser = {
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const claims = await readSession();
   if (!claims) return null;
-  const [user] = await db
-    .select({
-      id: users.id,
-      username: users.username,
-      mustChangePassword: users.mustChangePassword,
-      sessionVersion: users.sessionVersion,
-    })
-    .from(users)
-    .where(eq(users.id, claims.sub))
-    .limit(1);
+  // First query of almost every request: retried once if the pooled connection went stale.
+  const [user] = await withDbRetry(
+    () =>
+      db
+        .select({
+          id: users.id,
+          username: users.username,
+          mustChangePassword: users.mustChangePassword,
+          sessionVersion: users.sessionVersion,
+        })
+        .from(users)
+        .where(eq(users.id, claims.sub))
+        .limit(1),
+    { label: "auth.currentUser" },
+  );
   if (!user || user.sessionVersion !== claims.ver) return null;
   return user;
 });

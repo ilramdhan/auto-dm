@@ -1,6 +1,6 @@
 import "server-only";
 import { and, count, desc, eq, ilike, or, type SQL } from "drizzle-orm";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { campaigns, deliveries, rules, type Delivery } from "@/server/db/schema";
 import { ACTIVITY_PAGE_SIZE, type ActivityFilters } from "@/lib/validation/activity";
 
@@ -32,7 +32,7 @@ const selection = {
   ruleName: rules.name,
 };
 
-export async function listDeliveries(
+async function listDeliveriesQuery(
   f: ActivityFilters,
   pageSize = ACTIVITY_PAGE_SIZE,
 ): Promise<{ items: DeliveryRow[]; total: number }> {
@@ -54,8 +54,9 @@ export async function listDeliveries(
     total: totalRow?.n ?? 0,
   };
 }
+export const listDeliveries = retryable("deliveries.listDeliveries", listDeliveriesQuery);
 
-export async function recentDeliveries(limit = 8): Promise<DeliveryRow[]> {
+async function recentDeliveriesQuery(limit = 8): Promise<DeliveryRow[]> {
   const rows = await db
     .select(selection)
     .from(deliveries)
@@ -65,8 +66,10 @@ export async function recentDeliveries(limit = 8): Promise<DeliveryRow[]> {
     .limit(limit);
   return rows.map((r) => ({ ...r.delivery, campaignName: r.campaignName, ruleName: r.ruleName }));
 }
+export const recentDeliveries = retryable("deliveries.recentDeliveries", recentDeliveriesQuery);
 
-export async function hasAnyDelivery(): Promise<boolean> {
+async function hasAnyDeliveryQuery(): Promise<boolean> {
   const [row] = await db.select({ id: deliveries.id }).from(deliveries).limit(1);
   return !!row;
 }
+export const hasAnyDelivery = retryable("deliveries.hasAnyDelivery", hasAnyDeliveryQuery);

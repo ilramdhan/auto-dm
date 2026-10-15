@@ -1,6 +1,6 @@
 import "server-only";
 import { asc, count, desc, eq, sql } from "drizzle-orm";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { campaigns, rules, type Campaign } from "@/server/db/schema";
 import type { CampaignData } from "@/lib/validation/campaign";
 
@@ -10,7 +10,7 @@ export type CampaignListItem = Campaign & {
   keywordCount: number;
 };
 
-export async function listCampaigns(): Promise<CampaignListItem[]> {
+async function listCampaignsQuery(): Promise<CampaignListItem[]> {
   const rows = await db
     .select({
       campaign: campaigns,
@@ -29,20 +29,24 @@ export async function listCampaigns(): Promise<CampaignListItem[]> {
     keywordCount: r.keywordCount,
   }));
 }
+export const listCampaigns = retryable("campaigns.listCampaigns", listCampaignsQuery);
 
-export async function listCampaignOptions(): Promise<{ id: string; name: string }[]> {
+async function listCampaignOptionsQuery(): Promise<{ id: string; name: string }[]> {
   return db.select({ id: campaigns.id, name: campaigns.name }).from(campaigns).orderBy(asc(campaigns.name));
 }
+export const listCampaignOptions = retryable("campaigns.listCampaignOptions", listCampaignOptionsQuery);
 
-export async function countCampaigns(): Promise<number> {
+async function countCampaignsQuery(): Promise<number> {
   const [row] = await db.select({ n: count() }).from(campaigns);
   return row?.n ?? 0;
 }
+export const countCampaigns = retryable("campaigns.countCampaigns", countCampaignsQuery);
 
-export async function getCampaign(id: string): Promise<Campaign | undefined> {
+async function getCampaignQuery(id: string): Promise<Campaign | undefined> {
   const [row] = await db.select().from(campaigns).where(eq(campaigns.id, id)).limit(1);
   return row;
 }
+export const getCampaign = retryable("campaigns.getCampaign", getCampaignQuery);
 
 function toColumns(data: CampaignData) {
   const media = data.target === "media";

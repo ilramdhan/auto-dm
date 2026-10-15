@@ -2,7 +2,7 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, desc, eq, isNull } from "drizzle-orm";
 import { hashPassword, verifyPassword } from "./auth/password";
-import { db } from "./db/client";
+import { db, retryable } from "./db/client";
 import { apiKeys } from "./db/schema";
 
 /** Plaintext format: `ard_` + 32 random bytes base64url (43 chars). */
@@ -39,7 +39,7 @@ export async function createApiKey(name: string): Promise<{ id: string; key: str
 }
 
 /** Lists all keys (newest first), without hashes. */
-export async function listApiKeys(): Promise<ApiKeySummary[]> {
+async function listApiKeysQuery(): Promise<ApiKeySummary[]> {
   return db
     .select({
       id: apiKeys.id,
@@ -52,6 +52,7 @@ export async function listApiKeys(): Promise<ApiKeySummary[]> {
     .from(apiKeys)
     .orderBy(desc(apiKeys.createdAt));
 }
+export const listApiKeys = retryable("apiKeys.listApiKeys", listApiKeysQuery);
 
 /** Revokes a key (soft delete). Returns false when the key doesn't exist or was already revoked. */
 export async function revokeApiKey(id: string): Promise<boolean> {

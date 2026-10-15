@@ -1,6 +1,6 @@
 import "server-only";
 import { and, eq, gte, isNull, lt, sql, type SQL } from "drizzle-orm";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { campaigns, deliveries, rules } from "@/server/db/schema";
 import { addDaysYmd } from "@/lib/timezone";
 import type { ResolvedRange } from "@/lib/validation/analytics";
@@ -51,7 +51,7 @@ export type Kpis = {
   avgDurationMs: number | null;
 };
 
-export async function getKpis(scope: AnalyticsScope): Promise<Kpis> {
+async function getKpisQuery(scope: AnalyticsScope): Promise<Kpis> {
   const [row] = await db
     .select({
       comments: agg.comments,
@@ -84,11 +84,12 @@ export async function getKpis(scope: AnalyticsScope): Promise<Kpis> {
     }
   );
 }
+export const getKpis = retryable("analytics.getKpis", getKpisQuery);
 
 export type DayPoint = { day: string; comments: number; dmsSent: number; repliesSent: number };
 
 /** One point per calendar day in the range's time zone (gaps filled with zeros). */
-export async function getDailySeries(scope: AnalyticsScope): Promise<DayPoint[]> {
+async function getDailySeriesQuery(scope: AnalyticsScope): Promise<DayPoint[]> {
   const dayExpr = sql<string>`to_char(${d.createdAt} at time zone ${scope.range.timeZone}, 'YYYY-MM-DD')`;
   const rows = await db
     .select({ day: dayExpr, comments: agg.comments, dmsSent: agg.dmsSent, repliesSent: agg.repliesSent })
@@ -105,8 +106,9 @@ export async function getDailySeries(scope: AnalyticsScope): Promise<DayPoint[]>
   }
   return out;
 }
+export const getDailySeries = retryable("analytics.getDailySeries", getDailySeriesQuery);
 
-export async function getStatusBreakdown(
+async function getStatusBreakdownQuery(
   scope: AnalyticsScope,
 ): Promise<{ status: DeliveryStatusValue; count: number }[]> {
   return db
@@ -116,6 +118,7 @@ export async function getStatusBreakdown(
     .groupBy(d.status)
     .orderBy(sql`count(*) desc`);
 }
+export const getStatusBreakdown = retryable("analytics.getStatusBreakdown", getStatusBreakdownQuery);
 
 export type ContentRow = {
   key: string;
@@ -136,7 +139,7 @@ export type ContentRow = {
 };
 
 /** One row per campaign (every campaign is listed, even with zero comments) + an "unassigned" row. */
-export async function getPerCampaign(scope: AnalyticsScope): Promise<ContentRow[]> {
+async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]> {
   const joinOn = and(
     eq(d.campaignId, campaigns.id),
     gte(d.createdAt, scope.range.from),
@@ -212,9 +215,10 @@ export async function getPerCampaign(scope: AnalyticsScope): Promise<ContentRow[
   }
   return out;
 }
+export const getPerCampaign = retryable("analytics.getPerCampaign", getPerCampaignQuery);
 
 /** One row per Instagram post/reel that received comments (thumbnail from a campaign targeting it). */
-export async function getPerPost(scope: AnalyticsScope, limit = 200): Promise<ContentRow[]> {
+async function getPerPostQuery(scope: AnalyticsScope, limit = 200): Promise<ContentRow[]> {
   const meta = sql<{ id: string; name: string; thumb: string | null; link: string | null } | null>`(
     select json_build_object('id', c.id, 'name', c.name, 'thumb', c.media_thumbnail_url, 'link', c.media_permalink)
     from ${campaigns} c where c.media_id = ${d.mediaId} order by c.created_at desc limit 1)`;
@@ -254,6 +258,7 @@ export async function getPerPost(scope: AnalyticsScope, limit = 200): Promise<Co
     lastActivity: r.lastActivity ? new Date(r.lastActivity) : null,
   }));
 }
+export const getPerPost = retryable("analytics.getPerPost", getPerPostQuery);
 
 export type KeywordRow = {
   ruleId: string | null;
@@ -267,7 +272,7 @@ export type KeywordRow = {
   dmsFailed: number;
 };
 
-export async function getKeywordBreakdown(scope: AnalyticsScope, limit = 50): Promise<KeywordRow[]> {
+async function getKeywordBreakdownQuery(scope: AnalyticsScope, limit = 50): Promise<KeywordRow[]> {
   return db
     .select({
       ruleId: d.ruleId,
@@ -288,8 +293,9 @@ export async function getKeywordBreakdown(scope: AnalyticsScope, limit = 50): Pr
     .orderBy(sql`count(${d.id}) desc`)
     .limit(limit);
 }
+export const getKeywordBreakdown = retryable("analytics.getKeywordBreakdown", getKeywordBreakdownQuery);
 
-export async function getTopSkipReasons(
+async function getTopSkipReasonsQuery(
   scope: AnalyticsScope,
   limit = 8,
 ): Promise<{ reason: string; count: number }[]> {
@@ -301,8 +307,9 @@ export async function getTopSkipReasons(
     .orderBy(sql`count(*) desc`)
     .limit(limit);
 }
+export const getTopSkipReasons = retryable("analytics.getTopSkipReasons", getTopSkipReasonsQuery);
 
-export async function getTopErrors(
+async function getTopErrorsQuery(
   scope: AnalyticsScope,
   limit = 8,
 ): Promise<{ code: string; count: number; sample: string | null; last: Date | null }[]> {
@@ -322,3 +329,4 @@ export async function getTopErrors(
     .limit(limit);
   return rows.map((r) => ({ ...r, last: r.last ? new Date(r.last) : null }));
 }
+export const getTopErrors = retryable("analytics.getTopErrors", getTopErrorsQuery);

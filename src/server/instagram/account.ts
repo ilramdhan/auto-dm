@@ -2,7 +2,7 @@ import "server-only";
 import { and, desc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { decrypt, encrypt } from "@/server/crypto";
-import { db } from "@/server/db/client";
+import { db, retryable } from "@/server/db/client";
 import { instagramAccounts, type InstagramAccount } from "@/server/db/schema";
 import { IG_REFRESH_TOKEN_URL } from "./constants";
 import { graphId, graphRequest } from "./graph";
@@ -12,15 +12,18 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export const REFRESH_THRESHOLD_DAYS = 15;
 
 /** The connected (active) Instagram account, or `null` when none is connected. */
-export async function getActiveAccount(): Promise<InstagramAccount | null> {
-  const [row] = await db
-    .select()
-    .from(instagramAccounts)
-    .where(eq(instagramAccounts.isActive, true))
-    .orderBy(desc(instagramAccounts.updatedAt))
-    .limit(1);
-  return row ?? null;
-}
+export const getActiveAccount = retryable(
+  "account.getActiveAccount",
+  async (): Promise<InstagramAccount | null> => {
+    const [row] = await db
+      .select()
+      .from(instagramAccounts)
+      .where(eq(instagramAccounts.isActive, true))
+      .orderBy(desc(instagramAccounts.updatedAt))
+      .limit(1);
+    return row ?? null;
+  },
+);
 
 /** Decrypts the account's long-lived access token. Throws if the account was disconnected. */
 export function getAccessToken(account: Pick<InstagramAccount, "accessTokenEnc">): string {
