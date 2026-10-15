@@ -44,8 +44,13 @@ See the error in the Activity row; usually one of the above.
 
 ## Migrations fail on build
 
-- Use the direct connection (5432) in `DATABASE_URL_UNPOOLED`; poolers can reject DDL.
-- Verify the DB password and that the Supabase project isn't paused.
+- On Vercel, `DATABASE_URL_UNPOOLED` must be the Supabase **Session pooler** (port 5432 on
+  `…pooler.supabase.com`). The "Direct connection" host `db.<ref>.supabase.co` is IPv6-only on the free
+  plan and unreachable from Vercel builds.
+- Verify the DB password (URL-encode special characters) and that the Supabase project isn't paused.
+- `type "delivery_source" already exists` (or another "already exists"): the SQL files were run by
+  hand in the Supabase SQL editor. Current versions detect this and mark them as applied; update to the
+  latest release and redeploy. Do not drop the tables.
 - Never edit applied migrations; add a new one.
 
 ## Locked out / forgot password

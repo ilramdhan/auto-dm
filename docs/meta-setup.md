@@ -13,6 +13,8 @@ so you stay in full control of your data.
 
 - An **Instagram Professional account** (Business or Creator). Switch in the Instagram app:
   _Settings → Account type and tools → Switch to professional account_.
+- In the Instagram app: _Settings → Messages and story replies → Message controls → Connected tools →
+  Allow access to messages_ **ON**. Without it every DM fails.
 - A **Facebook account** to log in to developers.facebook.com (a Facebook Page is **not** required for
   the "Instagram Login" flow this app uses).
 - Your app deployed and reachable over **HTTPS** (see [deployment.md](deployment.md)). Meta cannot call
@@ -40,7 +42,8 @@ The app shows the callback URL and the verify token with copy buttons so you do 
    Instagram" if shown - ⚠ verify, Meta renames use cases regularly). Then choose the app type
    **Business**. Click **Next**, then **Create app**.
 5. On the app dashboard, find **Add products** (or _Products_ in the left menu) and add **Instagram**.
-   Open **Instagram → API setup with Instagram login**.
+   Open **Instagram → API setup with Instagram login**. In newer dashboards the same page is under
+   **Use cases → Manage messaging & content on Instagram → Customize**.
 
 ## Part 2 - Permissions
 

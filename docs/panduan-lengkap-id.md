@@ -6,6 +6,25 @@ Dari nol sampai komentar "DRIVE" otomatis dibalas + dikirim DM. Estimasi waktu: 
 > Versi Inggris per topik: [deployment.md](deployment.md) · [meta-setup.md](meta-setup.md) ·
 > [n8n.md](n8n.md) · [troubleshooting.md](troubleshooting.md)
 
+### Urutan langkah (centang satu per satu)
+
+| #   | Langkah                | Di mana                 | Tanda berhasil                                    |
+| --- | ---------------------- | ----------------------- | ------------------------------------------------- |
+| 1   | Buat database          | Supabase                | Punya 2 connection string                         |
+| 2   | Buat 2 secret          | Terminal                | Punya `APP_SECRET` dan `CRON_SECRET`              |
+| 3   | Deploy app             | Vercel                  | Log build: `[migrate] Database is up to date.`    |
+| 4   | Login pertama + cek    | Browser / app           | `/api/health` → `ok`, password sudah diganti      |
+| 5   | Siapkan akun Instagram | App Instagram           | Akun Professional, akses pesan ON                 |
+| 6   | Buat app Meta          | developers.facebook.com | App ID + Secret tersimpan di Settings → Instagram |
+| 7   | Connect Instagram      | App                     | Username tampil di Settings                       |
+| 8   | Pasang webhook         | Meta                    | "Verify and save" berhasil                        |
+| 9   | Buat campaign & aturan | App                     | "Test a comment" cocok                            |
+| 10  | Tes nyata, lalu Live   | Instagram / Meta        | Activity: **Sent**                                |
+| 11  | (Opsional) n8n         | n8n                     | Executions hijau                                  |
+
+**n8n itu opsional.** Jangan mulai dari n8n. Selesaikan langkah 1–10 dengan webhook langsung dulu;
+kalau sudah jalan, baru tambahkan n8n bila ingin notifikasi Telegram/Sheets dsb.
+
 ---
 
 ## 0. Yang dibutuhkan
@@ -49,8 +68,17 @@ kamu tulis di dashboard. Tidak ada biaya per kontak; batasannya dari Meta (lihat
    > Jangan pakai "Direct connection" (`db.<ref>.supabase.co`) untuk Vercel: di paket gratis
    > alamat itu hanya IPv6, sedangkan server build Vercel memakai IPv4 → migrasi gagal.
 
-4. Tidak perlu menjalankan migrasi manual. Tabel dibuat otomatis saat Vercel build
+   Jika password database mengandung `@ : / ? #` atau spasi, ubah ke bentuk URL-encoded
+   (mis. `@` → `%40`), atau pakai password berisi huruf dan angka saja.
+
+4. **Tidak perlu menjalankan SQL apa pun.** Tabel dibuat otomatis saat Vercel build
    (`scripts/migrate.ts` jalan sebelum `next build`). Row Level Security juga otomatis aktif.
+
+   **Sudah terlanjur menjalankan `0000`, `0001`, `0002` manual di SQL Editor?** Tidak apa-apa, tidak
+   perlu dihapus. Saat build berikutnya app mendeteksinya, menandainya sebagai sudah diterapkan, dan
+   lanjut. Di log build akan muncul
+   `[migrate] Found tables created by hand; marked as applied: …` lalu `Database is up to date.`
+   Langkah selanjutnya tetap sama: lanjut ke bagian 2 dan 3 (deploy Vercel).
 
 ## 2. Buat secret
 
@@ -59,6 +87,13 @@ Di Terminal (Mac/Linux):
 ```bash
 openssl rand -base64 48   # -> APP_SECRET
 openssl rand -hex 32      # -> CRON_SECRET
+```
+
+Di Windows (atau di mana saja yang ada Node.js):
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"   # APP_SECRET
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"      # CRON_SECRET
 ```
 
 Simpan `APP_SECRET` di password manager. Kalau hilang/diganti: semua login ter-logout dan secret
@@ -82,8 +117,20 @@ Instagram di-connect ulang.
    `APP_URL` tidak perlu diisi; otomatis memakai domain production Vercel. Isi hanya jika memakai
    custom domain (mis. `https://autodm.ilramdhan.dev`).
 
+   **Hanya itu yang diisi di Vercel.** App ID/Secret Meta, token Instagram, verify token webhook, dan
+   API key n8n diisi **di dalam app** nanti (tersimpan terenkripsi di database), bukan di Vercel.
+
 4. **Deploy**. Di log build harus muncul `[migrate] Database is up to date.`
 5. Cek kesehatan: buka `https://<app-kamu>.vercel.app/api/health` → `{"status":"ok","db":"ok",…}`.
+   Kalau `503`: `DATABASE_URL` atau password salah; lihat **Vercel → Logs**.
+6. Buka `https://<app-kamu>.vercel.app/`. Muncul landing page dengan tombol **Sign in**. Kalau muncul
+   kotak kuning **Setup needed**, isinya nama variabel yang belum diisi.
+
+> **Mengubah/menambah env setelah deploy?** Vercel tidak menerapkannya ke deployment yang sedang
+> jalan. Buka **Deployments → ⋯ (deployment teratas) → Redeploy**.
+>
+> Pakai domain **production** (Vercel → Project → Domains, mis. `https://nama-app.vercel.app`),
+> bukan URL preview yang panjang dan acak. URL inilah yang nanti dipakai di Meta.
 
 > Alternatif: integrasi resmi **Vercel ↔ Supabase** (Vercel → Storage/Integrations → Supabase)
 > mengisi `POSTGRES_URL` dan `POSTGRES_URL_NON_POOLING` otomatis; app memakai keduanya sebagai
@@ -96,6 +143,8 @@ Instagram di-connect ulang.
    tidak bisa dipakai lagi.
 3. Lakukan ini **segera setelah deploy**, karena sebelum diganti siapa pun yang tahu default bisa
    masuk duluan.
+4. **Settings → Processing → Time zone** → pilih `Asia/Jakarta` (atau zona waktumu) supaya hari di
+   Analytics sesuai kalender.
 
 ## 5. Siapkan akun Instagram
 
@@ -109,7 +158,8 @@ Instagram di-connect ulang.
 1. <https://developers.facebook.com/apps> → **Create app**.
 2. Use case: pilih yang berkaitan dengan **Instagram** ("Manage messaging & content on Instagram"),
    atau **Other → Business** jika tidak ada. Nama app bebas.
-3. Di dashboard app buka **Instagram → API setup with Instagram login**.
+3. Di dashboard app buka **Instagram → API setup with Instagram login**. (Di dashboard versi baru:
+   **Use cases → Manage messaging & content on Instagram → Customize → API setup with Instagram login**.)
 4. Salin **Instagram app ID** dan **Instagram app secret** dari halaman itu (bukan dari
    App settings → Basic).
 5. Di app kita: **Settings → Instagram** → isi **Instagram App ID** + **Instagram App Secret** →
@@ -172,24 +222,57 @@ Batasan dari Meta (berlaku untuk semua tool, termasuk ManyChat):
 
 ## 11. (Opsional) Mode n8n
 
-Pakai jika ingin menambah langkah sendiri (notifikasi Telegram/Slack, simpan ke Google Sheets, CRM).
-App tetap yang mencocokkan keyword dan mengirim balasan; n8n hanya meneruskan event.
+Pakai hanya jika ingin menambah langkah sendiri (notifikasi Telegram/Slack, simpan ke Google Sheets,
+CRM). App tetap yang mencocokkan keyword dan mengirim balasan; n8n hanya meneruskan event.
 
-1. App → **Settings → n8n → Create API key** → salin key `ard_…` (hanya tampil sekali).
-2. **Download workflow** (sudah berisi URL app kamu).
-3. n8n → **Workflows → Import from file** → pilih file tadi.
-4. n8n → **Credentials → New → Header Auth**, nama `auto-reply-ig API key`:
-   **Name** `Authorization`, **Value** `Bearer ard_…`. Pilih credential ini di node
-   **App: verify token** dan **App: relay events**.
-5. **Activate** workflow. Buka node webhook → salin **Production URL**
-   (`https://n8n.domainmu/webhook/instagram`).
-6. Meta → Configure webhooks → **Callback URL = Production URL n8n**, verify token tetap dari
-   Settings → Instagram → Verify and save → subscribe `comments`.
-7. App → **Settings → Processing → mode n8n** (penanda di dashboard; endpoint webhook langsung
-   tetap aktif dan aman karena setiap komentar hanya diproses sekali).
-8. n8n di balik reverse proxy: set env `WEBHOOK_URL=https://n8n.domainmu/` dan jangan biarkan proxy
-   mengubah body request (signature Meta dicek ulang oleh app).
-9. Tambah node milikmu setelah **Split results** atau di **Notify on failure**.
+**Syarat:** langkah 1–10 sudah berhasil dengan webhook langsung, dan n8n bisa diakses lewat
+**HTTPS publik** (n8n Cloud atau self-hosted dengan domain + TLS). `http://localhost:5678` tidak
+bisa dipanggil Meta.
+
+**A. Di app**
+
+1. **Settings → n8n → API keys → Create API key** → beri nama `n8n` → **Copy API key** (diawali
+   `ard_`, hanya tampil sekali).
+2. **Settings → n8n → Relay workflow → Download** (file sudah berisi URL app kamu).
+
+**B. Di n8n: import**
+
+3. **Workflows → Create workflow** → menu **⋯** kanan atas → **Import from File** → pilih file tadi.
+
+**C. Setelah import: yang perlu diubah hanya 3 hal**
+
+4. Klik dua kali node **App: verify token** → **Credential for Header Auth → Create new credential**:
+   - **Name**: `Authorization`
+   - **Value**: `Bearer ard_…` (kata `Bearer`, satu spasi, lalu key-nya)
+   - Ganti nama credential jadi `auto-reply-ig API key` → **Save**.
+5. Klik dua kali node **App: relay events** → pilih credential yang sama.
+6. Klik dua kali node **Config** → pastikan `appUrl` = URL app kamu, mis.
+   `https://nama-app.vercel.app`, **tanpa garis miring di akhir**.
+7. **Save** workflow (Ctrl/Cmd+S), lalu ubah toggle di atas dari **Inactive** ke **Active**.
+
+Jangan ubah node Webhook, node Code, atau pengaturan body di **App: relay events**: signature Meta
+dicek ulang dari byte aslinya.
+
+**D. Arahkan Meta ke n8n**
+
+8. Klik dua kali **Webhook POST (Meta events)** → tab **Production URL** → salin
+   (`https://n8n.domainmu/webhook/instagram`). Bukan Test URL.
+9. Meta → **Instagram → API setup with Instagram login → Configure webhooks**:
+   **Callback URL** = Production URL n8n, **Verify token** = tetap dari app Settings → Instagram →
+   **Verify and save**. Pastikan `comments` tetap ter-subscribe.
+10. App → **Settings → Processing → Receive comments via → Through n8n** → Save.
+
+**E. Tes**
+
+11. Komentar keyword dari akun tester.
+12. n8n → **Executions**: ada eksekusi hijau untuk verifikasi dan untuk setiap komentar. Di app,
+    komentar muncul di **Activity** seperti biasa.
+
+Kembali ke webhook langsung: ubah Callback URL di Meta ke `https://<app>/api/webhooks/instagram`,
+Verify and save, lalu pilih **Direct webhook** di Settings → Processing.
+
+n8n di balik reverse proxy: set env `WEBHOOK_URL=https://n8n.domainmu/` dan jangan biarkan proxy
+mengubah body request. Detail & troubleshooting: [n8n.md](n8n.md).
 
 ## 12. Checklist cepat
 
