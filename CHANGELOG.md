@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.1](https://github.com/ilramdhan/auto-dm/compare/v0.6.0...v0.6.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **pwa:** reload stale installed apps after a deploy and make sign-out work without JavaScript ([#92](https://github.com/ilramdhan/auto-dm/issues/92)) ([b046dc6](https://github.com/ilramdhan/auto-dm/commit/b046dc6623dba32317f6c017b7398f455509c227))
+
+
+### Performance
+
+* **analytics:** stream sections and cut database round trips ([#90](https://github.com/ilramdhan/auto-dm/issues/90)) ([23cc49a](https://github.com/ilramdhan/auto-dm/commit/23cc49ac6d1292db401b6a9917b832ceabd6df82)), closes [#86](https://github.com/ilramdhan/auto-dm/issues/86)
+
 ## [0.6.0](https://github.com/ilramdhan/auto-dm/compare/v0.5.1...v0.6.0) (2026-10-15)
 
 
