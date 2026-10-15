@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   CheckCircle2,
   CircleDashed,
   Eye,
@@ -61,6 +63,13 @@ type Account = {
   tokenDaysLeft: number | null;
 };
 
+export type MetaReviewUrls = {
+  privacyPolicy: string;
+  dataDeletionInstructions: string;
+  deauthorizeCallback: string;
+  dataDeletionCallback: string;
+};
+
 export function InstagramTab(props: {
   appId: string;
   appSecretConfigured: boolean;
@@ -69,6 +78,8 @@ export function InstagramTab(props: {
   redirectUri: string;
   receivedEvents: boolean;
   mode: "webhook" | "n8n";
+  metaReview: MetaReviewUrls;
+  contactConfigured: boolean;
 }) {
   const configured = !!props.appId && props.appSecretConfigured;
   return (
@@ -80,6 +91,7 @@ export function InstagramTab(props: {
       />
       <ConnectionCard account={props.account} configured={configured} />
       <WebhookCard webhookUrl={props.webhookUrl} receivedEvents={props.receivedEvents} mode={props.mode} />
+      <MetaReviewCard urls={props.metaReview} contactConfigured={props.contactConfigured} />
     </div>
   );
 }
@@ -465,6 +477,96 @@ function WebhookCard({
             Connect your account above (this also subscribes it to webhooks), then comment on a post to test.
           </li>
         </ol>
+      </CardContent>
+    </Card>
+  );
+}
+
+/** The four URLs Meta asks for before the app can be switched to Live mode. */
+function MetaReviewCard({ urls, contactConfigured }: { urls: MetaReviewUrls; contactConfigured: boolean }) {
+  return (
+    <Card id="meta-review" className="scroll-mt-20">
+      <CardHeader>
+        <CardTitle>Meta app review</CardTitle>
+        <CardDescription>
+          Meta requires a privacy policy and user data deletion handling before your app can go Live. This app
+          provides all four URLs.
+        </CardDescription>
+        <CardAction>
+          {contactConfigured ? (
+            <Badge variant="success">
+              <CheckCircle2 aria-hidden /> Ready
+            </Badge>
+          ) : (
+            <Badge variant="warning">
+              <AlertTriangle aria-hidden /> Contact missing
+            </Badge>
+          )}
+        </CardAction>
+      </CardHeader>
+      <CardContent className="grid gap-6">
+        {contactConfigured ? null : (
+          <Alert variant="warning">
+            <AlertTriangle aria-hidden />
+            <AlertDescription>
+              <p>
+                Add your name and a contact email in{" "}
+                <Link
+                  href="/settings?tab=account#public-contact"
+                  className="font-medium underline underline-offset-4"
+                >
+                  Settings → Account → Public contact
+                </Link>{" "}
+                first. The privacy policy uses generic wording until you do.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+        <section aria-labelledby="meta-review-basic" className="grid gap-4">
+          <div>
+            <h3 id="meta-review-basic" className="text-sm font-medium">
+              App settings → Basic
+            </h3>
+            <p className="text-muted-foreground text-xs">
+              In your Meta app open App settings → Basic and fill in these two fields.
+            </p>
+          </div>
+          <CopyField
+            id="meta-privacy-url"
+            label="Privacy Policy URL"
+            value={urls.privacyPolicy}
+            help="Paste into “Privacy Policy URL”."
+          />
+          <CopyField
+            id="meta-deletion-instructions-url"
+            label="Data deletion instructions URL"
+            value={urls.dataDeletionInstructions}
+            help="Under “User data deletion”, choose “Data deletion instructions URL” and paste this."
+          />
+        </section>
+        <section aria-labelledby="meta-review-business-login" className="grid gap-4">
+          <div>
+            <h3 id="meta-review-business-login" className="text-sm font-medium">
+              Business login settings
+            </h3>
+            <p className="text-muted-foreground text-xs">
+              Instagram → API setup with Instagram login → Set up Instagram business login → Business login
+              settings.
+            </p>
+          </div>
+          <CopyField
+            id="meta-deauthorize-url"
+            label="Deauthorize callback URL"
+            value={urls.deauthorizeCallback}
+            help="Meta calls it when someone removes your app; their stored token is wiped."
+          />
+          <CopyField
+            id="meta-deletion-callback-url"
+            label="Data deletion request URL"
+            value={urls.dataDeletionCallback}
+            help="Meta calls it when someone asks for their data to be deleted; it is deleted right away."
+          />
+        </section>
       </CardContent>
     </Card>
   );

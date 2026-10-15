@@ -91,7 +91,11 @@ export default async function SettingsPage({
           </TabsList>
         </div>
         <TabsContent value="account">
-          <AccountTab username={user.username} />
+          <AccountTab
+            username={user.username}
+            operatorName={settings["general.operatorName"].value ?? ""}
+            contactEmail={settings["general.contactEmail"].value ?? ""}
+          />
         </TabsContent>
         <TabsContent value="instagram">
           <InstagramTab
@@ -112,6 +116,15 @@ export default async function SettingsPage({
             redirectUri={oauthRedirectUri()}
             receivedEvents={anyDelivery}
             mode={settings["processing.mode"].value ?? "webhook"}
+            metaReview={{
+              privacyPolicy: `${base}/privacy`,
+              dataDeletionInstructions: `${base}/data-deletion`,
+              deauthorizeCallback: `${base}/api/instagram/deauthorize`,
+              dataDeletionCallback: `${base}/api/instagram/data-deletion`,
+            }}
+            contactConfigured={
+              !!settings["general.operatorName"].value && !!settings["general.contactEmail"].value
+            }
           />
         </TabsContent>
         <TabsContent value="processing">

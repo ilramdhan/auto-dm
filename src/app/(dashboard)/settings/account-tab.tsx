@@ -13,12 +13,22 @@ import { PasswordStrengthMeter } from "@/components/password-strength";
 import { FieldError } from "@/components/field-error";
 import type { FieldErrors } from "@/lib/action-result";
 import { changePasswordAction, changeUsernameAction } from "./actions";
+import { PublicContactCard } from "./public-contact-card";
 
-export function AccountTab({ username }: { username: string }) {
+export function AccountTab({
+  username,
+  operatorName,
+  contactEmail,
+}: {
+  username: string;
+  operatorName: string;
+  contactEmail: string;
+}) {
   return (
     <div className="grid max-w-2xl grid-cols-1 gap-6">
       <UsernameCard username={username} />
       <PasswordCard username={username} />
+      <PublicContactCard operatorName={operatorName} contactEmail={contactEmail} />
     </div>
   );
 }

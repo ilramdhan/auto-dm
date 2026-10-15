@@ -200,6 +200,24 @@ export const deliveries = pgTable(
   ],
 );
 
+/* ------------------------------ data deletion ------------------------------ */
+
+export const dataDeletionStatus = pgEnum("data_deletion_status", ["completed", "no_data"]);
+
+/**
+ * One row per data deletion request received from Meta (the user removed the app or asked for their
+ * data to be deleted). `confirmation_code` is returned to Meta and shown on /data-deletion?code=...
+ */
+export const dataDeletionRequests = pgTable("data_deletion_requests", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  confirmationCode: text("confirmation_code").notNull().unique(),
+  /** Instagram-scoped user id from the signed request. */
+  igUserId: text("ig_user_id"),
+  status: dataDeletionStatus("status").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+});
+
 export type User = typeof users.$inferSelect;
 export type InstagramAccount = typeof instagramAccounts.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
@@ -208,3 +226,4 @@ export type Rule = typeof rules.$inferSelect;
 export type NewRule = typeof rules.$inferInsert;
 export type Delivery = typeof deliveries.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
+export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;

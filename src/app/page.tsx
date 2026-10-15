@@ -205,6 +205,14 @@ export default async function Home() {
       </main>
 
       <footer className="text-muted-foreground border-t px-4 py-6 text-center text-xs">
+        <nav aria-label="Legal" className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1">
+          <Link href="/privacy" className="underline underline-offset-4">
+            Privacy policy
+          </Link>
+          <Link href="/data-deletion" className="underline underline-offset-4">
+            Data deletion
+          </Link>
+        </nav>
         <p>
           {APP_NAME} is free and open source (MIT).{" "}
           <a href={REPO_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">

@@ -205,14 +205,30 @@ Instagram di-connect ulang.
 Selama app di **Development mode**, hanya akun dengan role di app (tester/admin) yang memicu webhook.
 Agar komentar **publik** diproses:
 
-1. Lengkapi **App settings → Basic**: Privacy Policy URL (mis. `https://ilramdhan.dev/privacy`),
-   Terms URL, ikon app, kategori.
-2. **App Review → Permissions and features**: minta **Advanced Access** untuk
+1. Di app: **Settings → Account → Public contact** → isi nama kamu (atau nama bisnis) dan email
+   kontak → **Save contact**. Keduanya tampil di halaman publik kebijakan privasi dan penghapusan
+   data (selama kosong, halaman memakai kalimat umum "the operator of this site").
+2. Keempat URL di bawah bisa disalin dari **Settings → Instagram → Meta app review**. Di Meta →
+   **App settings → Basic**:
+   - **Privacy Policy URL**: `https://<app>/privacy`
+   - **User data deletion** → pilih **Data deletion instructions URL** → `https://<app>/data-deletion`
+   - lengkapi juga ikon app (1024x1024) dan kategori → **Save changes**.
+3. Di Meta → **Instagram → API setup with Instagram login → 3. Set up Instagram business login →
+   Business login settings**:
+   - **Deauthorize callback URL**: `https://<app>/api/instagram/deauthorize` (dipanggil saat
+     seseorang menghapus app; kalau itu akun yang terhubung, token-nya dihapus dan akun diputus).
+   - **Data deletion request URL**: `https://<app>/api/instagram/data-deletion` (dipanggil saat
+     seseorang meminta datanya dihapus; data komentarnya, dan untuk akun yang terhubung juga token
+     serta profilnya, langsung dihapus dan Meta menerima kode konfirmasi yang statusnya bisa dicek di
+     `https://<app>/data-deletion?code=...`).
+   - **Save**. Kedua callback memverifikasi `signed_request` dari Meta dengan App Secret, jadi App
+     Secret harus sudah tersimpan di Settings → Instagram.
+4. **App Review → Permissions and features**: minta **Advanced Access** untuk
    `instagram_business_basic`, `instagram_business_manage_comments`,
    `instagram_business_manage_messages`. Siapkan video screencast alur aplikasi (connect IG →
    buat rule → komentar → DM terkirim) dan penjelasan penggunaan.
-3. **Business Verification** (Meta meminta untuk Advanced Access).
-4. Setelah disetujui, ubah app ke **Live**.
+5. **Business Verification** (Meta meminta untuk Advanced Access).
+6. Setelah disetujui, ubah app ke **Live**.
 
 Batasan dari Meta (berlaku untuk semua tool, termasuk ManyChat):
 
@@ -284,6 +300,9 @@ mengubah body request. Detail & troubleshooting: [n8n.md](n8n.md).
 - [ ] Webhook verified + `comments` subscribed
 - [ ] Campaign + rule aktif, "Test a comment" cocok
 - [ ] Komentar dari akun tester → muncul di Activity sebagai **Sent**
+- [ ] Nama + email kontak tersimpan di **Settings → Account → Public contact**
+- [ ] Privacy Policy URL, data deletion instructions URL, deauthorize callback URL, dan data deletion
+      request URL sudah diisi di Meta
 - [ ] (Publik) App Review + Live mode
 
 ## Alternatif: Docker / VPS

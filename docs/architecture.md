@@ -27,6 +27,7 @@ erDiagram
   campaigns { uuid id PK; uuid account_id FK; text name; text media_id; bool is_active; timestamptz starts_at; timestamptz ends_at }
   rules { uuid id PK; uuid campaign_id FK; text name; text[] keywords; enum match_mode; text[] public_replies; text dm_message; text dm_button_url; bool once_per_user; int priority }
   deliveries { uuid id PK; text comment_id UK; uuid campaign_id FK; uuid rule_id FK; text commenter_id; enum status; text error; enum source }
+  data_deletion_requests { uuid id PK; text confirmation_code UK; text ig_user_id; enum status; timestamptz completed_at }
   instagram_accounts ||--o{ campaigns : has
   campaigns ||--o{ rules : has
   campaigns ||--o{ deliveries : "set null"
@@ -52,6 +53,13 @@ the original raw body and original `X-Hub-Signature-256`. Same engine, `source =
 
 **Token refresh**: `GET /api/cron/refresh-tokens` (Bearer `CRON_SECRET`) runs daily and refreshes
 tokens nearing expiry. **Health**: `GET /api/health`.
+
+**Meta deauthorize / data deletion**: `POST /api/instagram/deauthorize` and
+`POST /api/instagram/data-deletion` receive a form-encoded `signed_request` (HMAC-SHA256 with the app
+secret, verified in constant time). Deauthorize wipes the matching account's token; data deletion
+deletes the user's `deliveries` (as commenter or receiving account), wipes a matching account's token
+and profile, records a `data_deletion_requests` row and answers `{ url, confirmation_code }`. Public
+pages `/privacy` and `/data-deletion?code=...` need no sign-in.
 
 ## Idempotency
 

@@ -178,8 +178,19 @@ Nothing in Activity? See [troubleshooting.md](troubleshooting.md) → "Webhook d
 ## 12. Open it to everyone
 
 To process comments from the public, switch the Meta app to **Live** and, if Meta requires it for
-your setup, get **Advanced Access** through App Review. Steps and the honest state of what Meta
-requires: [meta-setup.md → Part 8](meta-setup.md#part-8---development-vs-live-mode-important).
+your setup, get **Advanced Access** through App Review.
+
+Before the Live toggle works, Meta needs a privacy policy and data deletion handling. The app
+provides both:
+
+1. **Settings → Account → Public contact**: enter your name (or business name) and a contact email.
+2. **Settings → Instagram → Meta app review** lists four URLs. Paste the **Privacy Policy URL**
+   (`/privacy`) and **Data deletion instructions URL** (`/data-deletion`) into Meta → **App
+   settings → Basic**, and the **Deauthorize callback URL** and **Data deletion request URL** into
+   **Instagram → API setup with Instagram login → Business login settings**.
+
+Steps and the honest state of what Meta requires:
+[meta-setup.md → Part 8](meta-setup.md#part-8---development-vs-live-mode-important).
 
 ---
 

@@ -119,11 +119,28 @@ Using n8n as relay instead? Point Meta at your n8n webhook URL and follow [n8n.m
 | Comments from random followers       | **Not delivered** (⚠ verify - widely reported)                | Delivered if permissions allow (see below)        |
 | Needs Privacy Policy URL             | No                                                            | **Yes** (App settings → Basic)                    |
 
-To go Live:
+To go Live, Meta needs a privacy policy and a way for users to have their data deleted. The app
+serves both; **Settings → Instagram → Meta app review** lists all four URLs with copy buttons.
 
-1. App settings → Basic: add a **Privacy Policy URL** (any public page stating how you handle data; a
-   simple page on your site is fine), a **Category**, and an app icon (1024x1024).
-2. Use the **toggle at the top of the dashboard** ("App mode: Development → Live").
+1. In auto-reply-ig open **Settings → Account → Public contact** and enter your name (or business
+   name) and a contact email. They are shown on the public privacy policy and data deletion pages
+   (until you do, the pages use generic wording like "the operator of this site").
+2. Meta dashboard → **App settings → Basic**:
+   - **Privacy Policy URL**: `{APP_URL}/privacy`
+   - **User data deletion**: choose **Data deletion instructions URL** and paste
+     `{APP_URL}/data-deletion`
+   - also set a **Category** and an app icon (1024x1024), then save.
+3. Meta dashboard → **Instagram → API setup with Instagram login → 3. Set up Instagram business
+   login → Business login settings**:
+   - **Deauthorize callback URL**: `{APP_URL}/api/instagram/deauthorize` - called when someone
+     removes your app; if it's the connected account, its token is wiped and it is disconnected.
+   - **Data deletion request URL**: `{APP_URL}/api/instagram/data-deletion` - called when someone
+     asks Meta to delete their data; the app deletes their comment records (and, for the connected
+     account, its token and profile details) right away and answers with a confirmation code. The
+     person can check the status at `{APP_URL}/data-deletion?code=...`.
+   - Save. Both callbacks verify Meta's `signed_request` with your App Secret, so save the App Secret
+     in **Settings → Instagram** first.
+4. Use the **toggle at the top of the dashboard** ("App mode: Development → Live").
 
 ### Standard vs Advanced Access - do I need App Review?
 
@@ -209,7 +226,12 @@ paywalled features. Hosting runs on the free tiers of Vercel Hobby and Supabase 
 - [ ] IG account added as Instagram Tester and invite accepted
 - [ ] **Connect Instagram** done
 - [ ] Webhook callback `{APP_URL}/api/webhooks/instagram` + verify token verified, `comments` subscribed
-- [ ] App switched to **Live** (privacy policy URL added)
+- [ ] Name + contact email saved in **Settings → Account → Public contact**
+- [ ] App settings → Basic: Privacy Policy URL `{APP_URL}/privacy`, data deletion instructions URL
+      `{APP_URL}/data-deletion`
+- [ ] Business login settings: deauthorize callback `{APP_URL}/api/instagram/deauthorize`, data
+      deletion request URL `{APP_URL}/api/instagram/data-deletion`
+- [ ] App switched to **Live**
 - [ ] Test comment from a _second_ account produces a row in **Activity**
 
 ## Sources

@@ -22,6 +22,20 @@
       "when": 1791997598206,
       "tag": "0002_delivery_action_status",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792027288883,
+      "tag": "0003_data_deletion_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792027289947,
+      "tag": "0004_data_deletion_rls",
+      "breakpoints": true
     }
   ]
 }

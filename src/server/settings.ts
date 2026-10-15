@@ -2,6 +2,7 @@ import "server-only";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/timezone";
+import { contactEmailSchema, operatorNameSchema } from "@/lib/validation/settings";
 import { decrypt, encrypt, randomToken } from "./crypto";
 import { db } from "./db/client";
 import { settings } from "./db/schema";
@@ -25,6 +26,10 @@ export const SETTINGS = {
     schema: z.string().refine(isValidTimeZone, "Unknown time zone"),
     secret: false,
   },
+  /** Person or business running this instance; named on the public /privacy and /data-deletion pages. */
+  "general.operatorName": { schema: operatorNameSchema, secret: false },
+  /** Public contact address for privacy and data deletion requests. */
+  "general.contactEmail": { schema: contactEmailSchema, secret: false },
 } as const;
 
 export type SettingKey = keyof typeof SETTINGS;
@@ -100,4 +105,18 @@ export async function getPublicSettings() {
 /** Configured analytics/dashboard time zone (falls back to UTC). */
 export async function getTimeZone(): Promise<string> {
   return (await getSetting("general.timezone")) ?? DEFAULT_TIME_ZONE;
+}
+
+export interface PublicContact {
+  operatorName: string | null;
+  contactEmail: string | null;
+}
+
+/** Operator name + contact email for the public privacy / data deletion pages (null when unset). */
+export async function getPublicContact(): Promise<PublicContact> {
+  const values = await getSettings(["general.operatorName", "general.contactEmail"]);
+  return {
+    operatorName: values["general.operatorName"] ?? null,
+    contactEmail: values["general.contactEmail"] ?? null,
+  };
 }

@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { fail, ok } from "@/lib/action-result";
 import { changePasswordSchema, changeUsernameSchema } from "@/lib/validation/auth";
-import { apiKeyNameSchema, metaAppSchema, processingSchema, timeZoneSchema } from "@/lib/validation/settings";
+import {
+  apiKeyNameSchema,
+  metaAppSchema,
+  processingSchema,
+  publicContactSchema,
+  timeZoneSchema,
+} from "@/lib/validation/settings";
 import { authedAction } from "@/server/actions/safe-action";
 import { createApiKey, revokeApiKey } from "@/server/api-keys";
 import { verifyPassword } from "@/server/auth/password";
@@ -56,6 +62,21 @@ export const changePasswordAction = authedAction(
     const { sessionVersion } = await updatePassword(user.id, input.password);
     await createSession(user.id, sessionVersion);
     authLog.info("password.changed", { userId: user.id, forced: false });
+    return ok();
+  },
+);
+
+export const savePublicContactAction = authedAction(
+  "settings",
+  "save_public_contact",
+  publicContactSchema,
+  async ({ operatorName, contactEmail }) => {
+    await setSetting("general.operatorName", operatorName);
+    await setSetting("general.contactEmail", contactEmail);
+    log.info("public_contact.saved", {});
+    revalidatePath("/settings");
+    revalidatePath("/privacy");
+    revalidatePath("/data-deletion");
     return ok();
   },
 );

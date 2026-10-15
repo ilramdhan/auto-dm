@@ -27,3 +27,22 @@ export const timeZoneSchema = z.object({
 export const apiKeyNameSchema = z.object({
   name: z.string().trim().min(1, "Give the key a name").max(60, "At most 60 characters"),
 });
+
+/** Shown on the public privacy policy and data deletion pages. Also used by the SETTINGS registry. */
+export const operatorNameSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your name or business name")
+  .max(100, "At most 100 characters");
+
+export const contactEmailSchema = z
+  .string()
+  .trim()
+  .max(254, "At most 254 characters")
+  .pipe(z.email("Enter a valid email address"));
+
+export const publicContactSchema = z.object({
+  operatorName: operatorNameSchema,
+  contactEmail: contactEmailSchema,
+});
+export type PublicContactInput = z.input<typeof publicContactSchema>;

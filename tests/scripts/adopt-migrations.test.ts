@@ -10,6 +10,9 @@ import { adoptManualMigrations } from "../../scripts/adopt-migrations";
 
 const BASE = process.env.TEST_DATABASE_URL;
 const FOLDER = "./drizzle/migrations";
+const ALL_TAGS = (
+  JSON.parse(readFileSync(`${FOLDER}/meta/_journal.json`, "utf8")) as { entries: { tag: string }[] }
+).entries.map((e) => e.tag);
 
 describe.skipIf(!BASE)("adoptManualMigrations (Postgres integration)", () => {
   let admin: postgres.Sql;
@@ -54,7 +57,7 @@ describe.skipIf(!BASE)("adoptManualMigrations (Postgres integration)", () => {
   it("adopts every migration that was run by hand, then migrate() is a no-op", async () => {
     const sql = await freshDb();
     try {
-      await runByHand(sql, ["0000_init", "0001_enable_rls", "0002_delivery_action_status"]);
+      await runByHand(sql, ALL_TAGS);
       const adopted = await adoptManualMigrations(sql, FOLDER);
       expect(adopted).toContain("0000_init");
       expect(adopted).toContain("0002_delivery_action_status");
@@ -62,7 +65,7 @@ describe.skipIf(!BASE)("adoptManualMigrations (Postgres integration)", () => {
       const [{ count }] = await sql<
         [{ count: number }]
       >`select count(*)::int as count from drizzle.__drizzle_migrations`;
-      expect(count).toBe(3);
+      expect(count).toBe(ALL_TAGS.length);
     } finally {
       await sql.end();
     }
