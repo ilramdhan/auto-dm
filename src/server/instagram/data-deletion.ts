@@ -1,6 +1,10 @@
 import "server-only";
-import { eq, or } from "drizzle-orm";
-import { CONFIRMATION_CODE_BYTES, type DataDeletionStatus } from "@/lib/validation/data-deletion";
+import { eq, or, sql, type SQL } from "drizzle-orm";
+import {
+  CONFIRMATION_CODE_BYTES,
+  type DataDeletionStatus,
+  type DeleteCommenterDataInput,
+} from "@/lib/validation/data-deletion";
 import { randomToken } from "@/server/crypto";
 import { db } from "@/server/db/client";
 import { dataDeletionRequests, deliveries, instagramAccounts } from "@/server/db/schema";
@@ -60,7 +64,6 @@ export interface DeleteUserDataResult {
  * - a `data_deletion_requests` row with a new confirmation code is recorded.
  */
 export async function deleteUserData(igUserId: string): Promise<DeleteUserDataResult> {
-  const confirmationCode = randomToken(CONFIRMATION_CODE_BYTES);
   return db.transaction(async (tx) => {
     const deleted = await tx
       .delete(deliveries)
@@ -77,11 +80,56 @@ export async function deleteUserData(igUserId: string): Promise<DeleteUserDataRe
       })
       .where(eq(instagramAccounts.igUserId, igUserId))
       .returning({ id: instagramAccounts.id });
-    const status: DataDeletionStatus = deleted.length > 0 || accounts.length > 0 ? "completed" : "no_data";
-    await tx
-      .insert(dataDeletionRequests)
-      .values({ confirmationCode, igUserId, status, completedAt: new Date() });
-    return { confirmationCode, status, deletedDeliveries: deleted.length, accountWiped: accounts.length > 0 };
+    const receipt = await recordDeletionRequest(tx, igUserId, deleted.length > 0 || accounts.length > 0);
+    return { ...receipt, deletedDeliveries: deleted.length, accountWiped: accounts.length > 0 };
+  });
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/** Records a completed deletion request with a fresh confirmation code (shared by every deletion path). */
+async function recordDeletionRequest(
+  tx: Tx,
+  igUserId: string | null,
+  deletedSomething: boolean,
+): Promise<{ confirmationCode: string; status: DataDeletionStatus }> {
+  const confirmationCode = randomToken(CONFIRMATION_CODE_BYTES);
+  const status: DataDeletionStatus = deletedSomething ? "completed" : "no_data";
+  await tx
+    .insert(dataDeletionRequests)
+    .values({ confirmationCode, igUserId, status, completedAt: new Date() });
+  return { confirmationCode, status };
+}
+
+export interface DeleteCommenterDataResult {
+  confirmationCode: string;
+  status: DataDeletionStatus;
+  /** Number of `deliveries` rows deleted. */
+  deleted: number;
+}
+
+/**
+ * Operator-initiated deletion for a commenter who asked by email (commenters never log in, so Meta
+ * sends no callback for them). In one transaction, deletes every delivery whose `commenter_id`
+ * matches exactly or whose `commenter_username` matches case-insensitively (leading "@" ignored),
+ * and records a `data_deletion_requests` row. Never touches `instagram_accounts`.
+ */
+export async function deleteCommenterData(
+  input: DeleteCommenterDataInput,
+): Promise<DeleteCommenterDataResult> {
+  const commenterId = input.commenterId?.trim() || undefined;
+  const username = input.username?.trim().replace(/^@/, "").toLowerCase() || undefined;
+  const conditions: SQL[] = [];
+  if (commenterId) conditions.push(eq(deliveries.commenterId, commenterId));
+  if (username) conditions.push(sql`lower(${deliveries.commenterUsername}) = ${username}`);
+  if (conditions.length === 0) throw new Error("deleteCommenterData needs a commenterId or username");
+  return db.transaction(async (tx) => {
+    const deleted = await tx
+      .delete(deliveries)
+      .where(or(...conditions))
+      .returning({ id: deliveries.id });
+    const receipt = await recordDeletionRequest(tx, commenterId ?? null, deleted.length > 0);
+    return { ...receipt, deleted: deleted.length };
   });
 }
 

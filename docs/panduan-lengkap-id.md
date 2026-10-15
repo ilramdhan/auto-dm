@@ -223,6 +223,16 @@ Agar komentar **publik** diproses:
      `https://<app>/data-deletion?code=...`).
    - **Save**. Kedua callback memverifikasi `signed_request` dari Meta dengan App Secret, jadi App
      Secret harus sudah tersimpan di Settings → Instagram.
+
+   **Menangani permintaan hapus data lewat email dari komentator.** Orang yang hanya berkomentar
+   tidak pernah login ke app, jadi Meta tidak mengirim callback untuk mereka; halaman publik
+   `/data-deletion` meminta mereka mengirim email ke kamu. Untuk memprosesnya, buka **Activity** lalu
+   klik ikon tempat sampah di salah satu baris komentarnya ("Delete @username's data"), atau isi
+   username-nya di **Settings → Account → Delete a commenter's data**. Setelah dikonfirmasi, semua
+   catatan komentar orang itu dihapus (dicocokkan lewat ID Instagram, atau username tanpa membedakan
+   huruf besar/kecil), akun yang terhubung tidak tersentuh, dan kamu mendapat kode konfirmasi. Balas
+   emailnya dengan tautan status `https://<app>/data-deletion?code=...`.
+
 4. **App Review → Permissions and features**: minta **Advanced Access** untuk
    `instagram_business_basic`, `instagram_business_manage_comments`,
    `instagram_business_manage_messages`. Siapkan video screencast alur aplikasi (connect IG →

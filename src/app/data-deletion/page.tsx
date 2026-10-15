@@ -69,7 +69,7 @@ export default async function DataDeletionPage({
         <p>
           Email <ContactLink email={contactEmail} /> with your Instagram username and ask for your data to be
           deleted. {operatorName ?? "The operator"} will delete the stored comments, replies and message
-          records linked to your account and confirm by email.
+          records linked to your account and reply with a confirmation code you can check on this page.
         </p>
       </LegalSection>
 

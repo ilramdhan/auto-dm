@@ -13,6 +13,7 @@ import { PasswordStrengthMeter } from "@/components/password-strength";
 import { FieldError } from "@/components/field-error";
 import type { FieldErrors } from "@/lib/action-result";
 import { changePasswordAction, changeUsernameAction } from "./actions";
+import { DeleteCommenterCard } from "./delete-commenter-card";
 import { PublicContactCard } from "./public-contact-card";
 
 export function AccountTab({
@@ -29,6 +30,7 @@ export function AccountTab({
       <UsernameCard username={username} />
       <PasswordCard username={username} />
       <PublicContactCard operatorName={operatorName} contactEmail={contactEmail} />
+      <DeleteCommenterCard />
     </div>
   );
 }
