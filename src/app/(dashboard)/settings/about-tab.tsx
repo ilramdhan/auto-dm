@@ -4,6 +4,7 @@ import {
   CircleArrowUp,
   CircleCheck,
   CloudOff,
+  Gauge,
   ExternalLink,
   GitPullRequest,
   Lightbulb,
@@ -18,6 +19,8 @@ import { CopyButton } from "@/components/copy-button";
 import { stripV } from "@/lib/semver";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/timezone";
 import { cn } from "@/lib/utils";
+import { classifyDbLatency, DB_LATENCY_GOOD_MS, DB_LATENCY_SLOW_MS } from "@/lib/diagnostics";
+import { pingDb, serverRegion, type DbPing } from "@/server/diagnostics";
 import { checkForUpdates, getAppVersion, REPO, type AppVersion, type UpdateCheck } from "@/server/updates";
 import { ReleaseNotesView } from "./release-notes-view";
 
@@ -25,8 +28,15 @@ const DOCKER_UPDATE = "docker compose pull && docker compose up -d";
 
 /** Async wrapper: render inside <Suspense> so a slow GitHub call never blocks the other tabs. */
 export async function AboutTab({ timeZone }: { timeZone: string }) {
-  const check = await checkForUpdates();
-  return <AboutView version={getAppVersion()} check={check} timeZone={timeZone} />;
+  const [check, db] = await Promise.all([checkForUpdates(), pingDb()]);
+  return (
+    <AboutView
+      version={getAppVersion()}
+      check={check}
+      timeZone={timeZone}
+      server={{ region: serverRegion(), db }}
+    />
+  );
 }
 
 /** Small marker next to the About tab label when a newer release exists. */
@@ -54,19 +64,27 @@ export function AboutTabSkeleton() {
   );
 }
 
+export interface ServerInfo {
+  region: string | null;
+  db: DbPing;
+}
+
 export function AboutView({
   version,
   check,
   timeZone,
+  server,
 }: {
   version: AppVersion;
   check: UpdateCheck;
   timeZone: string;
+  server?: ServerInfo;
 }) {
   const tz = isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIME_ZONE;
   return (
     <div className="grid max-w-3xl grid-cols-1 gap-6">
       <VersionCard version={version} check={check} />
+      {server ? <ServerCard server={server} /> : null}
       <WhatsNewCard check={check} timeZone={tz} />
       <HowToUpdateCard />
       <CommunityCard />
@@ -178,6 +196,80 @@ function VersionCard({ version, check }: { version: AppVersion; check: UpdateChe
           <p className="text-muted-foreground text-sm">
             GitHub couldn&apos;t be reached (offline, blocked or rate-limited). It&apos;s checked again
             automatically; you can also look at the <ExtLink href={REPO.releases}>releases page</ExtLink>.
+          </p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DbLatencyBadge({ db }: { db: DbPing }) {
+  if (!db.ok || db.latencyMs === null) {
+    return (
+      <Badge variant="danger" className="whitespace-normal">
+        <CloudOff aria-hidden /> Database unreachable
+      </Badge>
+    );
+  }
+  const level = classifyDbLatency(db.latencyMs);
+  const label = level === "good" ? "Fast" : level === "fair" ? "OK" : "Slow";
+  return (
+    <Badge variant={level === "good" ? "success" : level === "fair" ? "info" : "warning"}>
+      <Gauge aria-hidden /> {label}
+    </Badge>
+  );
+}
+
+/** Where the server runs and how far away the database is (#64): a slow value means a region mismatch. */
+function ServerCard({ server }: { server: ServerInfo }) {
+  const { region, db } = server;
+  const slow = db.ok && db.latencyMs !== null && classifyDbLatency(db.latencyMs) === "slow";
+  return (
+    <Card>
+      <CardHeader className="flex flex-col gap-2 sm:grid">
+        <CardTitle role="heading" aria-level={2}>
+          Server
+        </CardTitle>
+        <CardDescription>Where this deployment runs and how quickly it reaches the database.</CardDescription>
+        <CardAction className="col-start-auto row-start-auto sm:col-start-2 sm:row-span-2 sm:row-start-1">
+          <DbLatencyBadge db={db} />
+        </CardAction>
+      </CardHeader>
+      <CardContent className="grid gap-4">
+        <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm min-[400px]:grid-cols-2">
+          <div className="grid gap-0.5">
+            <dt className="text-muted-foreground">Server region</dt>
+            <dd className="font-mono">{region ?? "Not on Vercel"}</dd>
+          </div>
+          <div className="grid gap-0.5">
+            <dt className="text-muted-foreground">Database latency</dt>
+            <dd className="font-mono">{db.ok && db.latencyMs !== null ? `${db.latencyMs} ms` : "—"}</dd>
+          </div>
+        </dl>
+        <p className="text-muted-foreground text-sm">
+          One <code className="font-mono">select 1</code> round trip, measured when this tab loaded. Under{" "}
+          {DB_LATENCY_GOOD_MS} ms is normal; the first load after a pause can be higher while the connection
+          opens.
+        </p>
+        {slow ? (
+          <Alert variant="warning">
+            <Gauge aria-hidden />
+            <AlertTitle>Pages will feel slow</AlertTitle>
+            <AlertDescription>
+              <p>
+                {DB_LATENCY_SLOW_MS} ms or more usually means the server region is far from the database
+                region. Set the Vercel Function Region to the one next to your Supabase project, then
+                redeploy.
+              </p>
+              <ExtLink href={REPO.regionDocs}>Matching the regions</ExtLink>
+            </AlertDescription>
+          </Alert>
+        ) : null}
+        {!db.ok ? (
+          <p className="text-muted-foreground text-sm">
+            The database did not answer. Check{" "}
+            <span className="text-foreground font-medium">DATABASE_URL</span> and the server logs (
+            <code className="font-mono">health.db_unreachable</code>).
           </p>
         ) : null}
       </CardContent>

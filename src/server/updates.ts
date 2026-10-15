@@ -36,6 +36,7 @@ export const REPO = {
   docs: `${REPO_URL}/blob/main/docs/README.md`,
   upgradeVercel: `${REPO_URL}/blob/main/docs/deployment.md#upgrading`,
   upgradeDocker: `${REPO_URL}/blob/main/docs/docker.md#upgrading`,
+  regionDocs: `${REPO_URL}/blob/main/docs/deployment.md#3-deploy-the-app`,
 } as const;
 const RELEASES_API = `https://api.github.com/repos/${owner}/${repo}/releases?per_page=5`;
 

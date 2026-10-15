@@ -1,31 +1,27 @@
-import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/server/db/client";
 import { noStore } from "@/server/instagram/http";
-import { logger } from "@/server/log";
+import { pingDb, serverRegion } from "@/server/diagnostics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const log = logger("health");
-
 /** Liveness + DB ping. Exposes no configuration or secrets. */
 export async function GET() {
-  const started = Date.now();
-  try {
-    await db.execute(sql`select 1`);
-    return NextResponse.json(
-      {
-        status: "ok",
-        db: "ok",
-        latencyMs: Date.now() - started,
-        // Where this function runs (Vercel sets it). Compare with the database region when pages are slow.
-        region: process.env.VERCEL_REGION ?? null,
-      },
-      { headers: noStore() },
-    );
-  } catch (err) {
-    log.error("health.db_unreachable", { err: err instanceof Error ? err.name : "unknown" });
+  const ping = await pingDb();
+  if (!ping.ok) {
     return NextResponse.json({ status: "error", db: "unreachable" }, { status: 503, headers: noStore() });
   }
+  const headers = new Headers(noStore());
+  // Visible in the browser's DevTools → Network → Timing.
+  headers.set("Server-Timing", `db;desc="select 1";dur=${ping.latencyMs}`);
+  return NextResponse.json(
+    {
+      status: "ok",
+      db: "ok",
+      latencyMs: ping.latencyMs,
+      // Where this function runs (Vercel sets it). Compare with the database region when pages are slow.
+      region: serverRegion(),
+    },
+    { headers },
+  );
 }

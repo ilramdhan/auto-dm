@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   // Self-contained server bundle for the Docker image (Vercel ignores this setting).
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   poweredByHeader: false,
+  experimental: {
+    // Client router cache: going back to a page opened in the last 30 s is instant instead of
+    // re-rendering on the server (#64). Mutations still refresh via revalidatePath/router.refresh.
+    staleTimes: { dynamic: 30 },
+  },
   async headers() {
     return [
       {
