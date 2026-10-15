@@ -90,6 +90,14 @@ All screenshots use fake demo data ([`scripts/demo/seed.ts`](scripts/demo/seed.t
 
 </details>
 
+## Public website
+
+Every deployment also serves a small public website, so visitors don't need this repository to
+understand the project: **Home** (`/`), **Features** (`/features`), a plain-language **Setup guide**
+(`/setup`), **Pricing** (`/pricing`, free and open source plus honest hosting costs) and **FAQ** (`/faq`),
+next to the **Privacy**, **Terms** and **Data deletion** pages Meta requires. The pages are listed in
+`sitemap.xml` and make no external requests.
+
 ## Deploy in 5 minutes
 
 > You will need a free [Vercel](https://vercel.com), [Supabase](https://supabase.com) and GitHub account.

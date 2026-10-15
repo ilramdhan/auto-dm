@@ -1,6 +1,4 @@
 import Link from "next/link";
-import { Brand } from "@/components/brand";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { APP_NAME, REPO_URL } from "@/lib/constants";
 
 const LEGAL_LINKS = [
@@ -22,7 +20,10 @@ export function LegalNav({ className }: { className?: string }) {
   );
 }
 
-/** Layout for the public /privacy, /terms and /data-deletion pages (no sign-in needed). */
+/**
+ * Body of the public /privacy, /terms and /data-deletion pages (no sign-in needed). The header,
+ * footer and `<main>` landmark come from the (marketing) layout.
+ */
 export function LegalPage({
   title,
   intro,
@@ -33,33 +34,18 @@ export function LegalPage({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="pt-safe-4 mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 pb-4 sm:px-6">
-        <Link
-          href="/"
-          className="focus-visible:ring-ring/50 rounded-md outline-none focus-visible:ring-[3px]"
-        >
-          <Brand />
-          <span className="sr-only"> home</span>
-        </Link>
-        <ThemeToggle />
-      </header>
-      <main id="main" className="mx-auto w-full max-w-3xl flex-1 px-4 pt-8 pb-16 sm:px-6 sm:pt-12">
-        <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h1>
-        {intro ? <div className="text-muted-foreground mt-2 text-sm">{intro}</div> : null}
-        <div className="mt-8 grid gap-8">{children}</div>
-      </main>
-      <footer className="text-muted-foreground pb-safe-6 border-t px-4 pt-6 text-center text-xs">
-        <LegalNav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1" />
-        <p>
-          Powered by{" "}
-          <a href={REPO_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-            {APP_NAME}
-          </a>
-          . Not affiliated with Meta or Instagram.
-        </p>
-      </footer>
-    </div>
+    <article className="mx-auto w-full max-w-3xl px-4 pt-10 pb-16 sm:px-6 sm:pt-14">
+      <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">{title}</h1>
+      {intro ? <div className="text-muted-foreground mt-2 text-sm">{intro}</div> : null}
+      <div className="mt-8 grid gap-8">{children}</div>
+      <p className="text-muted-foreground mt-12 border-t pt-6 text-xs">
+        Powered by{" "}
+        <a href={REPO_URL} target="_blank" rel="noreferrer" className="underline underline-offset-4">
+          {APP_NAME}
+        </a>
+        , open-source software. Not affiliated with Meta or Instagram.
+      </p>
+    </article>
   );
 }
 

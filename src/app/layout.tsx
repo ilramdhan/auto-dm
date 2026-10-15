@@ -56,7 +56,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   // response gets a fresh nonce.
   const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
-    <html lang="en" suppressHydrationWarning>
+    // data-scroll-behavior: CSS enables smooth anchor scrolling; Next.js turns it off during route changes.
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-dvh font-sans antialiased`}>
         <ThemeProvider
           attribute="class"

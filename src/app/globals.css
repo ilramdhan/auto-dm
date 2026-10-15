@@ -168,6 +168,56 @@
   }
 }
 
+/* Smooth in-page anchor scrolling (off under reduced motion). The root layout sets
+   data-scroll-behavior="smooth" so Next.js still jumps instantly on route changes. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Public site: keep anchor targets clear of the sticky header. */
+.site-shell [id] {
+  scroll-margin-top: 5rem;
+}
+
+/* Tech stack marquee: two identical tracks slide right-to-left; -50% lands exactly on the copy. */
+@keyframes marquee-x {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee-track {
+  animation: marquee-x 40s linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Static, wrapped list instead of motion; the duplicate copy is hidden. */
+  .marquee {
+    mask-image: none !important;
+  }
+  .marquee-track {
+    animation: none !important;
+    width: 100% !important;
+  }
+  .marquee-list {
+    flex-shrink: 1;
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 0.75rem;
+    width: 100%;
+  }
+  .marquee-copy {
+    display: none !important;
+  }
+}
+
 @utility brand-gradient {
   background-image: linear-gradient(135deg, #f58529 0%, #dd2a7b 45%, #8134af 75%, #515bd4 100%);
 }

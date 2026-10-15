@@ -31,7 +31,31 @@ export const OG_SIZE = { width: 1200, height: 630 } as const;
 export const OG_ALT = `${SITE.name}: ${SITE.headline}`;
 
 /** Indexable pages; everything else (dashboard, auth, API) is noindex. */
-export const PUBLIC_PATHS = ["/", "/privacy", "/terms", "/data-deletion"] as const;
+export const PUBLIC_PATHS = [
+  "/",
+  "/features",
+  "/setup",
+  "/pricing",
+  "/faq",
+  "/privacy",
+  "/terms",
+  "/data-deletion",
+] as const;
+
+export type PublicPath = (typeof PUBLIC_PATHS)[number];
+
+/** Legal pages change rarely; the product pages change with releases. */
+const LEGAL_PATHS: readonly PublicPath[] = ["/privacy", "/terms", "/data-deletion"];
+
+/** Sitemap hints for a public page. */
+export function sitemapHints(path: PublicPath): {
+  changeFrequency: "monthly" | "yearly";
+  priority: number;
+} {
+  if (path === "/") return { changeFrequency: "monthly", priority: 1 };
+  if (LEGAL_PATHS.includes(path)) return { changeFrequency: "yearly", priority: 0.3 };
+  return { changeFrequency: "monthly", priority: 0.7 };
+}
 
 /** Paths crawlers should skip (robots.txt). Pages behind sign-in also send `noindex`. */
 export const PRIVATE_PATHS = [
@@ -72,7 +96,7 @@ export function publicPageMetadata({
 }: {
   title: string;
   description?: string;
-  path: (typeof PUBLIC_PATHS)[number];
+  path: PublicPath;
   absoluteTitle?: boolean;
 }): Metadata {
   return {

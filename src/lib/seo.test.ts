@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { absoluteUrl, jsonLdScript, publicPageMetadata } from "./seo";
+import { absoluteUrl, jsonLdScript, publicPageMetadata, sitemapHints } from "./seo";
+
+describe("sitemapHints", () => {
+  it("ranks home first, product pages next and legal pages last", () => {
+    expect(sitemapHints("/")).toEqual({ changeFrequency: "monthly", priority: 1 });
+    expect(sitemapHints("/features").priority).toBeGreaterThan(sitemapHints("/privacy").priority);
+    expect(sitemapHints("/data-deletion")).toEqual({ changeFrequency: "yearly", priority: 0.3 });
+  });
+});
 
 describe("absoluteUrl", () => {
   it("joins the base and path, or keeps the path when the base is unknown", () => {
