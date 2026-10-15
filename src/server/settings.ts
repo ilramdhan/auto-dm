@@ -2,7 +2,12 @@ import "server-only";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { DEFAULT_TIME_ZONE, isValidTimeZone } from "@/lib/timezone";
-import { contactEmailSchema, operatorNameSchema } from "@/lib/validation/settings";
+import {
+  contactEmailSchema,
+  DEFAULT_RETENTION_DAYS,
+  operatorNameSchema,
+  retentionDaysSchema,
+} from "@/lib/validation/settings";
 import { decrypt, encrypt, randomToken } from "./crypto";
 import { db } from "./db/client";
 import { settings } from "./db/schema";
@@ -21,6 +26,8 @@ export const SETTINGS = {
   "processing.mode": { schema: z.enum(["webhook", "n8n"]), secret: false },
   /** Kill switch: when false, comments are logged but nothing is sent. */
   "processing.enabled": { schema: z.boolean(), secret: false },
+  /** Days to keep comment records before the daily cron deletes them; 0 = keep forever. */
+  "processing.retentionDays": { schema: retentionDaysSchema, secret: false },
   /** IANA time zone used for calendar days in analytics and "today" on the dashboard. */
   "general.timezone": {
     schema: z.string().refine(isValidTimeZone, "Unknown time zone"),
@@ -38,6 +45,7 @@ export type SettingValue<K extends SettingKey> = z.infer<(typeof SETTINGS)[K]["s
 const DEFAULTS: { [K in SettingKey]?: () => SettingValue<K> } = {
   "processing.mode": () => "webhook",
   "processing.enabled": () => true,
+  "processing.retentionDays": () => DEFAULT_RETENTION_DAYS,
   "general.timezone": () => DEFAULT_TIME_ZONE,
 };
 

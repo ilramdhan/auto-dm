@@ -124,7 +124,9 @@ serves both; **Settings → Instagram → Meta app review** lists all four URLs 
 
 1. In auto-reply-ig open **Settings → Account → Public contact** and enter your name (or business
    name) and a contact email. They are shown on the public privacy policy and data deletion pages
-   (until you do, the pages use generic wording like "the operator of this site").
+   (until you do, the pages use generic wording like "the operator of this site"). The privacy
+   policy also states how long comment records are kept; set it in **Settings → Processing → Data
+   retention** (default 365 days; old records are deleted daily by the cron job).
 2. Meta dashboard → **App settings → Basic**:
    - **Privacy Policy URL**: `{APP_URL}/privacy`
    - **Terms of Service URL** (optional, recommended): `{APP_URL}/terms`

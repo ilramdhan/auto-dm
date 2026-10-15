@@ -5,11 +5,26 @@ import { AppError } from "@/server/errors";
 import { getActiveAccount, refreshTokenIfNeeded } from "@/server/instagram/account";
 import { errorResponse, noStore } from "@/server/instagram/http";
 import { getRequestId, logger } from "@/server/log";
+import { purgeOldDeliveries } from "@/server/repos/retention";
+import { getSetting } from "@/server/settings";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const rootLog = logger("cron");
+
+/** Deletes comment records past the configured retention. Never throws: a purge failure must not fail the token refresh. */
+async function purgeExpired(log: ReturnType<typeof logger>): Promise<number | null> {
+  try {
+    const days = (await getSetting("processing.retentionDays")) ?? 365;
+    const purged = await purgeOldDeliveries(days, new Date());
+    log.info("cron.retention_purge", { retentionDays: days, purged });
+    return purged;
+  } catch (err) {
+    log.warn("cron.retention_purge_failed", { err: err instanceof Error ? err.name : "unknown" });
+    return null;
+  }
+}
 
 /**
  * Daily long-lived token refresh (Vercel Cron).
@@ -35,16 +50,26 @@ export async function GET(req: NextRequest) {
     const account = await getActiveAccount();
     if (!account || !account.accessTokenEnc) {
       log.info("cron.token_refresh", { refreshed: false, reason: "no_account" });
-      return NextResponse.json({ refreshed: false, reason: "no_account" }, { headers: noStore() });
+      const purged = await purgeExpired(log);
+      return NextResponse.json({ refreshed: false, reason: "no_account", purged }, { headers: noStore() });
     }
-    const { refreshed, expiresAt } = await refreshTokenIfNeeded(account);
+    let refreshResult: Awaited<ReturnType<typeof refreshTokenIfNeeded>>;
+    try {
+      refreshResult = await refreshTokenIfNeeded(account);
+    } catch (err) {
+      // Still run the purge, then surface the refresh failure.
+      await purgeExpired(log);
+      throw err;
+    }
+    const { refreshed, expiresAt } = refreshResult;
     log.info("cron.token_refresh", {
       refreshed,
       expiresAt: expiresAt?.toISOString() ?? null,
       durationMs: Date.now() - started,
     });
+    const purged = await purgeExpired(log);
     return NextResponse.json(
-      { refreshed, expiresAt: expiresAt?.toISOString() ?? null },
+      { refreshed, expiresAt: expiresAt?.toISOString() ?? null, purged },
       { headers: noStore() },
     );
   } catch (err) {

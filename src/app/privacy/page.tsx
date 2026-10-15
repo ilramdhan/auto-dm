@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactLink, LegalList, LegalPage, LegalSection } from "@/components/legal-page";
 import { APP_NAME } from "@/lib/constants";
-import { loadPublicContact } from "@/server/legal";
+import { loadPublicContact, loadRetentionDays } from "@/server/legal";
 import { publicPageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = publicPageMetadata({
@@ -17,6 +17,7 @@ const LAST_UPDATED = "15 October 2026";
 
 export default async function PrivacyPage() {
   const { operatorName, contactEmail } = await loadPublicContact();
+  const retentionDays = await loadRetentionDays();
   const operator = operatorName ?? "the operator of this site";
   const Operator = operatorName ?? "The operator of this site";
 
@@ -95,9 +96,11 @@ export default async function PrivacyPage() {
 
       <LegalSection id="retention" title="How long we keep it">
         <p>
-          We keep comment records until {operator} deletes them or you ask us to delete them. When you ask,
-          everything stored about your Instagram account is deleted. When the connected Instagram account is
-          disconnected or removes this app, its access token is deleted straight away.
+          {retentionDays > 0
+            ? `Comment records are deleted automatically after ${retentionDays} days. You can also ask us to delete them sooner. `
+            : `Comment records are kept until ${operator} deletes them or you ask us to delete them. `}
+          When you ask, everything stored about your Instagram account is deleted. When the connected
+          Instagram account is disconnected or removes this app, its access token is deleted straight away.
         </p>
       </LegalSection>
 

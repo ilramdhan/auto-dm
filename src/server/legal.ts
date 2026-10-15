@@ -2,7 +2,8 @@ import "server-only";
 import { envProblems } from "@/env";
 import { getDeletionRequest, type DeletionRequestStatus } from "./instagram/data-deletion";
 import { logger } from "./log";
-import { getPublicContact, type PublicContact } from "./settings";
+import { DEFAULT_RETENTION_DAYS } from "@/lib/validation/settings";
+import { getPublicContact, getSetting, type PublicContact } from "./settings";
 
 const log = logger("legal");
 const EMPTY: PublicContact = { operatorName: null, contactEmail: null };
@@ -18,6 +19,17 @@ export async function loadPublicContact(): Promise<PublicContact> {
   } catch (err) {
     log.warn("public_contact.unavailable", { err: err instanceof Error ? err.name : "unknown" });
     return EMPTY;
+  }
+}
+
+/** Configured comment-record retention in days (0 = forever) for /privacy. Never throws. */
+export async function loadRetentionDays(): Promise<number> {
+  if (envProblems().length > 0) return DEFAULT_RETENTION_DAYS;
+  try {
+    return (await getSetting("processing.retentionDays")) ?? DEFAULT_RETENTION_DAYS;
+  } catch (err) {
+    log.warn("retention.unavailable", { err: err instanceof Error ? err.name : "unknown" });
+    return DEFAULT_RETENTION_DAYS;
   }
 }
 

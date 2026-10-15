@@ -17,6 +17,7 @@ import { getPublicSettings } from "@/server/settings";
 import { AccountTab } from "./account-tab";
 import { InstagramTab } from "./instagram-tab";
 import { ProcessingTab } from "./processing-tab";
+import { RetentionCard } from "./retention-card";
 import { TimeZoneCard } from "./timezone-card";
 import { N8nTab } from "./n8n-tab";
 import { AboutTab, AboutTabSkeleton, AboutUpdateMarker } from "./about-tab";
@@ -142,6 +143,7 @@ export default async function SettingsPage({
               mode={settings["processing.mode"].value ?? "webhook"}
               enabled={settings["processing.enabled"].value ?? true}
             />
+            <RetentionCard retentionDays={settings["processing.retentionDays"].value ?? 365} />
             <TimeZoneCard timeZone={settings["general.timezone"].value ?? "UTC"} />
           </div>
         </TabsContent>

@@ -20,6 +20,18 @@ export const processingSchema = z.object({
   enabled: z.boolean(),
 });
 
+/** Days to keep comment records; 0 = keep forever. */
+export const RETENTION_DAY_OPTIONS = [30, 90, 180, 365, 0] as const;
+export const DEFAULT_RETENTION_DAYS = 365;
+export const retentionDaysSchema = z.union([
+  z.literal(30),
+  z.literal(90),
+  z.literal(180),
+  z.literal(365),
+  z.literal(0),
+]);
+export const retentionSchema = z.object({ retentionDays: retentionDaysSchema });
+
 export const timeZoneSchema = z.object({
   timeZone: z.string().trim().refine(isValidTimeZone, "Unknown time zone"),
 });

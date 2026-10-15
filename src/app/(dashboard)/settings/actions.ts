@@ -9,6 +9,7 @@ import {
   metaAppSchema,
   processingSchema,
   publicContactSchema,
+  retentionSchema,
   timeZoneSchema,
 } from "@/lib/validation/settings";
 import { authedAction } from "@/server/actions/safe-action";
@@ -142,6 +143,19 @@ export const saveProcessingAction = authedAction(
     await setSetting("processing.enabled", enabled);
     log.info("processing.saved", { mode, enabled });
     revalidatePath("/", "layout");
+    return ok();
+  },
+);
+
+export const saveRetentionAction = authedAction(
+  "settings",
+  "save_retention",
+  retentionSchema,
+  async ({ retentionDays }) => {
+    await setSetting("processing.retentionDays", retentionDays);
+    log.info("retention.saved", { retentionDays });
+    revalidatePath("/settings");
+    revalidatePath("/privacy");
     return ok();
   },
 );

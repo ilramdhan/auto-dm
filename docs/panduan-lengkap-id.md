@@ -161,6 +161,8 @@ Instagram di-connect ulang.
    masuk duluan.
 4. **Settings → Processing → Time zone** → pilih `Asia/Jakarta` (atau zona waktumu) supaya hari di
    Analytics sesuai kalender.
+5. **Settings → Processing → Data retention** → pilih berapa lama catatan komentar disimpan (default
+   365 hari, `Keep forever` untuk tidak menghapus). Catatan lama dihapus otomatis tiap hari oleh cron.
 
 ## 5. Siapkan akun Instagram
 
