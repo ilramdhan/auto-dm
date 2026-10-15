@@ -1,6 +1,6 @@
 "use client";
 
-import { ErrorState } from "@/components/error-state";
+import { RecoverableError } from "@/components/recoverable-error";
 
 export default function DashboardError({
   error,
@@ -11,7 +11,7 @@ export default function DashboardError({
 }) {
   return (
     <div className="py-16">
-      <ErrorState error={error} reset={reset} />
+      <RecoverableError error={error} reset={reset} />
     </div>
   );
 }

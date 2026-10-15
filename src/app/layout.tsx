@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { RecoveryMonitor } from "@/components/error-recovery";
 import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
 import { publicBaseUrl } from "@/env";
 import { THEME_COLORS } from "@/lib/brand-mark";
@@ -68,6 +69,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
           <ServiceWorkerRegistration />
+          <RecoveryMonitor />
         </ThemeProvider>
       </body>
     </html>

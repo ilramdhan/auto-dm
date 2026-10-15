@@ -1,6 +1,6 @@
 "use client";
 
-import { ErrorState } from "@/components/error-state";
+import { RecoverableError } from "@/components/recoverable-error";
 
 export default function RootError({
   error,
@@ -11,7 +11,7 @@ export default function RootError({
 }) {
   return (
     <main id="main" className="flex min-h-dvh items-center justify-center px-4 py-16">
-      <ErrorState error={error} reset={reset} />
+      <RecoverableError error={error} reset={reset} />
     </main>
   );
 }
