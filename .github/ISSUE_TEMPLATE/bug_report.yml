@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting! Please check [docs/troubleshooting.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/troubleshooting.md) first.
+        Thanks for reporting! Please check [docs/troubleshooting.md](https://github.com/ilramdhan/autodm/blob/main/docs/troubleshooting.md) first.
 
         **Do not paste access tokens, app secrets, `APP_SECRET`, `DATABASE_URL` or full webhook payloads.** Redact them.
   - type: checkboxes

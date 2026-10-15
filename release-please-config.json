@@ -16,5 +16,5 @@
     { "type": "ci", "section": "CI", "hidden": true },
     { "type": "chore", "section": "Chores", "hidden": true }
   ],
-  "packages": { ".": { "package-name": "auto-reply-ig", "initial-version": "0.1.0" } }
+  "packages": { ".": { "package-name": "autodm", "initial-version": "0.1.0" } }
 }

@@ -1,5 +1,5 @@
 /*
- * auto-reply-ig service worker: an offline fallback page, nothing more.
+ * AutoDM service worker: an offline fallback page, nothing more.
  *
  * - Precaches /offline (a static page with no user data), the assets it needs to render, and the
  *   app icons.
@@ -10,8 +10,10 @@
  *
  * Bump VERSION when this file or the offline page changes so old caches are dropped on activate.
  */
-const VERSION = "v1";
-const CACHE_PREFIX = "auto-reply-ig-";
+const VERSION = "v2";
+const CACHE_PREFIX = "autodm-";
+/** Caches from before the rename (auto-reply-ig -> AutoDM); always deleted on activate. */
+const LEGACY_CACHE_PREFIXES = ["auto-reply-ig-"];
 const CACHE = `${CACHE_PREFIX}offline-${VERSION}`;
 const OFFLINE_URL = "/offline";
 const STATIC_ASSETS = [
@@ -49,7 +51,13 @@ self.addEventListener("activate", (event) => {
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
-        keys.filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE).map((key) => caches.delete(key)),
+        keys
+          .filter(
+            (key) =>
+              (key.startsWith(CACHE_PREFIX) && key !== CACHE) ||
+              LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)),
+          )
+          .map((key) => caches.delete(key)),
       );
       if (self.registration.navigationPreload) await self.registration.navigationPreload.enable();
       await self.clients.claim();

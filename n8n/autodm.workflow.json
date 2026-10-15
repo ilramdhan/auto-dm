@@ -1,9 +1,9 @@
 {
-  "name": "auto-reply-ig relay",
+  "name": "AutoDM relay",
   "nodes": [
     {
       "parameters": {
-        "content": "## auto-reply-ig relay\n\n**Setup (3 steps)**\n1. Create a **Header Auth** credential named `auto-reply-ig API key`: Name = `Authorization`, Value = `Bearer <API key from the app: Settings > n8n>`. Select it on the two HTTP Request nodes.\n2. In the **Config** node, set `appUrl` to your app's public URL (no trailing slash). Skipped if you downloaded the workflow from the app.\n3. Activate the workflow and paste the **Production URL** of the webhook nodes into Meta > Webhooks > Callback URL.\n\nThe app does all keyword matching and sending. This workflow only relays Meta's requests, so it works for every post and keyword.",
+        "content": "## AutoDM relay\n\n**Setup (3 steps)**\n1. Create a **Header Auth** credential named `AutoDM API key`: Name = `Authorization`, Value = `Bearer <API key from the app: Settings > n8n>`. Select it on the two HTTP Request nodes.\n2. In the **Config** node, set `appUrl` to your app's public URL (no trailing slash). Skipped if you downloaded the workflow from the app.\n3. Activate the workflow and paste the **Production URL** of the webhook nodes into Meta > Webhooks > Callback URL.\n\nThe app does all keyword matching and sending. This workflow only relays Meta's requests, so it works for every post and keyword.",
         "height": 300,
         "width": 440,
         "color": 4
@@ -162,7 +162,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "REPLACE_ME",
-          "name": "auto-reply-ig API key"
+          "name": "AutoDM API key"
         }
       }
     },
@@ -231,7 +231,7 @@
       "credentials": {
         "httpHeaderAuth": {
           "id": "REPLACE_ME",
-          "name": "auto-reply-ig API key"
+          "name": "AutoDM API key"
         }
       }
     },

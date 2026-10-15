@@ -8,6 +8,7 @@ import { z } from "zod";
  */
 export const SESSION_COOKIE = "ard_session";
 export const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
+// Legacy name (project was renamed to AutoDM). Do not change: existing sessions would be rejected.
 const ISSUER = "auto-reply-ig";
 const AUDIENCE = "auto-reply-ig:dashboard";
 

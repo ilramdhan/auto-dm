@@ -1,6 +1,6 @@
 import "server-only";
 
-import template from "../../../n8n/auto-reply-ig.workflow.json";
+import template from "../../../n8n/autodm.workflow.json";
 
 /** Placeholder in the template's Config node that is replaced with the app URL. */
 export const APP_URL_PLACEHOLDER = "__APP_URL__";

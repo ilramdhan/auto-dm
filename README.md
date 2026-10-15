@@ -3,28 +3,33 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/assets/banner-dark.png" />
   <source media="(prefers-color-scheme: light)" srcset="docs/assets/banner-light.png" />
-  <img src="docs/assets/banner-light.png" width="100%" alt="auto-reply-ig: comment a keyword on Instagram, get a public reply and a DM automatically. Free, self-hosted, open source." />
+  <img src="docs/assets/banner-light.png" width="100%" alt="AutoDM: comment a keyword on Instagram, get a public reply and a DM automatically. Free, self-hosted, open source." />
 </picture>
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![CI](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/auto-reply-ig/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/ilramdhan/auto-reply-ig)](https://github.com/ilramdhan/auto-reply-ig/releases)
-[![Docker image](https://img.shields.io/badge/ghcr.io-ilramdhan%2Fauto--reply--ig-2496ed?logo=docker&logoColor=white)](https://github.com/ilramdhan/auto-reply-ig/pkgs/container/auto-reply-ig)
+[![CI](https://github.com/ilramdhan/autodm/actions/workflows/ci.yml/badge.svg)](https://github.com/ilramdhan/autodm/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/ilramdhan/autodm)](https://github.com/ilramdhan/autodm/releases)
+[![Docker image](https://img.shields.io/badge/ghcr.io-ilramdhan%2Fautodm-2496ed?logo=docker&logoColor=white)](https://github.com/ilramdhan/autodm/pkgs/container/autodm)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black.svg?logo=nextdotjs)](https://nextjs.org)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-**[Docs](docs/README.md)** · **[Deploy](#deploy-in-5-minutes)** · **[Panduan Bahasa Indonesia](docs/panduan-lengkap-id.md)** · **[Discussions](https://github.com/ilramdhan/auto-reply-ig/discussions)**
+**[Docs](docs/README.md)** · **[Deploy](#deploy-in-5-minutes)** · **[Panduan Bahasa Indonesia](docs/panduan-lengkap-id.md)** · **[Discussions](https://github.com/ilramdhan/autodm/discussions)**
 
 </div>
 
-When someone comments a keyword like `GUIDE` on your post or reel, auto-reply-ig replies under the
+When someone comments a keyword like `GUIDE` on your post or reel, AutoDM replies under the
 comment and sends them a private DM with your link, using the official Instagram API. It is an
 open-source alternative to ManyChat-style "comment to DM" tools: no per-contact pricing, you host it
 yourself (free on Vercel + Supabase, or Docker), your data stays in your own database, and it can plug
 into n8n.
 
+> **Renamed from `auto-reply-ig`.** The project is now **AutoDM** (`ilramdhan/autodm`). Old GitHub links
+> and forks redirect automatically. Docker users: switch the image to `ghcr.io/ilramdhan/autodm`; the old
+> `ghcr.io/ilramdhan/auto-reply-ig` image no longer receives updates. Nothing else changes: your database,
+> settings, API keys and logins keep working.
+
 <p align="center">
-  <img src="docs/assets/screenshots/dashboard-light.png" width="860" alt="auto-reply-ig dashboard with demo data: comments today, DMs sent, failed and skipped counts, a 14-day chart of comments vs DMs, and recent activity" />
+  <img src="docs/assets/screenshots/dashboard-light.png" width="860" alt="AutoDM dashboard with demo data: comments today, DMs sent, failed and skipped counts, a 14-day chart of comments vs DMs, and recent activity" />
 </p>
 
 ## Features
@@ -89,7 +94,7 @@ All screenshots use fake demo data ([`scripts/demo/seed.ts`](scripts/demo/seed.t
 
 > You will need a free [Vercel](https://vercel.com), [Supabase](https://supabase.com) and GitHub account.
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Filramdhan%2Fauto-reply-ig&env=APP_SECRET&envDescription=Random%20string%2C%2032%2B%20chars.%20Generate%20with%20%60openssl%20rand%20-base64%2048%60.%20Do%20not%20lose%20it.&envLink=https%3A%2F%2Fgithub.com%2Filramdhan%2Fauto-reply-ig%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&project-name=auto-reply-ig&repository-name=auto-reply-ig&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22supabase%22%2C%22productSlug%22%3A%22supabase%22%7D%5D)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Filramdhan%2Fautodm&env=APP_SECRET&envDescription=Random%20string%2C%2032%2B%20chars.%20Generate%20with%20%60openssl%20rand%20-base64%2048%60.%20Do%20not%20lose%20it.&envLink=https%3A%2F%2Fgithub.com%2Filramdhan%2Fautodm%2Fblob%2Fmain%2Fdocs%2Fconfiguration.md&project-name=autodm&repository-name=autodm&stores=%5B%7B%22type%22%3A%22integration%22%2C%22integrationSlug%22%3A%22supabase%22%2C%22productSlug%22%3A%22supabase%22%7D%5D)
 
 1. Click the button, set `APP_SECRET` (e.g. `openssl rand -base64 48`), and add the **Supabase** integration when asked. It injects the database variables automatically. _(⚠ verify: the `stores` integration/product slugs for Supabase may change; if the Supabase step doesn't appear, add the integration from the Vercel project's Storage tab, or paste `DATABASE_URL` manually. See [deployment.md](docs/deployment.md).)_
 2. Vercel builds the app; **database migrations run automatically during the build**.
@@ -100,9 +105,9 @@ All screenshots use fake demo data ([`scripts/demo/seed.ts`](scripts/demo/seed.t
 ### Or self-host with Docker
 
 ```bash
-git clone https://github.com/ilramdhan/auto-reply-ig.git && cd auto-reply-ig
+git clone https://github.com/ilramdhan/autodm.git && cd autodm
 cp .env.example .env     # set APP_SECRET, CRON_SECRET (and APP_URL for your public HTTPS URL)
-docker compose up -d     # pulls ghcr.io/ilramdhan/auto-reply-ig, http://localhost:3000
+docker compose up -d     # pulls ghcr.io/ilramdhan/autodm, http://localhost:3000
 ```
 
 Meta webhooks need HTTPS, so put a reverse proxy in front. See [docs/docker.md](docs/docker.md). Versions and
@@ -111,7 +116,7 @@ release process: [docs/releasing.md](docs/releasing.md).
 ## Local development
 
 ```bash
-git clone https://github.com/ilramdhan/auto-reply-ig.git && cd auto-reply-ig
+git clone https://github.com/ilramdhan/autodm.git && cd autodm
 corepack enable && pnpm install          # Node 22 recommended (see .nvmrc)
 
 # Postgres 15+: Supabase CLI (`supabase start`) or Docker:
@@ -132,7 +137,7 @@ sequenceDiagram
   participant U as Commenter
   participant IG as Instagram / Meta
   participant N as n8n (optional)
-  participant A as auto-reply-ig
+  participant A as AutoDM
   participant DB as Postgres
   U->>IG: Comments "GUIDE" on your post
   IG->>A: POST /api/webhooks/instagram (signed)
@@ -186,7 +191,7 @@ Multi-account support, follower gate ("follow to get the link"), analytics and C
 
 ## 🇮🇩 Ringkasan
 
-auto-reply-ig adalah aplikasi gratis dan open source untuk membalas komentar Instagram secara otomatis: ketika seseorang berkomentar dengan kata kunci tertentu, aplikasi membalas di kolom komentar dan mengirim DM. Tanpa biaya per kontak, bisa dipasang gratis di Vercel + Supabase.
+AutoDM adalah aplikasi gratis dan open source untuk membalas komentar Instagram secara otomatis: ketika seseorang berkomentar dengan kata kunci tertentu, aplikasi membalas di kolom komentar dan mengirim DM. Tanpa biaya per kontak, bisa dipasang gratis di Vercel + Supabase.
 
 - **Panduan lengkap berbahasa Indonesia (mulai dari sini): [docs/panduan-lengkap-id.md](docs/panduan-lengkap-id.md)** — Supabase, Vercel, Meta app, webhook, n8n, dan semua key yang dibutuhkan (tidak perlu API key AI).
 - Deploy: [docs/deployment.md](docs/deployment.md).
@@ -217,7 +222,7 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code
 </table>
 
 Want to see your name here? Read [CONTRIBUTING.md](CONTRIBUTING.md) and open a pull request.
-The full list is on the [contributors graph](https://github.com/ilramdhan/auto-reply-ig/graphs/contributors).
+The full list is on the [contributors graph](https://github.com/ilramdhan/autodm/graphs/contributors).
 
 ## Acknowledgements
 

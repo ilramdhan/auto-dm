@@ -287,7 +287,7 @@ bisa dipanggil Meta.
 4. Klik dua kali node **App: verify token** → **Credential for Header Auth → Create new credential**:
    - **Name**: `Authorization`
    - **Value**: `Bearer ard_…` (kata `Bearer`, satu spasi, lalu key-nya)
-   - Ganti nama credential jadi `auto-reply-ig API key` → **Save**.
+   - Ganti nama credential jadi `AutoDM API key` → **Save**.
 5. Klik dua kali node **App: relay events** → pilih credential yang sama.
 6. Klik dua kali node **Config** → pastikan `appUrl` = URL app kamu, mis.
    `https://nama-app.vercel.app`, **tanpa garis miring di akhir**.
@@ -335,8 +335,12 @@ mengubah body request. Detail & troubleshooting: [n8n.md](n8n.md).
 ## Alternatif: Docker / VPS
 
 Jika tidak ingin memakai Vercel + Supabase, aplikasi bisa dijalankan di VPS sendiri dengan Docker Compose
-(image siap pakai di `ghcr.io/ilramdhan/auto-reply-ig`, sudah termasuk Postgres dan cron refresh token).
+(image siap pakai di `ghcr.io/ilramdhan/autodm`, sudah termasuk Postgres dan cron refresh token).
 Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengkap: [docker.md](docker.md).
+
+> **Dulu bernama `auto-reply-ig`.** Proyek ini sekarang bernama **AutoDM**. Link GitHub lama dan fork
+> otomatis dialihkan. Pengguna Docker: ganti image ke `ghcr.io/ilramdhan/autodm`; image lama
+> `ghcr.io/ilramdhan/auto-reply-ig` tidak lagi diperbarui. Database, pengaturan, API key dan login tetap jalan.
 
 ## Memperbarui aplikasi
 

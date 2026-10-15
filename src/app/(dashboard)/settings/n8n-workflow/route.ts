@@ -12,7 +12,7 @@ export async function GET() {
   return new NextResponse(JSON.stringify(workflow, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": 'attachment; filename="auto-reply-ig.n8n.json"',
+      "Content-Disposition": 'attachment; filename="autodm.n8n.json"',
       "Cache-Control": "no-store",
     },
   });

@@ -13,8 +13,8 @@ Only the latest release on `main` receives security fixes while the project is p
 
 Please **do not open a public issue**. Report privately via either:
 
-- GitHub: [Report a vulnerability](https://github.com/ilramdhan/auto-reply-ig/security/advisories/new) (Security Advisories)
-- Email: me@ilramdhan.dev (subject `SECURITY auto-reply-ig`)
+- GitHub: [Report a vulnerability](https://github.com/ilramdhan/autodm/security/advisories/new) (Security Advisories)
+- Email: me@ilramdhan.dev (subject `SECURITY AutoDM`)
 
 Include steps to reproduce, impact and affected version. You will get an acknowledgement within 5 days and
 we aim to ship a fix or mitigation within 30 days, crediting you if you wish.

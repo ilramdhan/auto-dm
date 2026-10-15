@@ -1,4 +1,4 @@
-# auto-reply-ig — Build Plan & Progress Tracker
+# AutoDM — Build Plan & Progress Tracker
 
 Open-source Instagram **comment → keyword → public reply + DM** automation.
 One deployment handles **all** posts/reels and **any number of keywords**, each with its own replies.
@@ -97,7 +97,7 @@ SECURITY.md, ACCESSIBILITY.md, CHANGELOG.md, vercel.json                    → 
 
 ## Phase 1C — n8n workflow · n8n agent (Sonnet)
 
-- [x] Importable workflow JSON (`n8n/auto-reply-ig.workflow.json`): verify relay (GET) + event relay (POST, raw body + signature) + result branch (notify-on-failure placeholder)
+- [x] Importable workflow JSON (`n8n/autodm.workflow.json`): verify relay (GET) + event relay (POST, raw body + signature) + result branch (notify-on-failure placeholder)
 - [x] `buildN8nWorkflow({ appUrl })` generator used by Settings download
 - [x] `docs/n8n.md` step-by-step (import, credentials, Meta callback URL → n8n, test)
 
