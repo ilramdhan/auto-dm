@@ -40,7 +40,7 @@ const sharp = requireFromNext("sharp") as SharpFactory;
 const BANNER = { width: 1600, height: 400 } as const;
 const SOCIAL = { width: 1280, height: 640 } as const;
 
-const NAME = "auto-reply-ig";
+const NAME = "AutoDM";
 const PITCH =
   "Comment a keyword on Instagram, get a public reply and a DM automatically. Free, self-hosted, open source.";
 const CHIPS = ["Open source · MIT", "Self-hosted", "n8n ready"] as const;

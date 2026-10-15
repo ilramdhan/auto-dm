@@ -50,7 +50,7 @@ refuses to run unless the database name contains `demo`.
 createdb autodm_demo
 export DATABASE_URL=postgres://postgres:postgres@localhost:5432/autodm_demo
 pnpm db:migrate && pnpm demo:seed
-APP_URL=https://autoreply.example.com pnpm build && pnpm start   # log in as admin / demo-password-2026
+APP_URL=https://autodm.example.com pnpm build && pnpm start   # log in as admin / demo-password-2026
 ```
 
 Capture at 1440px wide (390px for mobile) with `deviceScaleFactor: 2`, downscale to 1600px wide and

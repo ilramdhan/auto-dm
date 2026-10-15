@@ -33,7 +33,7 @@ The `1.0.0` release is cut deliberately (see "Forcing a version").
 
 ### Docker tags
 
-Image: `ghcr.io/ilramdhan/auto-reply-ig` (linux/amd64 and linux/arm64, with SBOM and provenance).
+Image: `ghcr.io/ilramdhan/autodm` (linux/amd64 and linux/arm64, with SBOM and provenance).
 
 | Event            | Tags                                                   |
 | ---------------- | ------------------------------------------------------ |
@@ -46,7 +46,7 @@ Image: `ghcr.io/ilramdhan/auto-reply-ig` (linux/amd64 and linux/arm64, with SBOM
 1. Check the open Release PR: version and changelog entries look right. If an entry is wrong, fix it in the Release PR's changelog text before merging.
 2. Make sure CI is green on the Release PR.
 3. Merge it (squash or merge commit; keep the title). Tag, GitHub Release and Docker images follow automatically.
-4. Verify the Release page and `docker pull ghcr.io/ilramdhan/auto-reply-ig:X.Y.Z`.
+4. Verify the Release page and `docker pull ghcr.io/ilramdhan/autodm:X.Y.Z`.
 
 ### Forcing a version
 
@@ -75,6 +75,6 @@ tag in the Vercel project's Git settings if you prefer to deploy only releases.
 
 ## Rollback
 
-- **Docker**: set the image tag to the previous version (`ghcr.io/ilramdhan/auto-reply-ig:0.2.0`) and `docker compose up -d`. Migrations only move forward, so restore a database backup if the newer version applied a schema change that the older version cannot handle (see [docker.md](docker.md#backups)).
+- **Docker**: set the image tag to the previous version (`ghcr.io/ilramdhan/autodm:0.2.0`) and `docker compose up -d`. Migrations only move forward, so restore a database backup if the newer version applied a schema change that the older version cannot handle (see [docker.md](docker.md#backups)).
 - **Vercel**: Project, Deployments, pick a previous deployment, **Promote to Production** (or "Instant Rollback").
 - **Bad release**: fix forward with a `fix:` PR, or `revert:` the offending commit. Do not delete tags or releases that users may have pulled.

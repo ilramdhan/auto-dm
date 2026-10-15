@@ -4,13 +4,15 @@ import { APP_NAME, REPO_URL } from "@/lib/constants";
 /** Copy shared by page metadata, the Open Graph image, the web app manifest and JSON-LD. */
 export const SITE = {
   name: APP_NAME,
-  shortName: "AutoReply",
+  shortName: "AutoDM",
   headline: "Turn Instagram comments into replies and DMs, automatically",
   tagline: "Open-source, self-hosted comment-to-DM automation for Instagram.",
   description:
     "Open-source Instagram comment-to-DM automation: keyword rules per post, public replies and private-reply DMs. Self-hosted on Vercel + Supabase or Docker, n8n ready.",
   keywords: [
+    "autodm",
     "instagram auto dm",
+    "auto dm instagram",
     "instagram comment to dm",
     "comment to dm",
     "instagram auto reply",

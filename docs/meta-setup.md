@@ -1,13 +1,13 @@
 # Meta (Instagram) setup guide
 
-This guide connects your own Instagram account to your own auto-reply-ig deployment. It takes about
+This guide connects your own Instagram account to your own AutoDM deployment. It takes about
 15 minutes and costs nothing. You create **your own Meta app** (nobody else's credentials are shared),
 so you stay in full control of your data.
 
 > **Verification status.** Written October 2026 from Meta's developer documentation and secondary
 > sources. The Meta developer site could not be fetched directly while writing, so items marked
 > **⚠ verify** come from search snippets or third parties. Meta changes its dashboard often; if a
-> label differs slightly, look for the closest match and please [open an issue](https://github.com/ilramdhan/auto-reply-ig/issues).
+> label differs slightly, look for the closest match and please [open an issue](https://github.com/ilramdhan/autodm/issues).
 
 ## What you need first
 
@@ -68,7 +68,7 @@ safe choice and is what the app does.
    - ⚠ verify: on the _Instagram → API setup_ page Meta also shows a separate **Instagram app ID** and
      **Instagram app secret**. For Instagram Login, **use the Instagram app ID/secret shown on the API
      setup page** if they differ from App settings → Basic.
-2. In auto-reply-ig go to **Settings → Instagram**, paste **Meta App ID** and **App Secret**, and save.
+2. In AutoDM go to **Settings → Instagram**, paste **Meta App ID** and **App Secret**, and save.
    The secret is encrypted at rest and never shown again.
 
 ## Part 4 - OAuth redirect URI
@@ -92,7 +92,7 @@ New apps start in **Development mode**: only people with a role on the app can u
 
 ## Part 6 - Connect Instagram
 
-1. In auto-reply-ig: **Settings → Instagram → Connect Instagram**.
+1. In AutoDM: **Settings → Instagram → Connect Instagram**.
 2. Log in to Instagram and **Allow** all three permissions.
 3. You return to the app and see your username. Behind the scenes the app exchanges the code for a
    short-lived token, upgrades it to a **long-lived (~60 days)** token, encrypts it, and subscribes
@@ -122,7 +122,7 @@ Using n8n as relay instead? Point Meta at your n8n webhook URL and follow [n8n.m
 To go Live, Meta needs a privacy policy and a way for users to have their data deleted. The app
 serves both; **Settings → Instagram → Meta app review** lists all four URLs with copy buttons.
 
-1. In auto-reply-ig open **Settings → Account → Public contact** and enter your name (or business
+1. In AutoDM open **Settings → Account → Public contact** and enter your name (or business
    name) and a contact email. They are shown on the public privacy policy and data deletion pages
    (until you do, the pages use generic wording like "the operator of this site").
 2. Meta dashboard → **App settings → Basic**:

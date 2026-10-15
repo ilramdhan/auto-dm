@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import raw from "../../../n8n/auto-reply-ig.workflow.json";
+import raw from "../../../n8n/autodm.workflow.json";
 import { APP_URL_PLACEHOLDER, buildN8nWorkflow } from "./workflow";
 
 type Wf = {

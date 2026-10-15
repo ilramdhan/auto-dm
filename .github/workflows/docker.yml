@@ -72,7 +72,7 @@ jobs:
             type=sha,format=short,enable=${{ inputs.version == '' && github.ref == 'refs/heads/main' }}
             type=ref,event=pr
           labels: |
-            org.opencontainers.image.title=auto-reply-ig
+            org.opencontainers.image.title=AutoDM
             org.opencontainers.image.description=Self-hosted Instagram comment-to-DM automation
             org.opencontainers.image.licenses=MIT
 
