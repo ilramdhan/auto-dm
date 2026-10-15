@@ -12,6 +12,16 @@ import {
   STORAGE_KEYS,
   type RecoveryAction,
 } from "@/lib/error-recovery";
+import {
+  clientNavigationTarget,
+  isOutdatedBuild,
+  NAVIGATION_WATCHDOG_MS,
+  navigationKey,
+  parseVersionResponse,
+  shouldCheckVersion,
+  VERSION_ENDPOINT,
+  VERSION_POLL_INTERVAL_MS,
+} from "@/lib/app-update";
 
 /** sessionStorage can be unavailable (privacy mode, blocked storage): every access is guarded. */
 function read(key: string): string | null {
@@ -105,13 +115,182 @@ export function useErrorRecovery(error: unknown, reset: () => void): RecoveryPha
   return phase;
 }
 
+const CLIENT_BUILD_ID = process.env.NEXT_PUBLIC_BUILD_ID;
+const VERSION_FETCH_TIMEOUT_MS = 5000;
+const STUCK_TOAST_ID = "autodm-navigation-stuck";
+
+/** Build id the server is running, or null when unknown (offline, timeout, unexpected body). */
+async function fetchServerBuildId(): Promise<string | null> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), VERSION_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(VERSION_ENDPOINT, {
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    return parseVersionResponse(await res.json())?.buildId ?? null;
+  } catch {
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+function offerReload(title: string, description: string): void {
+  toast.warning(title, {
+    id: STUCK_TOAST_ID,
+    description,
+    duration: Number.POSITIVE_INFINITY,
+    action: { label: "Reload", onClick: () => window.location.reload() },
+  });
+}
+
+/**
+ * Compares this bundle's build id with the server's. On a mismatch reloads once (loop-guarded);
+ * returns true when the build is outdated (whether or not the reload happened).
+ */
+async function checkForNewVersion(): Promise<boolean> {
+  const serverBuildId = await fetchServerBuildId();
+  if (!isOutdatedBuild(CLIENT_BUILD_ID, serverBuildId)) return false;
+  if (!reloadForNewVersion()) {
+    // Reloaded recently and still outdated (e.g. a cached page): let the user decide.
+    offerReload("A new version of AutoDM is available", "Reload to finish updating.");
+  }
+  return true;
+}
+
+/**
+ * Installed PWAs (and long-lived tabs) resume the old page from memory after a deploy, so the old
+ * bundle keeps talking to the new server (#87). Checks the server's build id when the app becomes
+ * visible again (throttled) and periodically while it stays visible.
+ */
+function useVersionCheck(): void {
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "production" || !CLIENT_BUILD_ID) return;
+    // A fresh page load is current by definition: the first check waits for the throttle window.
+    let lastCheckAt: number | null = Date.now();
+    let inFlight = false;
+
+    const check = (force = false) => {
+      if (document.visibilityState !== "visible" || inFlight) return;
+      const now = Date.now();
+      if (!force && !shouldCheckVersion(lastCheckAt, now)) return;
+      lastCheckAt = now;
+      inFlight = true;
+      void checkForNewVersion().finally(() => {
+        inFlight = false;
+      });
+    };
+    const onVisible = () => check();
+    const onPageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) check();
+    };
+    const interval = window.setInterval(() => check(true), VERSION_POLL_INTERVAL_MS);
+
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, []);
+}
+
+/**
+ * True while a navigation started at `fromKey` has not finished: the URL has not changed yet (not
+ * committed) or a route's loading.tsx skeleton (marked `data-route-loading`) is still on screen.
+ * `fromKey` null (back/forward, where the URL changes first) checks only the skeleton. Comparing
+ * with the starting URL rather than the link target keeps redirects from counting as stuck.
+ */
+function navigationPending(fromKey: string | null): boolean {
+  if (fromKey !== null && navigationKey(new URL(window.location.href)) === fromKey) return true;
+  return document.querySelector("[data-route-loading]") !== null;
+}
+
+/**
+ * A client navigation of a stale bundle can hang forever on the loading skeleton (#87). If one has
+ * not finished after NAVIGATION_WATCHDOG_MS: reload once when the server runs a newer build,
+ * otherwise offer a "Reload" toast (dismissed again if the page finishes loading after all).
+ */
+function useNavigationWatchdog(): void {
+  useEffect(() => {
+    let timer: number | undefined;
+    let generation = 0;
+
+    const schedule = (fn: () => void, ms: number) => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(fn, ms);
+    };
+    const arm = (fromKey: string | null) => {
+      const current = ++generation;
+      schedule(() => void inspect(fromKey, current), NAVIGATION_WATCHDOG_MS);
+    };
+    // After the toast: dismiss it once the navigation finishes on its own.
+    const settle = (fromKey: string | null, current: number) => {
+      if (current !== generation) return;
+      if (!navigationPending(fromKey)) toast.dismiss(STUCK_TOAST_ID);
+      else schedule(() => settle(fromKey, current), 1000);
+    };
+    const inspect = async (fromKey: string | null, current: number) => {
+      if (current !== generation) return;
+      // Background tabs may pause the network: look again once the user can see the result.
+      if (document.visibilityState !== "visible") {
+        schedule(() => void inspect(fromKey, current), NAVIGATION_WATCHDOG_MS);
+        return;
+      }
+      if (!navigationPending(fromKey)) return;
+      if (process.env.NODE_ENV === "production" && CLIENT_BUILD_ID && (await checkForNewVersion())) return;
+      if (current !== generation || !navigationPending(fromKey)) return;
+      offerReload(
+        "This page is taking too long to load",
+        "Reloading usually fixes it, especially right after AutoDM was updated.",
+      );
+      settle(fromKey, current);
+    };
+
+    const onClick = (event: MouseEvent) => {
+      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(anchor instanceof HTMLAnchorElement)) return;
+      const target = clientNavigationTarget({
+        href: anchor.href,
+        currentHref: window.location.href,
+        button: event.button,
+        modifierKey: event.metaKey || event.ctrlKey || event.shiftKey || event.altKey,
+        target: anchor.getAttribute("target"),
+        download: anchor.hasAttribute("download"),
+      });
+      if (target) arm(navigationKey(new URL(window.location.href)));
+    };
+    // Back/forward: the URL has already changed, so only the skeleton check applies.
+    const onPopState = () => arm(null);
+
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.clearTimeout(timer);
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, []);
+}
+
 /**
  * Mounted once in the root layout:
  * - after a version-skew reload, shows "Updated to a new version";
  * - catches version-skew errors that never reach an error boundary (a Server Action called from an
- *   event handler, a lazily loaded chunk) and reloads once.
+ *   event handler, a lazily loaded chunk) and reloads once;
+ * - checks the server's build id when the app returns to the foreground and every few minutes, and
+ *   reloads once when a new version was deployed (#87);
+ * - watches client navigations and offers a reload when one hangs (#87).
  */
 export function RecoveryMonitor() {
+  useVersionCheck();
+  useNavigationWatchdog();
   useEffect(() => {
     if (read(STORAGE_KEYS.updated)) {
       remove(STORAGE_KEYS.updated);

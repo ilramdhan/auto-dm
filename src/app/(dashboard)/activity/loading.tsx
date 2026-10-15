@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
-    <div className="grid grid-cols-1 gap-6" aria-busy="true" aria-label="Loading activity">
+    <div className="grid grid-cols-1 gap-6" data-route-loading aria-busy="true" aria-label="Loading activity">
       <Skeleton className="h-8 w-32" />
       <div className="flex flex-wrap gap-3">
         <Skeleton className="h-9 w-72" />
