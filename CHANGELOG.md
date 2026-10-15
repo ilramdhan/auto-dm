@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.2](https://github.com/ilramdhan/auto-dm/compare/v0.6.1...v0.6.2) (2026-10-15)
+
+
+### Bug Fixes
+
+* point every repository and image link at ilramdhan/auto-dm ([#94](https://github.com/ilramdhan/auto-dm/issues/94)) ([91a6d8e](https://github.com/ilramdhan/auto-dm/commit/91a6d8ef08eaabece174bce5023f7bc6d5ef31db))
+
 ## [0.6.1](https://github.com/ilramdhan/auto-dm/compare/v0.6.0...v0.6.1) (2026-10-15)
 
 
