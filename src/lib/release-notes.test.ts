@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedLink, parseInline, parseReleaseNotes } from "./release-notes";
+import { isAllowedLink, parseInline, parseReleaseNotes, stripTags } from "./release-notes";
 
 // Shaped like a release-please body (fake repo, fake hashes).
 const FIXTURE = `## [0.4.0](https://github.com/example/app/compare/v0.3.0...v0.4.0) (2026-10-20)
@@ -114,6 +114,8 @@ describe("parseInline / isAllowedLink", () => {
 
   it("never leaves angle brackets behind, even for nested tags", () => {
     const item = parseInline("fix <<script>script>alert(1)<</script>/script> done");
-    expect(item.text).not.toMatch(/[<>]/);
+    expect(item.text).not.toMatch(/[<>]|script/);
+    expect(stripTags("a <b>bold</b> c")).toBe("a bold c");
+    expect(stripTags("x > y")).toBe("x  y");
   });
 });

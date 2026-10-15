@@ -45,15 +45,29 @@ function clip(text: string, max: number): string {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text;
 }
 
-/** Strip inline Markdown emphasis/code markers; keep the words. */
+/**
+ * Drops anything between angle brackets, nested ones included (`<<script>script>` leaves nothing),
+ * so no tag-like text survives. A scanner instead of a regex: regex tag stripping is easy to bypass.
+ */
+export function stripTags(text: string): string {
+  let out = "";
+  let depth = 0;
+  for (const ch of text) {
+    if (ch === "<") depth++;
+    else if (ch === ">") depth = Math.max(0, depth - 1);
+    else if (depth === 0) out += ch;
+  }
+  return out;
+}
+
+/** Strip inline Markdown emphasis/code markers and any HTML; keep the words. */
 function stripInline(text: string): string {
-  return text
+  return stripTags(text)
     .replace(/\*\*([^*]+)\*\*/g, "$1")
     .replace(/__([^_]+)__/g, "$1")
     .replace(/(^|\W)\*([^*\n]+)\*(?=\W|$)/g, "$1$2")
     .replace(/`([^`]+)`/g, "$1")
-    .replace(/<[^>]*>/g, "") // stray HTML tags are dropped, never rendered
-    .replace(/[<>]/g, "") // and any leftover angle bracket (e.g. nested "<<script>script>")
+
     .replace(/\s+/g, " ")
     .trim();
 }
