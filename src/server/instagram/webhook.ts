@@ -77,11 +77,42 @@ export interface CommentEvent {
   parentId: string | null;
 }
 
+/** `entry[].id` values (the receiving account ids), for diagnostics. */
+export function entryIds(payload: WebhookPayload): string[] {
+  return payload.entry.map((e) => e.id);
+}
+
+/**
+ * How many of `ids` are the connected account `igUserId`. `null` when no account is connected, so
+ * the UI can tell "no account" apart from "sent for another account".
+ */
+export function countMatchedEntries(
+  ids: readonly string[],
+  igUserId: string | null | undefined,
+): number | null {
+  if (!igUserId) return null;
+  return ids.filter((id) => id === igUserId).length;
+}
+
+/**
+ * `JSON.parse` reviver: integers beyond `Number.MAX_SAFE_INTEGER` (17-digit Instagram ids sent as
+ * JSON numbers) are kept as their exact source text instead of a rounded number, which the id schema
+ * would reject and turn a real delivery into `invalid_payload`. Uses the reviver `context.source`
+ * (Node 21+); without it the value is returned unchanged.
+ */
+function preserveLargeIntegers(_key: string, value: unknown, context?: { source?: string }): unknown {
+  if (typeof value === "number" && Number.isInteger(value) && !Number.isSafeInteger(value)) {
+    const src = context?.source;
+    if (src && /^-?\d+$/.test(src)) return src;
+  }
+  return value;
+}
+
 /** Parses a raw webhook body. Returns `null` for invalid JSON or an unexpected shape. */
 export function parseWebhookPayload(rawBody: string): WebhookPayload | null {
   let json: unknown;
   try {
-    json = JSON.parse(rawBody);
+    json = JSON.parse(rawBody, preserveLargeIntegers);
   } catch {
     return null;
   }

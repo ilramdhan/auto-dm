@@ -3,14 +3,21 @@ import { verifyApiKey } from "@/server/api-keys";
 import { processCommentEvents } from "@/server/engine/process-comment";
 import { AppError } from "@/server/errors";
 import { errorResponse, noStore } from "@/server/instagram/http";
-import { authenticateWebhook } from "@/server/instagram/inbound";
+import { authenticateWebhook, rejectionResult } from "@/server/instagram/inbound";
 import { getRequestId, logger } from "@/server/log";
+import { recordWebhookRequestLater } from "@/server/repos/webhook-requests";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
 const rootLog = logger("n8n");
+
+class ApiKeyRejected extends AppError {
+  constructor() {
+    super("UNAUTHORIZED", "Invalid or missing API key");
+  }
+}
 
 /**
  * n8n relay. Requires `Authorization: Bearer <api key>` AND the original Meta
@@ -22,17 +29,28 @@ const rootLog = logger("n8n");
 export async function POST(req: NextRequest) {
   const started = Date.now();
   const log = rootLog.child({ requestId: getRequestId(req.headers) });
+  let authenticated = false;
   try {
-    if (!(await verifyApiKey(req.headers.get("authorization")))) {
-      throw new AppError("UNAUTHORIZED", "Invalid or missing API key");
-    }
-    const { entries, events } = await authenticateWebhook(req);
+    if (!(await verifyApiKey(req.headers.get("authorization")))) throw new ApiKeyRejected();
+    const { entries, entryIds, events } = await authenticateWebhook(req);
+    authenticated = true;
     const results = await processCommentEvents(events, { source: "n8n", log });
+    const durationMs = Date.now() - started;
     log.info("n8n.events_processed", {
       entries,
       events: events.length,
       statuses: results.map((r) => r.status),
-      durationMs: Date.now() - started,
+      durationMs,
+    });
+    recordWebhookRequestLater({
+      kind: "delivery",
+      source: "n8n",
+      result: "accepted",
+      statusCode: 200,
+      entries,
+      entryIds,
+      commentEvents: events.length,
+      durationMs,
     });
     return NextResponse.json(
       {
@@ -52,6 +70,18 @@ export async function POST(req: NextRequest) {
       reason: err instanceof Error ? err.message : "unknown",
       durationMs: Date.now() - started,
     });
-    return errorResponse(err, log, "n8n.events_failed");
+    const res = errorResponse(err, log, "n8n.events_failed");
+    recordWebhookRequestLater({
+      kind: "delivery",
+      source: "n8n",
+      result: authenticated
+        ? "error"
+        : err instanceof ApiKeyRejected
+          ? "api_key_invalid"
+          : rejectionResult(err),
+      statusCode: res.status,
+      durationMs: Date.now() - started,
+    });
+    return res;
   }
 }

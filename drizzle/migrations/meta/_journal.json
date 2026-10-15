@@ -36,6 +36,20 @@
       "when": 1792027289947,
       "tag": "0004_data_deletion_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792037395793,
+      "tag": "0005_webhook_requests",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792037396203,
+      "tag": "0006_webhook_requests_rls",
+      "breakpoints": true
     }
   ]
 }

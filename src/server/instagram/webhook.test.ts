@@ -1,6 +1,13 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { checkVerifyRequest, extractCommentEvents, parseWebhookPayload, verifySignature } from "./webhook";
+import {
+  checkVerifyRequest,
+  countMatchedEntries,
+  entryIds,
+  extractCommentEvents,
+  parseWebhookPayload,
+  verifySignature,
+} from "./webhook";
 
 const SECRET = "0123456789abcdef0123456789abcdef";
 const sign = (body: string, secret = SECRET) =>
@@ -157,5 +164,32 @@ describe("parseWebhookPayload / extractCommentEvents", () => {
     expect(parseWebhookPayload("not json")).toBeNull();
     expect(parseWebhookPayload("{}")).toBeNull();
     expect(parseWebhookPayload(JSON.stringify({ object: "instagram", entry: "x" }))).toBeNull();
+  });
+});
+
+describe("large numeric ids", () => {
+  it("keeps 17-digit ids sent as JSON numbers exactly instead of rejecting the payload", () => {
+    const raw =
+      '{"object":"instagram","entry":[{"id":17841405309211844,"changes":[{"field":"comments","value":{"id":17865799348089039,"text":"mau","from":{"id":232323232}}}]}]}';
+    const payload = parseWebhookPayload(raw);
+    expect(payload).not.toBeNull();
+    const [e] = extractCommentEvents(payload!);
+    expect(e).toMatchObject({
+      igUserId: "17841405309211844",
+      commentId: "17865799348089039",
+      fromId: "232323232",
+    });
+  });
+});
+
+describe("entryIds / countMatchedEntries", () => {
+  const payload = parseWebhookPayload(
+    JSON.stringify({ object: "instagram", entry: [{ id: "a" }, { id: "b" }, { id: "a" }] }),
+  )!;
+  it("lists entry ids and counts those for the connected account", () => {
+    expect(entryIds(payload)).toEqual(["a", "b", "a"]);
+    expect(countMatchedEntries(entryIds(payload), "a")).toBe(2);
+    expect(countMatchedEntries(entryIds(payload), "z")).toBe(0);
+    expect(countMatchedEntries(entryIds(payload), null)).toBeNull();
   });
 });

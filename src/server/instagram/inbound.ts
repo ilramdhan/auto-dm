@@ -4,6 +4,7 @@ import { ensureVerifyToken, getSetting } from "@/server/settings";
 import { noStore } from "./http";
 import {
   checkVerifyRequest,
+  entryIds,
   extractCommentEvents,
   MAX_WEBHOOK_BODY_BYTES,
   parseWebhookPayload,
@@ -16,7 +17,28 @@ export const SIGNATURE_HEADER = "x-hub-signature-256";
 export interface AuthenticatedWebhook {
   /** Number of `entry[]` items in the payload. */
   entries: number;
+  /** `entry[].id` values (receiving account ids), for diagnostics. */
+  entryIds: string[];
   events: CommentEvent[];
+}
+
+/** Why a webhook POST was rejected; recorded in `webhook_requests.result`. */
+export type WebhookRejectReason = "too_large" | "not_configured" | "signature_invalid" | "invalid_payload";
+
+/** {@link AppError} thrown by {@link authenticateWebhook}, carrying a machine-readable reason. */
+export class WebhookRejectedError extends AppError {
+  constructor(
+    readonly reason: WebhookRejectReason,
+    code: ConstructorParameters<typeof AppError>[0],
+    message: string,
+  ) {
+    super(code, message);
+  }
+}
+
+/** Maps an error thrown while authenticating a webhook to the result stored for diagnostics. */
+export function rejectionResult(err: unknown): WebhookRejectReason | "error" {
+  return err instanceof WebhookRejectedError ? err.reason : "error";
 }
 
 /** Reads the request body as raw text, enforcing {@link MAX_WEBHOOK_BODY_BYTES}. */
@@ -35,15 +57,29 @@ export async function readRawBody(req: Request): Promise<string | null> {
  */
 export async function authenticateWebhook(req: Request): Promise<AuthenticatedWebhook> {
   const raw = await readRawBody(req);
-  if (raw === null) throw new AppError("VALIDATION", "Payload too large");
+  if (raw === null) throw new WebhookRejectedError("too_large", "VALIDATION", "Payload too large");
   const appSecret = await getSetting("meta.appSecret");
-  if (!appSecret) throw new AppError("NOT_CONFIGURED", "Instagram app secret is not configured");
+  if (!appSecret) {
+    throw new WebhookRejectedError(
+      "not_configured",
+      "NOT_CONFIGURED",
+      "Instagram app secret is not configured",
+    );
+  }
   if (!verifySignature(raw, req.headers.get(SIGNATURE_HEADER), appSecret)) {
-    throw new AppError("UNAUTHORIZED", "Invalid or missing X-Hub-Signature-256");
+    throw new WebhookRejectedError(
+      "signature_invalid",
+      "UNAUTHORIZED",
+      "Invalid or missing X-Hub-Signature-256",
+    );
   }
   const payload = parseWebhookPayload(raw);
-  if (!payload) throw new AppError("VALIDATION", "Invalid webhook payload");
-  return { entries: payload.entry.length, events: extractCommentEvents(payload) };
+  if (!payload) throw new WebhookRejectedError("invalid_payload", "VALIDATION", "Invalid webhook payload");
+  return {
+    entries: payload.entry.length,
+    entryIds: entryIds(payload),
+    events: extractCommentEvents(payload),
+  };
 }
 
 /** Answers Meta's GET verification handshake (`hub.challenge` as text/plain, or 403). */

@@ -218,6 +218,47 @@ export const dataDeletionRequests = pgTable("data_deletion_requests", {
   completedAt: timestamp("completed_at", { withTimezone: true }),
 });
 
+/* ---------------------------- webhook diagnostics ---------------------------- */
+
+export const webhookRequestKind = pgEnum("webhook_request_kind", ["delivery", "verification"]);
+export const webhookRequestSource = pgEnum("webhook_request_source", ["direct", "n8n"]);
+export const webhookRequestResult = pgEnum("webhook_request_result", [
+  "accepted",
+  "signature_invalid",
+  "not_configured",
+  "invalid_payload",
+  "too_large",
+  "api_key_invalid",
+  "error",
+  "verified",
+  "forbidden",
+]);
+
+/**
+ * Recent inbound webhook requests (POST deliveries and GET verification handshakes), kept as a small
+ * ring buffer (pruned to the newest rows) so Settings can show whether Meta is reaching the app.
+ * Never stores payload bodies, signatures or tokens: only counts and the outcome.
+ */
+export const webhookRequests = pgTable(
+  "webhook_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    kind: webhookRequestKind("kind").notNull(),
+    source: webhookRequestSource("source").notNull().default("direct"),
+    result: webhookRequestResult("result").notNull(),
+    statusCode: integer("status_code").notNull(),
+    /** `entry[]` items in the payload (null when the payload was not parsed). */
+    entries: integer("entries"),
+    /** Comment events extracted from the payload. */
+    commentEvents: integer("comment_events"),
+    /** Entries whose `entry[].id` is the connected account (null when no account was connected). */
+    matchedEntries: integer("matched_entries"),
+    durationMs: integer("duration_ms"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("webhook_requests_created_idx").on(t.createdAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type InstagramAccount = typeof instagramAccounts.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
@@ -227,3 +268,4 @@ export type NewRule = typeof rules.$inferInsert;
 export type Delivery = typeof deliveries.$inferSelect;
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type DataDeletionRequest = typeof dataDeletionRequests.$inferSelect;
+export type WebhookRequest = typeof webhookRequests.$inferSelect;
