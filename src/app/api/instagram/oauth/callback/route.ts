@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { appUrl } from "@/env";
 import { requireUser } from "@/server/auth/guard";
 import { safeErrorMessage } from "@/server/instagram/graph";
-import { logger } from "@/server/log";
+import { getRequestId, logger } from "@/server/log";
 import {
   completeOAuth,
   OAUTH_STATE_COOKIE,
@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
 
-const log = logger("oauth");
+const rootLog = logger("oauth");
 
 function back(query: string): NextResponse {
   const res = NextResponse.redirect(new URL(`/settings?tab=instagram&${query}`, appUrl()), 303);
@@ -31,6 +31,7 @@ function back(query: string): NextResponse {
  */
 export async function GET(req: NextRequest) {
   await requireUser();
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   const params = req.nextUrl.searchParams;
   if (!verifyOAuthState(params.get("state"), req.cookies.get(OAUTH_STATE_COOKIE)?.value)) {
     return back("error=invalid_state");

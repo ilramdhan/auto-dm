@@ -5,14 +5,14 @@ import { deliveries, type InstagramAccount } from "@/server/db/schema";
 import { getAccessToken, getActiveAccount } from "@/server/instagram/account";
 import { COMMENT_MAX_CHARS, DM_MAX_CHARS } from "@/server/instagram/constants";
 import { GraphApiError, safeErrorMessage } from "@/server/instagram/graph";
-import { logger } from "@/server/log";
+import { logger, type Logger } from "@/server/log";
 import { replyToComment, sendPrivateReply } from "@/server/instagram/messaging";
 import type { CommentEvent } from "@/server/instagram/webhook";
 import { getSetting } from "@/server/settings";
 import { resolveRule } from "./resolve";
 import { pickRandom, renderTemplate, truncateText } from "./template";
 
-const log = logger("engine");
+const rootLog = logger("engine");
 
 export type DeliverySource = "webhook" | "n8n" | "manual";
 
@@ -132,8 +132,9 @@ async function claimRule(params: {
  */
 export async function processCommentEvent(
   event: CommentEvent,
-  opts: { source: DeliverySource; now?: Date },
+  opts: { source: DeliverySource; now?: Date; log?: Logger },
 ): Promise<ProcessResult> {
+  const log = opts.log ?? rootLog;
   const started = Date.now();
   const elapsed = () => Date.now() - started;
   const [inserted] = await db
@@ -332,7 +333,7 @@ export async function processCommentEvent(
 /** Processes events sequentially (keeps Graph API calls and DB load predictable). */
 export async function processCommentEvents(
   events: readonly CommentEvent[],
-  opts: { source: DeliverySource },
+  opts: { source: DeliverySource; log?: Logger },
 ): Promise<ProcessResult[]> {
   const results: ProcessResult[] = [];
   for (const event of events) results.push(await processCommentEvent(event, opts));

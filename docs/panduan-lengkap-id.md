@@ -342,4 +342,6 @@ Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengk
 | Token kedaluwarsa                       | Pastikan `CRON_SECRET` terisi; atau klik Connect Instagram lagi                                                                      |
 
 Log aplikasi (format JSON) ada di **Vercel → Project → Logs**; cari `scope` seperti `webhook`,
-`engine`, `auth`.
+`engine`, `auth`. Setiap permintaan punya `requestId`, dan halaman error menampilkan kode **Reference**
+(digest): cari kode itu di log untuk menemukan penyebabnya. Token, secret, password, dan isi webhook tidak
+pernah dicatat. Atur detail log dengan env `LOG_LEVEL` (`debug`, `info`, `warn`, `error`).

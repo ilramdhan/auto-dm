@@ -11,6 +11,7 @@
 | `ADMIN_DEFAULT_USERNAME` | no       | `admin`                      | First run only                                  |
 | `ADMIN_DEFAULT_PASSWORD` | no       | `changeme123`                | Forced change at first login                    |
 | `CRON_SECRET`            | no       | -                            | Protects `/api/cron/*`                          |
+| `LOG_LEVEL`              | no       | `info` (`debug` in dev)      | `debug`, `info`, `warn` or `error`              |
 
 Generate secrets: `openssl rand -base64 48`.
 

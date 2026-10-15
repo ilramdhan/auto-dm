@@ -4,13 +4,13 @@ import { processCommentEvents } from "@/server/engine/process-comment";
 import { AppError } from "@/server/errors";
 import { errorResponse, noStore } from "@/server/instagram/http";
 import { authenticateWebhook } from "@/server/instagram/inbound";
-import { logger } from "@/server/log";
+import { getRequestId, logger } from "@/server/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const log = logger("n8n");
+const rootLog = logger("n8n");
 
 /**
  * n8n relay. Requires `Authorization: Bearer <api key>` AND the original Meta
@@ -21,12 +21,13 @@ const log = logger("n8n");
  */
 export async function POST(req: NextRequest) {
   const started = Date.now();
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   try {
     if (!(await verifyApiKey(req.headers.get("authorization")))) {
       throw new AppError("UNAUTHORIZED", "Invalid or missing API key");
     }
     const { entries, events } = await authenticateWebhook(req);
-    const results = await processCommentEvents(events, { source: "n8n" });
+    const results = await processCommentEvents(events, { source: "n8n", log });
     log.info("n8n.events_processed", {
       entries,
       events: events.length,

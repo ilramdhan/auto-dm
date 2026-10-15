@@ -2,16 +2,17 @@ import { after, NextResponse, type NextRequest } from "next/server";
 import { processCommentEvents } from "@/server/engine/process-comment";
 import { errorResponse, noStore } from "@/server/instagram/http";
 import { authenticateWebhook, verificationResponse } from "@/server/instagram/inbound";
-import { logger } from "@/server/log";
+import { getRequestId, logger } from "@/server/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const log = logger("webhook");
+const rootLog = logger("webhook");
 
 /** Meta webhook subscription handshake (`hub.challenge` echo). */
 export async function GET(req: NextRequest) {
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   try {
     return await verificationResponse(req.nextUrl.searchParams);
   } catch (err) {
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   const started = Date.now();
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   let inbound;
   try {
     inbound = await authenticateWebhook(req);
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
     after(async () => {
       const t0 = Date.now();
       try {
-        const results = await processCommentEvents(events, { source: "webhook" });
+        const results = await processCommentEvents(events, { source: "webhook", log });
         log.info("webhook.processed", {
           events: results.length,
           statuses: results.map((r) => r.status),
