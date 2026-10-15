@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.3.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.2.0...v0.3.0) (2026-10-15)
+
+
+### Features
+
+* privacy policy, data deletion page and Meta deletion callbacks ([#43](https://github.com/ilramdhan/auto-reply-ig/issues/43)) ([c296db2](https://github.com/ilramdhan/auto-reply-ig/commit/c296db242af0eea27800ae484da7d0a062f88892)), closes [#42](https://github.com/ilramdhan/auto-reply-ig/issues/42)
+
+
+### Bug Fixes
+
+* **migrate:** adopt migrations run by hand; rewrite the setup guide ([#39](https://github.com/ilramdhan/auto-reply-ig/issues/39)) ([9c78393](https://github.com/ilramdhan/auto-reply-ig/commit/9c783936aa01c3d468304d4b31bd744a9d55bf44))
+
 ## [0.2.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.1.0...v0.2.0) (2026-10-14)
 
 
