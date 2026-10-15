@@ -183,7 +183,7 @@ Full reference: [docs/configuration.md](docs/configuration.md).
 
 **Can I use n8n?** Yes, optionally: [docs/n8n.md](docs/n8n.md).
 
-**It doesn't fire!** See [docs/troubleshooting.md](docs/troubleshooting.md).
+**It doesn't fire!** Open **Settings → Instagram → Webhook diagnostics**, then see [My test comment did nothing](docs/troubleshooting.md#my-test-comment-did-nothing). Test from a second account: your own comments are ignored.
 
 ## Roadmap ideas
 

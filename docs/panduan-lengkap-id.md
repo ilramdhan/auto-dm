@@ -202,6 +202,8 @@ Instagram di-connect ulang.
 3. **Verify token**: salin dari Settings → Instagram (tombol mata untuk melihat, tombol copy).
 4. **Verify and save**, lalu **Subscribe** field **`comments`**.
 5. Kartu "Webhook" di Settings berubah jadi **Receiving events** setelah komentar pertama masuk.
+   Kartu **Webhook diagnostics** di bawahnya menampilkan setiap permintaan dari Meta (diterima atau
+   ditolak, dan alasannya), hasil verifikasi, dan tombol **Re-subscribe webhooks**.
 
 ## 9. Buat campaign & aturan
 
@@ -356,16 +358,49 @@ migrasi. Docker: `docker compose pull && docker compose up -d`. Detail: [deploym
 
 ## 13. Masalah umum
 
-| Gejala                                  | Penyebab & solusi                                                                                                                    |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Build Vercel gagal di `[migrate]`       | `DATABASE_URL_UNPOOLED` memakai Direct connection (IPv6). Ganti ke **Session pooler** 5432                                           |
-| "Verify and save" di Meta gagal         | URL salah / app belum ter-deploy / verify token salah                                                                                |
-| Komentar tidak muncul di Activity       | App masih Development mode & pengomentar bukan tester; field `comments` belum di-subscribe; App Secret salah (signature ditolak 401) |
-| Activity: `skipped · no_match`          | Keyword tidak cocok; cek mode & ejaan dengan "Test a comment"                                                                        |
-| Activity: `skipped · already_delivered` | "Once per user" aktif dan orang itu sudah pernah dapat DM                                                                            |
-| DM gagal kode `551`                     | Pengguna tidak bisa menerima pesan (privasi) – bukan error app                                                                       |
-| DM gagal kode `10` / `200`              | Izin kurang atau app belum Live/Advanced Access                                                                                      |
-| Token kedaluwarsa                       | Pastikan `CRON_SECRET` terisi; atau klik Connect Instagram lagi                                                                      |
+### Komentar tes saya tidak memicu apa-apa
+
+Buka dulu **Settings → Instagram → Webhook diagnostics**. Di sana ada daftar permintaan webhook
+terakhir dari Meta (waktu, hasil, jumlah komentar, dan apakah untuk akun kamu), hasil verifikasi
+terakhir, dan hasil subscribe webhook terakhir.
+
+- **Activity: `Skipped · Own comment`**: kamu berkomentar memakai akun yang terhubung. Komentar akun
+  sendiri tidak pernah dibalas (mencegah loop). Tes dari **akun kedua**.
+- **Tidak ada baris di Activity dan tidak ada webhook delivery**: Meta tidak mengirim apa pun.
+  Biasanya app masih **Development mode** dan akun pengomentar belum menjadi **Instagram Tester**
+  yang sudah menerima undangan, atau field `comments` belum di-subscribe.
+- **Delivery `Signature invalid`**: App Secret di Settings bukan **Instagram App Secret** dari app
+  yang mengirim webhook (ambil dari Instagram → API setup with Instagram login, bukan App settings →
+  Basic).
+- **Delivery `Accepted` tetapi Account: `Other account`**: Meta mengirim komentar untuk akun Instagram
+  lain (tombol **Test** di dashboard Meta mengirim contoh seperti ini). Hubungkan ulang akun pemilik
+  post.
+- **Verifikasi terakhir `Verify failed`**: verify token di Meta tidak sama dengan di Settings.
+- **Account subscription `Failed`**: klik **Re-subscribe webhooks**; kalau masih gagal, Connect
+  Instagram ulang dan izinkan semua permission.
+
+Checklist kalau tidak ada yang masuk:
+
+1. Callback URL di Meta persis `https://<app>/api/webhooks/instagram` (atau URL n8n di mode n8n).
+2. **Verify and save** berhasil (diagnostics menampilkan verifikasi terakhir _Verified_).
+3. Field `comments` di-subscribe di Meta, dan **Account subscription** _Subscribed_.
+4. Berkomentar dari **akun kedua**, bukan akun yang terhubung.
+5. Selama **Development mode**, akun kedua itu ditambahkan di **App roles → Roles → Instagram
+   Testers** dan undangannya **sudah diterima** di Instagram (Settings → Apps and websites → Tester
+   invites).
+6. Agar semua orang dilayani: app **Live** + Advanced Access (lihat bagian 10).
+7. Akun yang terhubung **publik** dan bertipe Business/Creator.
+
+| Gejala                                  | Penyebab & solusi                                                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Build Vercel gagal di `[migrate]`       | `DATABASE_URL_UNPOOLED` memakai Direct connection (IPv6). Ganti ke **Session pooler** 5432                   |
+| "Verify and save" di Meta gagal         | URL salah / app belum ter-deploy / verify token salah                                                        |
+| Komentar tidak muncul di Activity       | Lihat Settings → Instagram → Webhook diagnostics; detail di "Komentar tes saya tidak memicu apa-apa" di atas |
+| Activity: `skipped · no_match`          | Keyword tidak cocok; cek mode & ejaan dengan "Test a comment"                                                |
+| Activity: `skipped · already_delivered` | "Once per user" aktif dan orang itu sudah pernah dapat DM                                                    |
+| DM gagal kode `551`                     | Pengguna tidak bisa menerima pesan (privasi) – bukan error app                                               |
+| DM gagal kode `10` / `200`              | Izin kurang atau app belum Live/Advanced Access                                                              |
+| Token kedaluwarsa                       | Pastikan `CRON_SECRET` terisi; atau klik Connect Instagram lagi                                              |
 
 Log aplikasi (format JSON) ada di **Vercel → Project → Logs**; cari `scope` seperti `webhook`,
 `engine`, `auth`. Setiap permintaan punya `requestId`, dan halaman error menampilkan kode **Reference**

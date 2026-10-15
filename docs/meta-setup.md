@@ -107,7 +107,12 @@ New apps start in **Development mode**: only people with a role on the app can u
    matches. If it fails, see [troubleshooting.md](troubleshooting.md).
 4. In the webhook fields list, **subscribe to `comments`** (toggle it on).
 5. Your account must also be subscribed to the app. The **Connect Instagram** step does this; the
-   dashboard shows "Webhook subscriptions" per account on the same page.
+   dashboard shows "Webhook subscriptions" per account on the same page. In the app, **Settings →
+   Instagram → Webhook diagnostics** shows the last subscription result, a **Re-subscribe webhooks**
+   button, and every recent request Meta sent (verified, accepted or rejected, and why).
+6. Test by commenting from a **second account** (in Development mode: an accepted Instagram Tester).
+   Comments by the connected account itself are always skipped. See
+   [My test comment did nothing](troubleshooting.md#my-test-comment-did-nothing).
 
 Using n8n as relay instead? Point Meta at your n8n webhook URL and follow [n8n.md](n8n.md).
 

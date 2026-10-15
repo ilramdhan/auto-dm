@@ -19,6 +19,37 @@ If pages end in an error instead, check **Vercel → Logs**: a wrong `DATABASE_U
 seconds instead of hanging. `DATABASE_URL` must be the **Transaction pooler** (port 6543); the
 Session pooler (5432) is only for `DATABASE_URL_UNPOOLED`.
 
+## My test comment did nothing
+
+Open **Settings → Instagram → Webhook diagnostics** first. It lists the last webhook requests Meta
+sent to the app (time, result, number of comments, and whether they were for your account), the last
+verification handshake, and the result of the last webhook subscription.
+
+| What you see                                                        | Meaning and fix                                                                                                                                                                                     |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Activity row **Skipped · Own comment**                              | You commented with the connected account. Its comments are never answered (loop protection). Test from a **second account**.                                                                        |
+| **No row in Activity** and **no webhook deliveries** in diagnostics | Meta isn't sending anything. Usually the app is in **Development mode** and the commenter isn't an accepted **Instagram Tester**, or `comments` isn't subscribed. Work through the checklist below. |
+| Deliveries with **Signature invalid**                               | The App Secret in Settings is not the **Instagram App Secret** of the app that sends the webhook (Instagram → API setup with Instagram login, not App settings → Basic). Save the right one.        |
+| Deliveries with **Not configured**                                  | No App Secret is saved yet. Add it in Settings → Instagram → Meta app.                                                                                                                              |
+| Deliveries **Accepted** but **Account: Other account**              | Meta sent the comment for a different Instagram account id (the dashboard's **Test** button sends a sample like this). Reconnect the account the post belongs to.                                   |
+| Last verification **Verify failed**                                 | The verify token in Meta doesn't match the one in Settings. Copy it again and click **Verify and save**.                                                                                            |
+| Activity row **Skipped · No keyword matched / Automation paused**   | The webhook works. Check the campaign (post, schedule, active), keywords and match mode with **Test a comment**, or turn automation back on in Settings → Processing.                               |
+| Account subscription **Failed**                                     | Click **Re-subscribe webhooks**. If it still fails, reconnect Instagram and accept every permission.                                                                                                |
+
+Checklist when nothing arrives:
+
+1. Meta's callback URL is exactly `{APP_URL}/api/webhooks/instagram` (or your n8n URL in n8n mode).
+2. **Verify and save** succeeded (diagnostics shows the last verification as _Verified_).
+3. The `comments` field is subscribed in the Meta dashboard, and **Account subscription** says
+   _Subscribed_ (use **Re-subscribe webhooks** if not).
+4. You comment from a **second account**, never the connected one.
+5. In **Development mode** that second account is added under **App roles → Roles → Instagram
+   Testers** and has **accepted** the invite in Instagram (Settings → Apps and websites → Tester
+   invites). Without that, Meta sends nothing.
+6. To answer everyone else, the app must be **Live**, with Advanced Access for the comments
+   permission ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).
+7. The connected account is **public** and a Business or Creator account.
+
 ## Webhook does not fire (no rows in Activity)
 
 1. **App mode**: in Development mode only app-role users trigger webhooks. Switch to **Live** ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).
