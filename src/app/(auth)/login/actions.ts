@@ -6,8 +6,9 @@ import { runAction } from "@/server/actions/safe-action";
 import { logger } from "@/server/log";
 import { loginSchema } from "@/lib/validation/auth";
 import { clearFailures, clientIp, isRateLimited, recordFailure } from "@/server/auth/rate-limit";
-import { createSession, destroySession, readSession } from "@/server/auth/session";
-import { authenticate, revokeSessions, touchLastLogin } from "@/server/auth/users";
+import { signOutCurrentSession } from "@/server/auth/logout";
+import { createSession } from "@/server/auth/session";
+import { authenticate, touchLastLogin } from "@/server/auth/users";
 
 const GENERIC = "Incorrect username or password.";
 const log = logger("auth");
@@ -49,12 +50,12 @@ export async function loginAction(_prev: ActionResult | null, formData: FormData
   });
 }
 
+/**
+ * Kept for compatibility (pages rendered by older builds may still post to it). The user menu now
+ * posts a plain form to `POST /api/auth/logout`, which also works on a stale bundle (#87).
+ */
 export async function logoutAction(): Promise<void> {
-  // Server-side revocation: bumping session_version kills this token even if it was copied.
-  // Single-admin app, so this signs out every device - the safer default.
-  const session = await readSession();
-  if (session) await revokeSessions(session.sub);
-  await destroySession();
+  await signOutCurrentSession();
   log.info("logout", {});
   redirect("/login");
 }

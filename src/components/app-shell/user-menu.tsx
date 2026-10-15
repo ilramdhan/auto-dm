@@ -12,7 +12,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { logoutAction } from "@/app/(auth)/login/actions";
 
 export function UserMenu({ username }: { username: string }) {
   return (
@@ -48,7 +47,9 @@ export function UserMenu({ username }: { username: string }) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <form action={logoutAction}>
+        {/* Plain form post, not a Server Action: keeps working without JavaScript and in an installed
+            app still running an older build after a deploy (#87). */}
+        <form action="/api/auth/logout" method="post">
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full">
               <LogOut aria-hidden /> Sign out
