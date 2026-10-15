@@ -64,6 +64,43 @@ See the error in the Activity row; usually one of the above.
   latest release and redeploy. Do not drop the tables.
 - Never edit applied migrations; add a new one.
 
+## Logging
+
+**Where:** Vercel → Project → Logs (filter by text). Docker: `docker compose logs -f app`.
+
+Every event is one JSON line:
+
+```json
+{
+  "time": "2026-10-15T10:00:00.000Z",
+  "ts": "2026-10-15T10:00:00.000Z",
+  "level": "info",
+  "scope": "webhook",
+  "msg": "webhook.received",
+  "event": "webhook.received",
+  "requestId": "fra1::abc-123",
+  "events": 1,
+  "durationMs": 4
+}
+```
+
+`ts` and `event` are aliases of `time` and `msg`, kept so older searches still work.
+
+**Searching:**
+
+- `scope`: `"scope":"webhook"`, `engine`, `graph`, `n8n`, `cron`, `oauth`, `auth`, `health`, `app`.
+- `requestId`: the `x-vercel-id` of the request (or `x-request-id`, else a random UUID). The webhook, n8n, cron and
+  OAuth routes log it on every line, including the background processing of a comment, so search the id to see its whole journey.
+- Error "Reference": the code shown on the "Something went wrong" page is the error digest. Search it
+  (`"digest":"1234567890"`) to find the `request.unhandled_error` line with the error name, path, method and route.
+
+**Verbosity:** set `LOG_LEVEL` to `debug`, `info`, `warn` or `error` (default `info` in production, `debug` in
+development; an invalid value falls back to `info`). Stack traces are logged only at `debug` or outside production.
+
+**Never logged:** access tokens, app secret, verify token, passwords, cookies, `Authorization` headers, signatures,
+request headers/bodies or full webhook payloads, and SQL parameters. Values under keys such as `token`, `secret`,
+`password`, `authorization`, `cookie` or `api_key` are replaced by `[redacted]`, and long strings are truncated.
+
 ## Locked out / forgot password
 
 Delete the user row (`delete from users;`) in the Supabase SQL editor; the default admin is expected to be recreated on the next login attempt (⚠ verify against the auth bootstrap); change the password again.

@@ -240,6 +240,16 @@ Agar komentar **publik** diproses:
      `https://<app>/data-deletion?code=...`).
    - **Save**. Kedua callback memverifikasi `signed_request` dari Meta dengan App Secret, jadi App
      Secret harus sudah tersimpan di Settings → Instagram.
+
+   **Menangani permintaan hapus data lewat email dari komentator.** Orang yang hanya berkomentar
+   tidak pernah login ke app, jadi Meta tidak mengirim callback untuk mereka; halaman publik
+   `/data-deletion` meminta mereka mengirim email ke kamu. Untuk memprosesnya, buka **Activity** lalu
+   klik ikon tempat sampah di salah satu baris komentarnya ("Delete @username's data"), atau isi
+   username-nya di **Settings → Account → Delete a commenter's data**. Setelah dikonfirmasi, semua
+   catatan komentar orang itu dihapus (dicocokkan lewat ID Instagram, atau username tanpa membedakan
+   huruf besar/kecil), akun yang terhubung tidak tersentuh, dan kamu mendapat kode konfirmasi. Balas
+   emailnya dengan tautan status `https://<app>/data-deletion?code=...`.
+
 4. **App Review → Permissions and features**: minta **Advanced Access** untuk
    `instagram_business_basic`, `instagram_business_manage_comments`,
    `instagram_business_manage_messages`. Siapkan video screencast alur aplikasi (connect IG →
@@ -342,4 +352,6 @@ Webhook Meta wajib HTTPS, jadi pasang reverse proxy seperti Caddy. Langkah lengk
 | Token kedaluwarsa                       | Pastikan `CRON_SECRET` terisi; atau klik Connect Instagram lagi                                                                      |
 
 Log aplikasi (format JSON) ada di **Vercel → Project → Logs**; cari `scope` seperti `webhook`,
-`engine`, `auth`.
+`engine`, `auth`. Setiap permintaan punya `requestId`, dan halaman error menampilkan kode **Reference**
+(digest): cari kode itu di log untuk menemukan penyebabnya. Token, secret, password, dan isi webhook tidak
+pernah dicatat. Atur detail log dengan env `LOG_LEVEL` (`debug`, `info`, `warn`, `error`).

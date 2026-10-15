@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
 import { DeliveryStatusBadge } from "@/components/delivery-status-badge";
+import { DeleteCommenterButton } from "@/components/data-deletion/delete-commenter";
 import { ACTIVITY_PAGE_SIZE, activityFiltersSchema } from "@/lib/validation/activity";
 import { formatDateTime, formatNumber, timeAgo } from "@/lib/format";
 import { skipReasonLabel } from "@/lib/labels";
@@ -125,7 +126,10 @@ export default async function ActivityPage({
                     <TableHead>Comment</TableHead>
                     <TableHead>Campaign · rule</TableHead>
                     <TableHead>Keyword</TableHead>
-                    <TableHead className="pr-4">Status</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12 pr-4">
+                      <span className="sr-only">Actions</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -170,11 +174,14 @@ export default async function ActivityPage({
                           <span className="text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="pr-4">
+                      <TableCell>
                         <div className="grid gap-0.5">
                           <StatusCell d={d} />
                           <Outcome d={d} />
                         </div>
+                      </TableCell>
+                      <TableCell className="pr-4 text-right">
+                        <DeleteCommenterButton commenterId={d.commenterId} username={d.commenterUsername} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -193,7 +200,10 @@ export default async function ActivityPage({
                       {timeAgo(d.createdAt)}
                     </time>
                   </div>
-                  <StatusCell d={d} />
+                  <div className="flex shrink-0 items-center gap-1">
+                    <StatusCell d={d} />
+                    <DeleteCommenterButton commenterId={d.commenterId} username={d.commenterUsername} />
+                  </div>
                 </div>
                 <p className="mt-2 text-sm break-words">
                   {d.commentText || <span className="text-muted-foreground italic">empty</span>}

@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.3.0...v0.4.0) (2026-10-15)
+
+
+### Features
+
+* terms of service page and legal links on every public page ([#47](https://github.com/ilramdhan/auto-reply-ig/issues/47)) ([5472355](https://github.com/ilramdhan/auto-reply-ig/commit/54723550d0d634e7faf9418dfc039c67ffb63aaa)), closes [#46](https://github.com/ilramdhan/auto-reply-ig/issues/46)
+
+
+### Bug Fixes
+
+* **db:** fail fast on unreachable DB; document matching the Vercel function region ([#45](https://github.com/ilramdhan/auto-reply-ig/issues/45)) ([779308a](https://github.com/ilramdhan/auto-reply-ig/commit/779308af9e1383caf25834ba16db3e1419379177)), closes [#44](https://github.com/ilramdhan/auto-reply-ig/issues/44)
+
 ## [0.3.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.2.0...v0.3.0) (2026-10-15)
 
 

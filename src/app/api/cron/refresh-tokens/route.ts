@@ -4,12 +4,12 @@ import { safeEqual } from "@/server/crypto";
 import { AppError } from "@/server/errors";
 import { getActiveAccount, refreshTokenIfNeeded } from "@/server/instagram/account";
 import { errorResponse, noStore } from "@/server/instagram/http";
-import { logger } from "@/server/log";
+import { getRequestId, logger } from "@/server/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const log = logger("cron");
+const rootLog = logger("cron");
 
 /**
  * Daily long-lived token refresh (Vercel Cron).
@@ -21,6 +21,7 @@ const log = logger("cron");
  */
 export async function GET(req: NextRequest) {
   const started = Date.now();
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   try {
     const { CRON_SECRET, NODE_ENV } = env();
     if (CRON_SECRET) {

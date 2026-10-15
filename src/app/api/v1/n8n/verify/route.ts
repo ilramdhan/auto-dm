@@ -3,12 +3,12 @@ import { verifyApiKey } from "@/server/api-keys";
 import { AppError } from "@/server/errors";
 import { errorResponse } from "@/server/instagram/http";
 import { verificationResponse } from "@/server/instagram/inbound";
-import { logger } from "@/server/log";
+import { getRequestId, logger } from "@/server/log";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const log = logger("n8n");
+const rootLog = logger("n8n");
 
 /**
  * Lets n8n answer Meta's GET verification handshake: n8n forwards `hub.mode`, `hub.verify_token`
@@ -17,6 +17,7 @@ const log = logger("n8n");
  * `{ error: { code: "UNAUTHORIZED", message } }`.
  */
 export async function GET(req: NextRequest) {
+  const log = rootLog.child({ requestId: getRequestId(req.headers) });
   try {
     if (!(await verifyApiKey(req.headers.get("authorization")))) {
       throw new AppError("UNAUTHORIZED", "Invalid or missing API key");

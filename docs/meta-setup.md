@@ -143,6 +143,15 @@ serves both; **Settings → Instagram → Meta app review** lists all four URLs 
      in **Settings → Instagram** first.
 4. Use the **toggle at the top of the dashboard** ("App mode: Development → Live").
 
+**Handling a commenter's email request.** People who only commented on your posts never log in to
+the app, so Meta never sends a deletion callback for them; the public `/data-deletion` page asks them
+to email you instead. To act on such an email, open **Activity** and use the trash icon on one of
+their rows ("Delete @username's data"), or enter their username in **Settings → Account → Delete a
+commenter's data**. After you confirm, every stored comment record for that commenter is deleted
+(matched by Instagram user id, or by username case-insensitively), the connected account is not
+touched, and you get a confirmation code. Reply with the status link
+`{APP_URL}/data-deletion?code=...` so they can check it themselves.
+
 ### Standard vs Advanced Access - do I need App Review?
 
 Meta's rule (from the Instagram Platform App Review docs): **Standard Access** is for apps that only
