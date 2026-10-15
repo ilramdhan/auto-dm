@@ -53,6 +53,7 @@ function stripInline(text: string): string {
     .replace(/(^|\W)\*([^*\n]+)\*(?=\W|$)/g, "$1$2")
     .replace(/`([^`]+)`/g, "$1")
     .replace(/<[^>]*>/g, "") // stray HTML tags are dropped, never rendered
+    .replace(/[<>]/g, "") // and any leftover angle bracket (e.g. nested "<<script>script>")
     .replace(/\s+/g, " ")
     .trim();
 }

@@ -111,4 +111,9 @@ describe("parseInline / isAllowedLink", () => {
     expect(isAllowedLink("http://github.com/a")).toBe(false);
     expect(isAllowedLink("https://github.com@evil.example/")).toBe(false);
   });
+
+  it("never leaves angle brackets behind, even for nested tags", () => {
+    const item = parseInline("fix <<script>script>alert(1)<</script>/script> done");
+    expect(item.text).not.toMatch(/[<>]/);
+  });
 });
