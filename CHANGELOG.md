@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.4.0...v0.5.0) (2026-10-15)
+
+
+### Features
+
+* brand icons, social cards, SEO metadata and installable PWA ([#60](https://github.com/ilramdhan/auto-reply-ig/issues/60)) ([cb2cb29](https://github.com/ilramdhan/auto-reply-ig/commit/cb2cb296dc6107dd642d8915d7e3b1d9db73a364)), closes [#49](https://github.com/ilramdhan/auto-reply-ig/issues/49)
+* let the operator delete a commenter's data ([#55](https://github.com/ilramdhan/auto-reply-ig/issues/55)) ([c734f2c](https://github.com/ilramdhan/auto-reply-ig/commit/c734f2c56bece548b537f2e27189158cb81ffc51)), closes [#53](https://github.com/ilramdhan/auto-reply-ig/issues/53)
+* **log:** request ids, unhandled error logging and central redaction ([#57](https://github.com/ilramdhan/auto-reply-ig/issues/57)) ([2828bbf](https://github.com/ilramdhan/auto-reply-ig/commit/2828bbf4e5d8ff9199d89eed373ac38f0c703332)), closes [#51](https://github.com/ilramdhan/auto-reply-ig/issues/51)
+* **settings:** add an About tab with version, update check and changelog ([#59](https://github.com/ilramdhan/auto-reply-ig/issues/59)) ([77d04b7](https://github.com/ilramdhan/auto-reply-ig/commit/77d04b78a52fe331735a4d548d089ee3ef22bc26))
+
 ## [0.4.0](https://github.com/ilramdhan/auto-reply-ig/compare/v0.3.0...v0.4.0) (2026-10-15)
 
 
