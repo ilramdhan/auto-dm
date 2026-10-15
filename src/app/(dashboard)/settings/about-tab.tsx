@@ -197,7 +197,7 @@ function WhatsNewCard({ check, timeZone }: { check: UpdateCheck; timeZone: strin
         <CardTitle role="heading" aria-level={2}>
           What&apos;s new
         </CardTitle>
-        <CardDescription>Recent releases of auto-reply-ig.</CardDescription>
+        <CardDescription>Recent releases of AutoDM.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
         {releases.length === 0 ? (
@@ -313,9 +313,7 @@ function CommunityCard() {
         <CardTitle role="heading" aria-level={2}>
           Community &amp; support
         </CardTitle>
-        <CardDescription>
-          auto-reply-ig is open source. Get help, report issues or contribute.
-        </CardDescription>
+        <CardDescription>AutoDM is open source. Get help, report issues or contribute.</CardDescription>
       </CardHeader>
       <CardContent>
         <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">

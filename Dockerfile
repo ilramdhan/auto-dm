@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
-# Production image for self-hosting auto-reply-ig (Vercel users don't need this).
-#   docker run -p 3000:3000 -e DATABASE_URL=... -e APP_SECRET=... ghcr.io/ilramdhan/auto-reply-ig
+# Production image for self-hosting AutoDM (Vercel users don't need this).
+#   docker run -p 3000:3000 -e DATABASE_URL=... -e APP_SECRET=... ghcr.io/ilramdhan/autodm
 # Migrations are applied automatically on start (set SKIP_MIGRATIONS=1 to disable).
 
 ARG NODE_VERSION=22

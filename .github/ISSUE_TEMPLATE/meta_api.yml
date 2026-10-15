@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        See [docs/meta-setup.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/meta-setup.md) and [docs/troubleshooting.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/troubleshooting.md) first. Many Meta errors come from app mode or missing permissions.
+        See [docs/meta-setup.md](https://github.com/ilramdhan/autodm/blob/main/docs/meta-setup.md) and [docs/troubleshooting.md](https://github.com/ilramdhan/autodm/blob/main/docs/troubleshooting.md) first. Many Meta errors come from app mode or missing permissions.
 
         **Do not paste access tokens, app secrets or full webhook payloads.**
   - type: checkboxes

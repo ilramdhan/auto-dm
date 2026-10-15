@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Follow [docs/panduan-lengkap-id.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/panduan-lengkap-id.md) (Bahasa Indonesia) or [docs/meta-setup.md](https://github.com/ilramdhan/auto-reply-ig/blob/main/docs/meta-setup.md) first. Writing in English or Bahasa Indonesia is fine.
+        Follow [docs/panduan-lengkap-id.md](https://github.com/ilramdhan/autodm/blob/main/docs/panduan-lengkap-id.md) (Bahasa Indonesia) or [docs/meta-setup.md](https://github.com/ilramdhan/autodm/blob/main/docs/meta-setup.md) first. Writing in English or Bahasa Indonesia is fine.
 
         **Do not paste tokens, app secrets, `APP_SECRET` or `DATABASE_URL`.**
   - type: checkboxes

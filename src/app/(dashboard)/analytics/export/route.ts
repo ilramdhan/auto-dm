@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
         r.lastActivity,
       ]),
     ]);
-    const filename = `auto-reply-ig-${filters.group}-${range.fromYmd}_${range.toYmd}.csv`;
+    const filename = `autodm-${filters.group}-${range.fromYmd}_${range.toYmd}.csv`;
     return new NextResponse(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",

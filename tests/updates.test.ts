@@ -60,11 +60,11 @@ describe("checkForUpdates", () => {
     const r = await checkForUpdates();
     expect(r.ok && r.updateAvailable).toBe(true);
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit & { next?: unknown }];
-    expect(url).toBe("https://api.github.com/repos/ilramdhan/auto-reply-ig/releases?per_page=5");
+    expect(url).toBe("https://api.github.com/repos/ilramdhan/autodm/releases?per_page=5");
     expect(init.headers).toMatchObject({
       Accept: "application/vnd.github+json",
       "X-GitHub-Api-Version": "2022-11-28",
-      "User-Agent": "auto-reply-ig",
+      "User-Agent": "autodm",
     });
     expect(init.next).toEqual({ revalidate: 21600 });
     expect(init.signal).toBeInstanceOf(AbortSignal);

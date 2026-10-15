@@ -1,4 +1,4 @@
-# Contributing to auto-reply-ig
+# Contributing to AutoDM
 
 Thanks for helping! By participating you agree to the [Code of Conduct](CODE_OF_CONDUCT.md).
 AI agents: also read [CLAUDE.md](CLAUDE.md) and `.claude/rules/`.

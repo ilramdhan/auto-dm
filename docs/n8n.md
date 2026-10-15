@@ -39,12 +39,12 @@ Requirements: a self-hosted n8n 1.x reachable over **public HTTPS** (Meta reject
    Auth** choose **Create new credential**:
    - **Name** (the header name): `Authorization`
    - **Value**: `Bearer ard_…` (the word `Bearer`, one space, then your key)
-   - Rename the credential (top left of the dialog) to `auto-reply-ig API key` → **Save**.
+   - Rename the credential (top left of the dialog) to `AutoDM API key` → **Save**.
 5. Double-click **App: relay events** → **Credential for Header Auth** → pick the same
-   `auto-reply-ig API key`. Both HTTP nodes must use it.
+   `AutoDM API key`. Both HTTP nodes must use it.
 6. Double-click **Config** and check `appUrl`: your app's public URL, e.g.
    `https://my-replies.vercel.app`, **no trailing slash**. (Already filled if you used the Download
-   button; if you imported `n8n/auto-reply-ig.workflow.json` from the repo, set it here.)
+   button; if you imported `n8n/autodm.workflow.json` from the repo, set it here.)
 7. **Save** the workflow (Ctrl/Cmd+S), then switch the **Inactive / Active** toggle at the top to
    **Active**. Meta only reaches the Production URL of an active workflow.
 

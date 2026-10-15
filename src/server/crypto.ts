@@ -2,7 +2,11 @@ import "server-only";
 import { createCipheriv, createDecipheriv, hkdfSync, randomBytes, timingSafeEqual } from "node:crypto";
 import { env } from "@/env";
 
-/** Derive purpose-specific 32-byte keys from APP_SECRET (HKDF-SHA256). */
+/**
+ * Derive purpose-specific 32-byte keys from APP_SECRET (HKDF-SHA256).
+ * The salt is the project's legacy name (renamed to AutoDM); never change it, or every stored secret
+ * and access token becomes undecryptable.
+ */
 export function deriveKey(purpose: "session" | "secrets"): Buffer {
   return Buffer.from(hkdfSync("sha256", env().APP_SECRET, "auto-reply-ig", `v1:${purpose}`, 32));
 }

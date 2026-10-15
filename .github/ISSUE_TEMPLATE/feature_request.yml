@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Not sure yet? Start a conversation in [Ideas](https://github.com/ilramdhan/auto-reply-ig/discussions/categories/ideas).
+        Not sure yet? Start a conversation in [Ideas](https://github.com/ilramdhan/autodm/discussions/categories/ideas).
 
         Do not paste tokens or secrets.
   - type: textarea

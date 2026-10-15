@@ -4,7 +4,7 @@
 # Behind HTTPS (required by Meta webhooks) set APP_URL to your public URL.
 services:
   app:
-    image: ghcr.io/ilramdhan/auto-reply-ig:latest
+    image: ghcr.io/ilramdhan/autodm:latest
     build: .
     restart: unless-stopped
     ports:

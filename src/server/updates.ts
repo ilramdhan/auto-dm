@@ -131,7 +131,7 @@ export const checkForUpdates = cache(async (): Promise<UpdateCheck> => {
       headers: {
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "auto-reply-ig",
+        "User-Agent": "autodm",
       },
       signal: AbortSignal.timeout(TIMEOUT_MS),
       next: { revalidate: RELEASES_REVALIDATE_SECONDS },
