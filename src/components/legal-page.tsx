@@ -34,7 +34,7 @@ export function LegalPage({
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
+      <header className="pt-safe-4 mx-auto flex w-full max-w-3xl items-center justify-between gap-2 px-4 pb-4 sm:px-6">
         <Link
           href="/"
           className="focus-visible:ring-ring/50 rounded-md outline-none focus-visible:ring-[3px]"
@@ -49,7 +49,7 @@ export function LegalPage({
         {intro ? <div className="text-muted-foreground mt-2 text-sm">{intro}</div> : null}
         <div className="mt-8 grid gap-8">{children}</div>
       </main>
-      <footer className="text-muted-foreground border-t px-4 py-6 text-center text-xs">
+      <footer className="text-muted-foreground pb-safe-6 border-t px-4 pt-6 text-center text-xs">
         <LegalNav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1" />
         <p>
           Powered by{" "}

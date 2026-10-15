@@ -3,8 +3,14 @@ import Link from "next/link";
 import { ContactLink, LegalList, LegalPage, LegalSection } from "@/components/legal-page";
 import { APP_NAME } from "@/lib/constants";
 import { loadPublicContact } from "@/server/legal";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Privacy policy" };
+export const metadata: Metadata = publicPageMetadata({
+  title: "Privacy policy",
+  description:
+    "What this site stores when you comment on our Instagram posts, why, who it is shared with and how to delete it.",
+  path: "/privacy",
+});
 
 /** Bump when the wording below changes. */
 const LAST_UPDATED = "15 October 2026";

@@ -34,6 +34,9 @@ export function proxy(req: NextRequest) {
     "img-src 'self' data: blob: https://*.cdninstagram.com https://*.fbcdn.net",
     "font-src 'self'",
     `connect-src 'self'${dev ? " ws:" : ""}`,
+    // PWA: the service worker (public/sw.js) and the web app manifest (src/app/manifest.ts).
+    "worker-src 'self'",
+    "manifest-src 'self'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
@@ -55,7 +58,9 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
+  // Skip API routes, build assets, and public files that are not HTML pages: icons, the service
+  // worker, the web app manifest, robots.txt, sitemap.xml and the generated social images.
   matcher: [
-    "/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml)$).*)",
+    "/((?!api/|_next/static|_next/image|icons/|favicon.ico|sw.js|manifest.webmanifest|robots.txt|sitemap.xml|opengraph-image|twitter-image|apple-icon|icon.svg|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt|xml|webmanifest)$).*)",
   ],
 };

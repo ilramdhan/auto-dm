@@ -32,7 +32,7 @@ export function StatusCard({ status, onNavigate }: { status: ShellStatus; onNavi
         <Link
           href="/settings?tab=instagram"
           onClick={onNavigate}
-          className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded-sm"
+          className="text-muted-foreground hover:text-foreground flex min-h-11 items-center gap-2 rounded-sm lg:min-h-6"
         >
           <InstagramIcon className="size-4" aria-hidden />
           <span>Instagram not connected</span>
@@ -42,7 +42,7 @@ export function StatusCard({ status, onNavigate }: { status: ShellStatus; onNavi
         href="/settings?tab=processing"
         onClick={onNavigate}
         className={cn(
-          "flex items-center gap-2 rounded-sm text-xs font-medium",
+          "flex min-h-11 items-center gap-2 rounded-sm text-xs font-medium lg:min-h-6",
           status.processingEnabled ? "text-success" : "text-warning",
         )}
       >

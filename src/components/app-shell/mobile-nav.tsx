@@ -20,19 +20,23 @@ export function MobileNav({ status }: { status: ShellStatus }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open navigation menu">
+        <Button variant="ghost" size="icon" className="size-11 lg:hidden" aria-label="Open navigation menu">
           <Menu aria-hidden />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="bg-sidebar w-72 p-0">
-        <SheetHeader className="border-b">
+      <SheetContent
+        side="left"
+        // Safe-area insets for the installed app, and a 44px close button (the primitive's is 16px).
+        className="bg-sidebar pl-safe-0 pb-safe-0 w-72 max-w-[85vw] p-0 [&>button:last-child]:top-2 [&>button:last-child]:right-2 [&>button:last-child]:flex [&>button:last-child]:size-11 [&>button:last-child]:items-center [&>button:last-child]:justify-center [&>button:last-child]:rounded-md"
+      >
+        <SheetHeader className="pt-safe-4 border-b pr-14">
           <SheetTitle>
             <Brand />
           </SheetTitle>
           <SheetDescription className="sr-only">Main navigation</SheetDescription>
         </SheetHeader>
         <nav aria-label="Main" className="px-3">
-          <NavLinks onNavigate={() => setOpen(false)} />
+          <NavLinks onNavigate={() => setOpen(false)} touch />
         </nav>
         <div className="mt-auto p-3">
           <StatusCard status={status} onNavigate={() => setOpen(false)} />

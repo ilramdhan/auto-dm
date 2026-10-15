@@ -13,7 +13,8 @@ export const NAV_ITEMS = [
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
-export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+/** `touch`: 44px rows for the mobile sheet (WCAG 2.5.5 target size). */
+export function NavLinks({ onNavigate, touch = false }: { onNavigate?: () => void; touch?: boolean }) {
   const pathname = usePathname();
   return (
     <ul className="grid gap-1">
@@ -27,6 +28,7 @@ export function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "focus-visible:ring-ring/50 flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-[3px]",
+                touch && "min-h-11 text-base",
                 active
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",

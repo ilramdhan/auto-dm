@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { envProblems } from "./env";
+import { envProblems, publicBaseUrl } from "./env";
 
 const SECRET = "x".repeat(32);
 
@@ -23,5 +23,23 @@ describe("envProblems", () => {
       APP_SECRET: "short",
     });
     expect(problems).toEqual(["APP_SECRET"]);
+  });
+});
+
+describe("publicBaseUrl", () => {
+  it("uses APP_URL without a trailing slash", () => {
+    expect(publicBaseUrl({ APP_URL: "https://autodm.example.com/" })).toBe("https://autodm.example.com");
+  });
+
+  it("falls back to the Vercel production URL", () => {
+    expect(publicBaseUrl({ VERCEL_PROJECT_PRODUCTION_URL: "my-app.vercel.app" })).toBe(
+      "https://my-app.vercel.app",
+    );
+  });
+
+  it("returns null instead of throwing when unset or invalid", () => {
+    expect(publicBaseUrl({})).toBeNull();
+    expect(publicBaseUrl({ APP_URL: "not a url" })).toBeNull();
+    expect(publicBaseUrl({ APP_URL: "javascript:alert(1)" })).toBeNull();
   });
 });

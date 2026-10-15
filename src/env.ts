@@ -58,3 +58,16 @@ export function env(): Env {
 export function appUrl(): string {
   return (env().APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
 }
+
+/**
+ * Public base URL for SEO metadata (canonical, Open Graph, sitemap, robots), or null when neither
+ * APP_URL nor a Vercel URL is configured. Unlike `appUrl()` it never throws, so metadata keeps
+ * working on a fresh deploy whose other variables are still missing.
+ */
+export function publicBaseUrl(raw: Record<string, string | undefined> = process.env): string | null {
+  const vercelUrl = raw.VERCEL_PROJECT_PRODUCTION_URL ?? raw.VERCEL_URL;
+  const parsed = z
+    .url({ protocol: /^https?$/ })
+    .safeParse(raw.APP_URL ?? (vercelUrl ? `https://${vercelUrl}` : undefined));
+  return parsed.success ? parsed.data.replace(/\/+$/, "") : null;
+}

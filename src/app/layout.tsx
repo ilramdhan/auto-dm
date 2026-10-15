@@ -4,25 +4,51 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { APP_NAME } from "@/lib/constants";
+import { ServiceWorkerRegistration } from "@/components/service-worker-registration";
+import { publicBaseUrl } from "@/env";
+import { THEME_COLORS } from "@/lib/brand-mark";
+import { SITE } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
 
-export const metadata: Metadata = {
-  title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
-  description:
-    "Open-source Instagram comment-to-DM automation: keyword rules, public replies and private-reply DMs.",
-  robots: { index: false, follow: false },
-  icons: { icon: [{ url: "/icon.svg", type: "image/svg+xml" }] },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Resolved per request (the layout is dynamic anyway) so a Docker image built without APP_URL still
+  // gets absolute URLs at runtime. Unknown base: no metadataBase, URLs stay relative.
+  const base = publicBaseUrl();
+  return {
+    ...(base ? { metadataBase: new URL(base) } : {}),
+    title: { default: SITE.name, template: `%s · ${SITE.name}` },
+    description: SITE.description,
+    applicationName: SITE.name,
+    keywords: [...SITE.keywords],
+    authors: [{ name: SITE.name, url: SITE.repoUrl }],
+    creator: SITE.name,
+    // Public pages are indexable; the (dashboard), (auth) and offline layouts/pages opt out.
+    robots: { index: true, follow: true },
+    openGraph: {
+      type: "website",
+      siteName: SITE.name,
+      title: SITE.name,
+      description: SITE.description,
+      locale: "en_US",
+      alternateLocale: ["id_ID"],
+      ...(base ? { url: base } : {}),
+    },
+    twitter: { card: "summary_large_image", title: SITE.name, description: SITE.description },
+    appleWebApp: { capable: true, title: SITE.shortName, statusBarStyle: "default" },
+    formatDetection: { telephone: false },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fcfcfd" },
-    { media: "(prefers-color-scheme: dark)", color: "#121216" },
+    { media: "(prefers-color-scheme: light)", color: THEME_COLORS.light },
+    { media: "(prefers-color-scheme: dark)", color: THEME_COLORS.dark },
   ],
+  // Draw under notches/home indicators in standalone mode; headers and footers pad with safe-area insets.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -41,6 +67,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         >
           <TooltipProvider delayDuration={200}>{children}</TooltipProvider>
           <Toaster richColors closeButton position="top-right" />
+          <ServiceWorkerRegistration />
         </ThemeProvider>
       </body>
     </html>

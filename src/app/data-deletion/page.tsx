@@ -6,8 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { confirmationCodeSchema, type DataDeletionStatus } from "@/lib/validation/data-deletion";
 import { loadPublicContact, lookupDeletionRequest, type DeletionLookup } from "@/server/legal";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Data deletion" };
+export const metadata: Metadata = publicPageMetadata({
+  title: "Data deletion",
+  description:
+    "How to delete the data this site stores about your Instagram account, and check the status of a deletion request.",
+  path: "/data-deletion",
+});
 
 const STATUS_TEXT: Record<DataDeletionStatus, { label: string; description: string }> = {
   completed: {

@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import { Brand } from "@/components/brand";
 import { LegalNav } from "@/components/legal-page";
 import { ThemeToggle } from "@/components/theme-toggle";
+
+/** Sign-in pages are never indexed (robots.txt also disallows them). */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[420px] bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklch,var(--primary)_14%,transparent),transparent)]"
       />
-      <header className="flex items-center justify-between px-4 py-4 sm:px-6">
+      <header className="pt-safe-4 flex items-center justify-between px-4 pb-4 sm:px-6">
         <Brand />
         <ThemeToggle />
       </header>
@@ -19,7 +23,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       >
         <div className="w-full max-w-sm">{children}</div>
       </main>
-      <footer className="text-muted-foreground grid gap-2 px-4 pb-6 text-center text-xs">
+      <footer className="text-muted-foreground pb-safe-6 grid gap-2 px-4 text-center text-xs">
         <LegalNav />
         <p>Self-hosted · Open source · Your data stays in your database</p>
       </footer>

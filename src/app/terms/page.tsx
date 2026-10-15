@@ -3,8 +3,13 @@ import Link from "next/link";
 import { ContactLink, LegalList, LegalPage, LegalSection } from "@/components/legal-page";
 import { APP_NAME } from "@/lib/constants";
 import { loadPublicContact } from "@/server/legal";
+import { publicPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = { title: "Terms of service" };
+export const metadata: Metadata = publicPageMetadata({
+  title: "Terms of service",
+  description: "The terms for receiving automatic Instagram replies and private messages from this site.",
+  path: "/terms",
+});
 
 /** Bump when the wording below changes. */
 const LAST_UPDATED = "15 October 2026";

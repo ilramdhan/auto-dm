@@ -1,7 +1,11 @@
+import type { Metadata } from "next";
 import { AppShell } from "@/components/app-shell/app-shell";
 import { requireUser } from "@/server/auth/guard";
 import { getActiveAccount } from "@/server/instagram/account";
 import { getSettings } from "@/server/settings";
+
+/** Signed-in pages are never indexed (robots.txt also disallows them). */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();

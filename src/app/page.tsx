@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import {
   ArrowRight,
   BarChart3,
@@ -18,13 +18,36 @@ import { SetupRequired } from "@/components/setup-required";
 import { InstagramIcon } from "@/components/icons";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { envProblems } from "@/env";
+import { envProblems, publicBaseUrl } from "@/env";
 import { APP_NAME, REPO_URL } from "@/lib/constants";
+import { absoluteUrl, jsonLdScript, publicPageMetadata, SITE } from "@/lib/seo";
 import { SESSION_COOKIE } from "@/server/auth/session-token";
 
-export const metadata: Metadata = {
-  title: { absolute: `${APP_NAME} · Instagram comment-to-DM automation` },
-};
+export const metadata: Metadata = publicPageMetadata({
+  title: `${APP_NAME} · Instagram comment-to-DM automation`,
+  absoluteTitle: true,
+  path: "/",
+});
+
+/** schema.org description of the app for search engines (JSON-LD). */
+function softwareApplicationJsonLd(base: string | null) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: SITE.name,
+    alternateName: SITE.shortName,
+    description: SITE.description,
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    license: "https://opensource.org/licenses/MIT",
+    isAccessibleForFree: true,
+    keywords: SITE.keywords.join(", "),
+    ...(base ? { url: absoluteUrl(base, "/"), image: absoluteUrl(base, "/opengraph-image") } : {}),
+    codeRepository: SITE.repoUrl,
+    sameAs: [SITE.repoUrl],
+  };
+}
 
 const STEPS = [
   {
@@ -81,14 +104,22 @@ export default async function Home() {
   // Cookie presence only decides the button label; the dashboard still validates the session.
   const signedIn = (await cookies()).has(SESSION_COOKIE);
   const missingEnv = envProblems();
+  // Set by the proxy (src/proxy.ts); inline scripts need it to pass the CSP.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      <script
+        type="application/ld+json"
+        nonce={nonce}
+        // Safe: jsonLdScript escapes "<", and the data is our own constants.
+        dangerouslySetInnerHTML={{ __html: jsonLdScript(softwareApplicationJsonLd(publicBaseUrl())) }}
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] bg-[radial-gradient(60%_60%_at_50%_0%,color-mix(in_oklch,var(--primary)_14%,transparent),transparent)]"
       />
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 py-4 sm:px-6">
+      <header className="pt-safe-4 mx-auto flex w-full max-w-5xl items-center justify-between gap-2 px-4 pb-4 sm:px-6">
         <Brand />
         <nav aria-label="Main" className="flex items-center gap-1 sm:gap-2">
           <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -114,9 +145,7 @@ export default async function Home() {
             <InstagramIcon className="size-3.5" />
             Open source · Self-hosted
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-            Turn Instagram comments into replies and DMs, automatically
-          </h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">{SITE.headline}</h1>
           <p className="text-muted-foreground mx-auto mt-4 max-w-xl text-base text-pretty sm:text-lg">
             When someone comments your keyword, {APP_NAME} replies under the comment and sends them a private
             message with your link. You host it, you own the data.
@@ -205,7 +234,7 @@ export default async function Home() {
         </section>
       </main>
 
-      <footer className="text-muted-foreground border-t px-4 py-6 text-center text-xs">
+      <footer className="text-muted-foreground pb-safe-6 border-t px-4 pt-6 text-center text-xs">
         <LegalNav className="mb-2 flex flex-wrap justify-center gap-x-4 gap-y-1" />
         <p>
           {APP_NAME} is free and open source (MIT).{" "}
