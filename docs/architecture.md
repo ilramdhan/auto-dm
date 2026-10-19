@@ -26,7 +26,7 @@ erDiagram
   settings { text key PK; jsonb value }
   api_keys { uuid id PK; text name; text prefix; text key_hash UK; timestamptz revoked_at }
   instagram_accounts { uuid id PK; text ig_user_id UK; text username; text access_token_enc; timestamptz token_expires_at; bool is_active }
-  campaigns { uuid id PK; uuid account_id FK; text name; text media_id; bool is_active; timestamptz starts_at; timestamptz ends_at }
+  campaigns { uuid id PK; uuid account_id FK; text name; text media_id; text[] media_ids; bool is_active; timestamptz starts_at; timestamptz ends_at }
   rules { uuid id PK; uuid campaign_id FK; text name; text[] keywords; enum match_mode; text[] public_replies; text dm_message; text dm_button_url; bool once_per_user; int priority }
   deliveries { uuid id PK; text comment_id UK; uuid campaign_id FK; uuid rule_id FK; text commenter_id; enum status; text error; enum source }
   data_deletion_requests { uuid id PK; text confirmation_code UK; text ig_user_id; enum status; timestamptz completed_at }
@@ -36,7 +36,16 @@ erDiagram
   rules ||--o{ deliveries : "set null"
 ```
 
-`campaigns.media_id = NULL` means "all posts". `match_mode`: word, exact, contains, any (every non-empty top-level comment; thread replies ignored; keyword rules win within a tier; `matched_keyword` is `*`). `delivery_status`:
+**Campaign targeting**: `campaigns.media_ids` (text[], GIN-indexed) lists every post/reel a
+campaign targets, e.g. the organic reel _and_ the ad version Instagram creates when it is boosted
+(a different media id). It is the source of truth. `media_id` is kept for backward compatibility:
+every write mirrors `media_ids[1]` into it, and readers fall back to it when `media_ids` is
+NULL/empty (rows written before migration `0008`; `0009` backfills them). "All posts" means both are
+empty. Matching lives in `campaignMediaIds()` / `isPostSpecific()` / `targetsMedia()` (`engine/pick.ts`)
+and the SQL twins `targetsMediaCond()` / `allPostsCond` (`engine/resolve.ts`, `@>` uses the index).
+Up to 20 posts per campaign. The `media_permalink/thumbnail/caption` preview columns describe the
+first post only. "Add this post to campaign" on `/skipped` (rows with `no_campaign_for_post`)
+appends a post with one idempotent `UPDATE`. `match_mode`: word, exact, contains, any (every non-empty top-level comment; thread replies ignored; keyword rules win within a tier; `matched_keyword` is `*`). `delivery_status`:
 received, processing, skipped, sent, partial, failed. `delivery_source`: webhook, n8n, manual.
 
 ## Request flows
@@ -46,7 +55,7 @@ returns the challenge if the stored verify token matches.
 
 **Comment event**: `POST /api/webhooks/instagram` -> verify `X-Hub-Signature-256` on the raw body ->
 Zod-parse -> respond 200 -> `after()` runs the engine: insert `deliveries` (conflict on `comment_id`
-means duplicate, stop) -> ignore own comments -> resolve campaign (media-specific before "all posts",
+means duplicate, stop) -> ignore own comments -> resolve campaign (campaigns whose `media_ids` include the post before "all posts",
 date window, active) -> match rule by priority -> once-per-user check -> public reply (random variant)
 -> private reply DM -> update status (`sent`, `partial` if one step failed, `failed`, `skipped` with reason).
 

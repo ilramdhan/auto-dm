@@ -2,9 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { ok } from "@/lib/action-result";
+import { addCampaignMediaSchema, MAX_CAMPAIGN_MEDIA } from "@/lib/validation/campaign";
 import { manualSendSchema, syncMissedSchema } from "@/lib/validation/skipped";
 import { authedAction } from "@/server/actions/safe-action";
 import { manualSend, syncMissedComments } from "@/server/engine/manual-send";
+import { AppError } from "@/server/errors";
+import { logger } from "@/server/log";
+import { addMediaToCampaign } from "@/server/repos/campaigns";
+import { getDelivery } from "@/server/repos/deliveries";
+
+const log = logger("manual");
 
 function revalidate() {
   revalidatePath("/skipped");
@@ -35,3 +42,34 @@ export const syncMissedCommentsAction = authedAction("manual", "sync", syncMisse
   revalidate();
   return ok(res);
 });
+
+/**
+ * "Add this post to campaign" (rows skipped as `no_campaign_for_post`): appends the comment's
+ * `media_id` to the campaign's `media_ids` so future comments on that post (e.g. the ad version of
+ * a boosted reel) are answered automatically. Idempotent. The row itself stays skipped; the
+ * operator can still "Send manually".
+ */
+export const addPostToCampaignAction = authedAction(
+  "manual",
+  "add_post_to_campaign",
+  addCampaignMediaSchema,
+  async ({ campaignId, deliveryId }) => {
+    const delivery = await getDelivery(deliveryId);
+    if (!delivery) throw new AppError("NOT_FOUND", "This comment no longer exists.");
+    if (!delivery.mediaId) throw new AppError("VALIDATION", "This comment has no post id to add.");
+    const res = await addMediaToCampaign(campaignId, delivery.mediaId);
+    switch (res) {
+      case "not_found":
+        throw new AppError("NOT_FOUND", "This campaign no longer exists.");
+      case "all_posts":
+        throw new AppError("CONFLICT", "That campaign already applies to all posts.");
+      case "full":
+        throw new AppError("CONFLICT", `A campaign can target at most ${MAX_CAMPAIGN_MEDIA} posts.`);
+    }
+    log.info("campaign.media_added", { campaignId, mediaId: delivery.mediaId, result: res });
+    revalidate();
+    revalidatePath("/campaigns");
+    revalidatePath(`/campaigns/${campaignId}`);
+    return ok<{ added: boolean }>({ added: res === "added" });
+  },
+);

@@ -119,6 +119,47 @@ Checklist when nothing arrives:
    permission ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).
 7. The connected account is **public** and a Business or Creator account.
 
+## A comment matched the keyword but got no reply or DM
+
+Work through this in order. Most cases are visible in the app; only "Meta never sent it" leaves no row.
+
+1. **Read the skip reason.** Open **Activity** or the **Skipped comments** page (`/skipped`) and find the comment. The reason says what happened:
+
+   | Reason                 | Meaning and fix                                                                                                                     |
+   | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+   | `no_match`             | No active rule's keyword matched the text **as it arrived**. Check keywords and match mode with **Test a comment**.                 |
+   | `no_campaign_for_post` | The text matches a rule, but the comment is on a post the campaign doesn't target. See "Boosted reels" below.                       |
+   | `already_delivered`    | The person already got this rule's DM and **Once per user** is on. Use another account, or tick the override when sending manually. |
+   | `own_comment`          | Written by the connected account (loop protection). Comment from a second account.                                                  |
+   | `processing_disabled`  | Automation is paused. Turn it back on in Settings → Processing.                                                                     |
+   | `not_delivered`        | Found by **Check post for missed comments**: Meta never sent a webhook for it. Send it manually if you want to answer it.           |
+
+2. **Boosted reels and Instagram Ads.** Comments on the ad version of a post arrive with a **different media id**, so a campaign that targets one post skips them as `no_campaign_for_post`. Fixes:
+   - Click **Add this post to campaign** on the Skipped row. A campaign can target several posts.
+   - Or set the campaign to **All posts**. Careful with short keywords in `contains` mode: on All posts, `cat` also matches "lo**cat**ion". Use `word` mode or longer keywords.
+
+3. **Rule edits only apply to new comments.** The comment is matched as it was when it arrived, against the rules at that time. After fixing a rule, send old comments manually from `/skipped`.
+
+4. **Edited comments** are not re-processed: only the first version is matched ([#97](https://github.com/ilramdhan/auto-dm/issues/97)).
+
+5. **Manual send** (from `/skipped`): Instagram's Private Reply works only within **7 days** of the comment and allows **one DM per comment**. A **once-per-user override** checkbox lets you send even if the person already received this rule's DM.
+
+6. **Comments Meta never delivered.** If there is no row at all, click **Check post for missed comments** on `/skipped`. It reads the post's comments from Instagram (last 7 days, campaign posts only) and adds missing ones as `not_delivered`. Nothing is sent automatically.
+
+7. **Want to answer every comment on a post?** Use the match mode **Any comment**. It ignores replies in threads, and rules with keywords take precedence over it.
+
+To list recent skipped rows by reason and post, run this in the Supabase SQL editor (no tokens are selected):
+
+```sql
+select created_at, skip_reason, media_id, commenter_username, left(comment_text, 60) as comment
+from deliveries
+where status = 'skipped'
+order by created_at desc
+limit 50;
+```
+
+Group by `media_id` to spot a second id for the same reel: `select media_id, skip_reason, count(*) from deliveries where status = 'skipped' group by 1, 2 order by 3 desc;`
+
 ## Webhook does not fire (no rows in Activity)
 
 1. **App mode**: in Development mode only app-role users trigger webhooks. Switch to **Live** ([meta-setup](meta-setup.md#part-8---development-vs-live-mode-important)).

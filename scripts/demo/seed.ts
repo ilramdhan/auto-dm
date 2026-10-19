@@ -326,6 +326,8 @@ async function main() {
       .insert(schema.campaigns)
       .values({
         ...plan.campaign,
+        // media_ids is the source of truth; media_id mirrors its first element.
+        mediaIds: plan.campaign.mediaId ? [plan.campaign.mediaId] : null,
         accountId: account.id,
         createdAt: new Date(now.getTime() - (20 - i * 3) * DAY_MS),
       })

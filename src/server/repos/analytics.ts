@@ -4,6 +4,7 @@ import { db, retryable } from "@/server/db/client";
 import { campaigns, deliveries, rules } from "@/server/db/schema";
 import { addDaysYmd } from "@/lib/timezone";
 import type { ResolvedRange } from "@/lib/validation/analytics";
+import { campaignMediaIds, isPostSpecific } from "@/server/engine/pick";
 import { DELIVERY_STATUSES, type DeliveryStatusValue } from "@/lib/validation/activity";
 
 /**
@@ -169,7 +170,10 @@ export type ContentRow = {
   key: string;
   campaignId: string | null;
   name: string;
+  /** Campaign rows: first targeted post (legacy). Post rows: that post. */
   mediaId: string | null;
+  /** Campaign rows: every targeted post (empty = all posts). Post rows: `[mediaId]`. */
+  mediaIds: string[];
   thumbnailUrl: string | null;
   permalink: string | null;
   allPosts: boolean;
@@ -197,6 +201,7 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
         id: campaigns.id,
         name: campaigns.name,
         mediaId: campaigns.mediaId,
+        mediaIds: campaigns.mediaIds,
         thumbnailUrl: campaigns.mediaThumbnailUrl,
         permalink: campaigns.mediaPermalink,
         comments: agg.comments,
@@ -226,9 +231,10 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
     campaignId: r.id,
     name: r.name,
     mediaId: r.mediaId,
+    mediaIds: campaignMediaIds(r),
     thumbnailUrl: r.thumbnailUrl,
     permalink: r.permalink,
-    allPosts: !r.mediaId,
+    allPosts: !isPostSpecific(r),
     comments: r.comments,
     matched: r.matched,
     repliesSent: r.repliesSent,
@@ -246,6 +252,7 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
       campaignId: null,
       name: "No matching campaign",
       mediaId: null,
+      mediaIds: [],
       thumbnailUrl: null,
       permalink: null,
       allPosts: false,
@@ -263,11 +270,20 @@ async function getPerCampaignQuery(scope: AnalyticsScope): Promise<ContentRow[]>
 }
 export const getPerCampaign = retryable("analytics.getPerCampaign", getPerCampaignQuery);
 
-/** One row per Instagram post/reel that received comments (thumbnail from a campaign targeting it). */
+/**
+ * One row per Instagram post/reel that received comments (name from a campaign targeting it). The
+ * campaign's thumbnail/permalink describe its first post only, so they're used only for that post
+ * and that campaign is preferred.
+ */
 async function getPerPostQuery(scope: AnalyticsScope, limit = 200): Promise<ContentRow[]> {
   const meta = sql<{ id: string; name: string; thumb: string | null; link: string | null } | null>`(
-    select json_build_object('id', c.id, 'name', c.name, 'thumb', c.media_thumbnail_url, 'link', c.media_permalink)
-    from ${campaigns} c where c.media_id = ${d.mediaId} order by c.created_at desc limit 1)`;
+    select json_build_object('id', c.id, 'name', c.name,
+      'thumb', case when c.media_id = ${d.mediaId} then c.media_thumbnail_url end,
+      'link', case when c.media_id = ${d.mediaId} then c.media_permalink end)
+    from ${campaigns} c
+    where c.media_ids @> array[${d.mediaId}]::text[]
+      or ((c.media_ids is null or cardinality(c.media_ids) = 0) and c.media_id = ${d.mediaId})
+    order by (c.media_id = ${d.mediaId}) desc nulls last, c.created_at desc limit 1)`;
   const rows = await db
     .select({
       mediaId: d.mediaId,
@@ -291,6 +307,7 @@ async function getPerPostQuery(scope: AnalyticsScope, limit = 200): Promise<Cont
     campaignId: r.meta?.id ?? null,
     name: r.meta?.name ?? (r.mediaId ? `Post ${r.mediaId}` : "Unknown post"),
     mediaId: r.mediaId,
+    mediaIds: r.mediaId ? [r.mediaId] : [],
     thumbnailUrl: r.meta?.thumb ?? null,
     permalink: r.meta?.link ?? null,
     allPosts: false,

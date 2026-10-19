@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { ExternalLink, Globe, ImageIcon, Loader2 } from "lucide-react";
+import { ExternalLink, Globe, ImageIcon, Loader2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { FieldError } from "@/components/field-error";
-import { campaignSchema } from "@/lib/validation/campaign";
+import { MAX_CAMPAIGN_MEDIA, campaignSchema } from "@/lib/validation/campaign";
 import { fromDateTimeLocal, toDateTimeLocal, truncate } from "@/lib/format";
 import { handleActionResult } from "@/lib/forms";
 import { zodFailure } from "@/lib/action-result";
@@ -24,7 +24,7 @@ type FormValues = {
   name: string;
   description: string;
   target: "media" | "all";
-  media: PickedMedia | null;
+  media: PickedMedia[];
   isActive: boolean;
   startsAt: string;
   endsAt: string;
@@ -35,6 +35,7 @@ export type CampaignFormInitial = {
   name: string;
   description: string | null;
   mediaId: string | null;
+  mediaIds: string[] | null;
   mediaPermalink: string | null;
   mediaThumbnailUrl: string | null;
   mediaCaption: string | null;
@@ -42,6 +43,25 @@ export type CampaignFormInitial = {
   startsAt: Date | null;
   endsAt: Date | null;
 };
+
+/**
+ * Targeted posts of a saved campaign. Only the first post's preview is stored (`media_*` columns);
+ * the others show their id until re-picked in this session.
+ */
+function initialMedia(c: CampaignFormInitial): PickedMedia[] {
+  const ids = c.mediaIds?.length ? c.mediaIds : c.mediaId ? [c.mediaId] : [];
+  return ids.map((id, i) =>
+    i === 0
+      ? { id, permalink: c.mediaPermalink, thumbnailUrl: c.mediaThumbnailUrl, caption: c.mediaCaption }
+      : { id, permalink: null, thumbnailUrl: null, caption: null },
+  );
+}
+
+/** Maps a server/schema error path to the form field that shows it. */
+function formField(name: string): keyof FormValues {
+  const n = name.replace(/^data\./, "");
+  return (/^media(Id|Ids)\b/.test(n) ? "media" : n) as keyof FormValues;
+}
 
 export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
   const router = useRouter();
@@ -51,15 +71,8 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
     defaultValues: {
       name: initial?.name ?? "",
       description: initial?.description ?? "",
-      target: initial && !initial.mediaId ? "all" : "media",
-      media: initial?.mediaId
-        ? {
-            id: initial.mediaId,
-            permalink: initial.mediaPermalink,
-            thumbnailUrl: initial.mediaThumbnailUrl,
-            caption: initial.mediaCaption,
-          }
-        : null,
+      target: initial && initialMedia(initial).length === 0 ? "all" : "media",
+      media: initial ? initialMedia(initial) : [],
       isActive: initial?.isActive ?? true,
       // datetime-local values are set after mount (browser timezone), see below.
       startsAt: "",
@@ -76,14 +89,17 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
   const media = useWatch({ control, name: "media" });
 
   const onSubmit = handleSubmit((v) => {
+    const forMedia = v.target === "media";
+    // The stored preview (`media_*`) is the first post's; `media_id` mirrors it server-side.
+    const first = forMedia ? v.media[0] : undefined;
     const payload = {
       name: v.name,
       description: v.description,
       target: v.target,
-      mediaId: v.target === "media" ? (v.media?.id ?? null) : null,
-      mediaPermalink: v.target === "media" ? (v.media?.permalink ?? null) : null,
-      mediaThumbnailUrl: v.target === "media" ? (v.media?.thumbnailUrl ?? null) : null,
-      mediaCaption: v.target === "media" ? (v.media?.caption ?? null) : null,
+      mediaIds: forMedia ? v.media.map((m) => m.id) : [],
+      mediaPermalink: first?.permalink ?? null,
+      mediaThumbnailUrl: first?.thumbnailUrl ?? null,
+      mediaCaption: first?.caption ?? null,
       isActive: v.isActive,
       startsAt: fromDateTimeLocal(v.startsAt),
       endsAt: fromDateTimeLocal(v.endsAt),
@@ -91,23 +107,14 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
     // Same schema the server uses, for instant feedback.
     const local = campaignSchema.safeParse(payload);
     if (!local.success) {
-      handleActionResult(zodFailure(local.error), (name, err) =>
-        setError(name === "mediaId" ? "media" : (name as keyof FormValues), err),
-      );
+      handleActionResult(zodFailure(local.error), (name, err) => setError(formField(String(name)), err));
       return;
     }
     startTransition(async () => {
       const res = initial
         ? await updateCampaignAction({ id: initial.id, data: payload })
         : await createCampaignAction(payload);
-      const okRes = handleActionResult(res, (name, err) =>
-        setError(
-          String(name)
-            .replace(/^data\./, "")
-            .replace("mediaId", "media") as keyof FormValues,
-          err,
-        ),
-      );
+      const okRes = handleActionResult(res, (name, err) => setError(formField(String(name)), err));
       if (!okRes) return;
       if (initial) {
         toast.success("Campaign saved");
@@ -162,8 +169,8 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
                 [
                   {
                     value: "media",
-                    title: "A specific post or reel",
-                    desc: "Only comments on the content you pick.",
+                    title: "Specific posts or reels",
+                    desc: "Only comments on the content you pick (one or more).",
                     icon: ImageIcon,
                   },
                   {
@@ -196,51 +203,80 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
         />
         {target === "media" ? (
           <div className="grid gap-2">
-            {media ? (
-              <div className="flex items-center gap-3 rounded-lg border p-3">
-                {media.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- Instagram CDN URLs, not optimizable
-                  <img src={media.thumbnailUrl} alt="" className="size-16 shrink-0 rounded-md object-cover" />
-                ) : (
-                  <span className="bg-muted flex size-16 shrink-0 items-center justify-center rounded-md">
-                    <ImageIcon className="text-muted-foreground size-5" aria-hidden />
-                  </span>
-                )}
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm">
-                    {media.caption ? truncate(media.caption, 140) : "No caption"}
-                  </p>
-                  {media.permalink ? (
-                    <a
-                      href={media.permalink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-muted-foreground mt-1 inline-flex items-center gap-1 text-xs hover:underline"
+            {media.length > 0 ? (
+              <ul className="grid gap-2" aria-label={`Selected posts (${media.length})`}>
+                {media.map((m, i) => (
+                  <li key={m.id} className="flex items-center gap-3 rounded-lg border p-3">
+                    {m.thumbnailUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- Instagram CDN URLs, not optimizable
+                      <img src={m.thumbnailUrl} alt="" className="size-14 shrink-0 rounded-md object-cover" />
+                    ) : (
+                      <span className="bg-muted flex size-14 shrink-0 items-center justify-center rounded-md">
+                        <ImageIcon className="text-muted-foreground size-5" aria-hidden />
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="line-clamp-2 text-sm break-words">
+                        {m.caption ? (
+                          truncate(m.caption, 140)
+                        ) : m.thumbnailUrl || m.permalink ? (
+                          "No caption"
+                        ) : (
+                          <span className="font-mono text-xs break-all">Post {m.id}</span>
+                        )}
+                      </p>
+                      <p className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-2 text-xs">
+                        {i === 0 && media.length > 1 ? <span>Main post (shown in lists)</span> : null}
+                        {m.permalink ? (
+                          <a
+                            href={m.permalink}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 hover:underline"
+                          >
+                            View on Instagram <ExternalLink className="size-3" aria-hidden />
+                            <span className="sr-only">(opens in a new tab)</span>
+                          </a>
+                        ) : null}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remove ${m.caption ? `“${truncate(m.caption, 40)}”` : `post ${m.id}`}`}
+                      onClick={() =>
+                        setValue(
+                          "media",
+                          media.filter((x) => x.id !== m.id),
+                          { shouldDirty: true },
+                        )
+                      }
                     >
-                      View on Instagram <ExternalLink className="size-3" aria-hidden />
-                      <span className="sr-only">(opens in a new tab)</span>
-                    </a>
-                  ) : null}
-                </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
-                  Change
-                </Button>
-              </div>
-            ) : (
-              <Button
-                type="button"
-                variant="outline"
-                className={cn(
-                  "h-auto justify-start gap-3 border-dashed py-4",
-                  errors.media && "border-destructive",
-                )}
-                onClick={() => setPickerOpen(true)}
-                aria-describedby={errors.media ? "media-error" : undefined}
-              >
-                <ImageIcon aria-hidden />
-                Choose a post or reel…
-              </Button>
-            )}
+                      <X aria-hidden />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              className={cn(
+                media.length === 0 && "h-auto justify-start gap-3 border-dashed py-4",
+                media.length > 0 && "justify-self-start",
+                errors.media && "border-destructive",
+              )}
+              onClick={() => setPickerOpen(true)}
+              aria-describedby={`media-help${errors.media ? " media-error" : ""}`}
+            >
+              {media.length === 0 ? <ImageIcon aria-hidden /> : <Plus aria-hidden />}
+              {media.length === 0 ? "Choose posts or reels…" : "Add or change posts…"}
+            </Button>
+            <p id="media-help" className="text-muted-foreground text-xs">
+              {media.length} of {MAX_CAMPAIGN_MEDIA} posts. Boosted a reel? Add its ad version too, or use
+              &ldquo;Add this post to campaign&rdquo; on the Skipped comments page.
+            </p>
             <FieldError
               id="media-error"
               errors={errors.media?.message ? [errors.media.message] : undefined}
@@ -252,7 +288,8 @@ export function CampaignForm({ initial }: { initial?: CampaignFormInitial }) {
                 <MediaPickerDialog
                   open={pickerOpen}
                   onOpenChange={setPickerOpen}
-                  selectedId={field.value?.id}
+                  selected={field.value}
+                  max={MAX_CAMPAIGN_MEDIA}
                   onSelect={(m) => {
                     field.onChange(m);
                     form.clearErrors("media");

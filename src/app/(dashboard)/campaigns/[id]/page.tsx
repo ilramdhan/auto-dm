@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/page-header";
 import { UrlTabs } from "@/components/url-tabs";
+import { Badge } from "@/components/ui/badge";
 import { CampaignActiveSwitch } from "@/components/campaigns/campaign-active-switch";
 import { CampaignStatusBadge, campaignState } from "@/components/campaigns/campaign-status";
 import { DeleteCampaignButton } from "@/components/campaigns/delete-campaign-button";
@@ -18,6 +19,7 @@ import { pct, resolveRange } from "@/lib/validation/analytics";
 import { formatNumber, truncate } from "@/lib/format";
 import { requireUser } from "@/server/auth/guard";
 import { getCampaign } from "@/server/repos/campaigns";
+import { campaignMediaIds } from "@/server/engine/pick";
 import { listRules } from "@/server/repos/rules";
 import { getKpis } from "@/server/repos/analytics";
 
@@ -50,6 +52,7 @@ export default async function CampaignPage({
   ]);
   if (!campaign) notFound();
   const state = campaignState(campaign);
+  const posts = campaignMediaIds(campaign).length;
 
   const stats = [
     { label: "Comments", value: formatNumber(kpis.comments), sub: "last 30 days" },
@@ -80,9 +83,10 @@ export default async function CampaignPage({
           </span>
         }
         description={
-          campaign.mediaId ? (
+          posts > 0 ? (
             <span className="inline-flex flex-wrap items-center gap-x-2">
               {campaign.mediaCaption ? `“${truncate(campaign.mediaCaption, 80)}”` : "Specific post"}
+              {posts > 1 ? <Badge variant="outline">{posts} posts</Badge> : null}
               {campaign.mediaPermalink ? (
                 <a
                   href={campaign.mediaPermalink}

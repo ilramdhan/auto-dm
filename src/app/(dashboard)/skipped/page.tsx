@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { AddPostToCampaignButton } from "@/components/skipped/add-post-button";
 import { ManualSendButton, type ManualRuleOption } from "@/components/skipped/manual-send-dialog";
 import { SkipReasonFilter } from "@/components/skipped/reason-filter";
 import { SyncMissedComments } from "@/components/skipped/sync-missed";
@@ -14,7 +15,7 @@ import { skipReasonExplanation, skipReasonLabel } from "@/lib/labels";
 import { SKIPPED_PAGE_SIZE, skippedFiltersSchema } from "@/lib/validation/skipped";
 import { requireUser } from "@/server/auth/guard";
 import { manualRuleCandidates, manualSendBlocker, preselectRuleId } from "@/server/engine/manual";
-import type { CampaignWithRules } from "@/server/engine/pick";
+import { isPostSpecific, targetsMedia, type CampaignWithRules } from "@/server/engine/pick";
 import { loadActiveCampaigns } from "@/server/engine/resolve";
 import { getActiveAccount } from "@/server/instagram/account";
 import { listSkippedDeliveries, type SkippedRow } from "@/server/repos/deliveries";
@@ -41,6 +42,17 @@ function ruleOptions(all: CampaignWithRules[], d: SkippedRow): ManualRuleOption[
     dmButtonUrl: rule.dmButtonUrl,
     oncePerUser: rule.oncePerUser,
   }));
+}
+
+/**
+ * "Add this post to campaign" applies to `no_campaign_for_post` rows whose campaign is post-specific
+ * and doesn't target the row's post yet (hidden once added, or for inactive/deleted campaigns).
+ */
+function addPostTarget(all: CampaignWithRules[], d: SkippedRow): { id: string; name: string } | null {
+  if (d.skipReason !== "no_campaign_for_post" || !d.campaignId || !d.mediaId) return null;
+  const c = all.find((x) => x.campaign.id === d.campaignId)?.campaign;
+  if (!c || !isPostSpecific(c) || targetsMedia(c, d.mediaId)) return null;
+  return { id: c.id, name: c.name };
 }
 
 function Post({ d }: { d: SkippedRow }) {
@@ -80,7 +92,7 @@ export default async function SkippedPage({
   ]);
   const active = account ? await loadActiveCampaigns({ accountId: account.id, now }) : [];
   const postCampaigns = active
-    .filter((c) => c.campaign.mediaId !== null)
+    .filter((c) => isPostSpecific(c.campaign))
     .map((c) => ({ id: c.campaign.id, name: c.campaign.name }));
   const paused = enabled === false;
   const connected = !!account?.accessTokenEnc;
@@ -145,6 +157,7 @@ export default async function SkippedPage({
           <ul className="grid gap-3" aria-label={`Skipped comments, page ${page} of ${pages}`}>
             {items.map((d) => {
               const rules = ruleOptions(active, d);
+              const addTarget = addPostTarget(active, d);
               const explanation = skipReasonExplanation(d.skipReason, { campaignName: d.campaignName });
               return (
                 <li key={d.id} className="bg-card grid gap-3 rounded-xl border p-4 md:grid-cols-[1fr_auto]">
@@ -183,7 +196,14 @@ export default async function SkippedPage({
                       ) : null}
                     </div>
                   </div>
-                  <div className="md:justify-self-end">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start md:justify-self-end">
+                    {addTarget ? (
+                      <AddPostToCampaignButton
+                        deliveryId={d.id}
+                        campaignId={addTarget.id}
+                        campaignName={addTarget.name}
+                      />
+                    ) : null}
                     <ManualSendButton
                       deliveryId={d.id}
                       username={d.commenterUsername}

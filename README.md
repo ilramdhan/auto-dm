@@ -34,7 +34,9 @@ into n8n.
 
 ## Features
 
-- **Multi-post campaigns**: one campaign per post or reel, or one for "all posts".
+- **Multi-post campaigns**: a campaign targets one or more posts/reels (up to 20, e.g. a reel and
+  its boosted ad version), or "all posts". Comments from an ad that aren't covered show up on
+  Skipped comments with **Add this post to campaign**.
 - **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains, or any comment; case, accent and emoji safe).
 - **Random public-reply variants** so your replies don't look copy-pasted.
 - **Personalised DMs** with `{username}` and `{keyword}`, plus an optional **link button**.

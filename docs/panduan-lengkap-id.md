@@ -207,7 +207,9 @@ Instagram di-connect ulang.
 
 ## 9. Buat campaign & aturan
 
-1. **Campaigns → New campaign** → pilih post/reel (atau **All posts**) → simpan.
+1. **Campaigns → New campaign** → pilih satu atau beberapa post/reel (maks. 20, atau **All posts**)
+   → simpan. Reel yang di-boost lewat Instagram Ads punya media id lain untuk versi iklannya:
+   masukkan keduanya ke campaign yang sama supaya komentar dari iklan juga dibalas.
 2. **Add rule**:
    - **Keywords**: `drive` (tekan Enter per keyword; bisa banyak, mis. `drive`, `prompt`).
    - **Match mode**: _Whole word_ (disarankan) – cocok untuk "DRIVE", "drive 🙏", "Drive!!".
@@ -239,8 +241,9 @@ komentar untuk akun lain disembunyikan; pilih **All reasons** untuk melihatnya).
   tidak cocok, kolom keyword berisi `*`.
 - **`Matched a campaign for a different post`** (`no_campaign_for_post`): keyword cocok dengan
   campaign untuk post lain. Biasanya komentar ada di **versi iklan dari reel yang di-boost** (Instagram
-  Ads), yang punya media id berbeda dari reel aslinya. Kirim manual (aturan itu sudah terpilih), atau
-  buat campaign untuk post tersebut.
+  Ads), yang punya media id berbeda dari reel aslinya. Klik **Add this post to campaign** (ada dialog
+  konfirmasi) supaya komentar berikutnya di post itu dibalas otomatis; komentar yang sudah terlewat
+  tetap bisa dikirim lewat **Send manually** (aturan itu sudah terpilih).
 - **Check post for missed comments**: membaca komentar 7 hari terakhir dari post campaign aktif (maks.
   5 halaman × 50 komentar per post, plus balasan yang ikut terbaca) dan mencatat komentar yang
   webhook-nya tidak pernah datang sebagai **Missed** (`not_delivered`). Tidak ada yang dikirim
@@ -419,7 +422,7 @@ Checklist kalau tidak ada yang masuk:
 | "Verify and save" di Meta gagal         | URL salah / app belum ter-deploy / verify token salah                                                        |
 | Komentar tidak muncul di Activity       | Lihat Settings → Instagram → Webhook diagnostics; detail di "Komentar tes saya tidak memicu apa-apa" di atas |
 | Activity: `skipped · no_match`          | Keyword tidak cocok; cek mode & ejaan dengan "Test a comment"                                                |
-| Activity: `no_campaign_for_post`        | Komentar di post lain (sering versi iklan reel yang di-boost). Kirim manual dari **Skipped**                 |
+| Activity: `no_campaign_for_post`        | Komentar di post lain (sering versi iklan reel yang di-boost). **Skipped → Add this post to campaign**       |
 | Activity: `skipped · already_delivered` | "Once per user" aktif dan orang itu sudah pernah dapat DM                                                    |
 | DM gagal kode `551`                     | Pengguna tidak bisa menerima pesan (privasi) – bukan error app                                               |
 | DM gagal kode `10` / `200`              | Izin kurang atau app belum Live/Advanced Access                                                              |

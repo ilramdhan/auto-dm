@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from "@/server/db/client";
 import { campaigns } from "@/server/db/schema";
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { AppError } from "@/server/errors";
 import { getAccessToken, getActiveAccount } from "@/server/instagram/account";
 import { fetchRecentComments } from "@/server/instagram/comments";
@@ -17,7 +17,8 @@ import {
 import { getSetting } from "@/server/settings";
 import { manualSendBlocker, manualMatch, manualRuleCandidates, privateReplyWindowStart } from "./manual";
 import { sendForDelivery, type ProcessResult } from "./process-comment";
-import { loadActiveCampaigns } from "./resolve";
+import { campaignMediaIds } from "./pick";
+import { loadActiveCampaigns, postSpecificCond } from "./resolve";
 
 const log = logger("manual");
 
@@ -119,14 +120,15 @@ export async function syncMissedComments(input: {
     throw new AppError("NOT_CONFIGURED", "Connect an Instagram account in Settings → Instagram first.");
 
   const rows = await db
-    .select({ mediaId: campaigns.mediaId })
+    .select({ mediaId: campaigns.mediaId, mediaIds: campaigns.mediaIds })
     .from(campaigns)
     .where(
       input.campaignId
-        ? and(eq(campaigns.id, input.campaignId), isNotNull(campaigns.mediaId))
-        : and(eq(campaigns.isActive, true), isNotNull(campaigns.mediaId)),
+        ? and(eq(campaigns.id, input.campaignId), postSpecificCond)
+        : and(eq(campaigns.isActive, true), postSpecificCond),
     );
-  const mediaIds = [...new Set(rows.map((r) => r.mediaId).filter((m): m is string => !!m))];
+  // Every post of every (multi-post) campaign, once.
+  const mediaIds = [...new Set(rows.flatMap((r) => campaignMediaIds(r)))];
   if (input.campaignId && mediaIds.length === 0)
     throw new AppError(
       "VALIDATION",

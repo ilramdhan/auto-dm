@@ -57,6 +57,20 @@
       "when": 1792385889358,
       "tag": "0007_match_mode_any",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792388178396,
+      "tag": "0008_campaign_media_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792388184252,
+      "tag": "0009_campaign_media_ids_backfill",
+      "breakpoints": true
     }
   ]
 }

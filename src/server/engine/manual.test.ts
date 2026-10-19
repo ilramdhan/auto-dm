@@ -18,6 +18,7 @@ const campaign = (id: string, mediaId: string | null): Campaign => ({
   name: `Campaign ${id}`,
   description: null,
   mediaId,
+  mediaIds: null,
   mediaPermalink: null,
   mediaThumbnailUrl: null,
   mediaCaption: null,

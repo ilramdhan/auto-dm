@@ -85,7 +85,16 @@ export const instagramAccounts = pgTable("instagram_accounts", {
 
 /* ------------------------------ campaigns/rules ---------------------------- */
 
-/** A campaign = one piece of content (or "all posts" when mediaId is null). */
+/**
+ * A campaign = one or more pieces of content, or "all posts" when no media id is set.
+ *
+ * Targeting: `mediaIds` is the source of truth (e.g. the organic reel *and* its ad version, which
+ * Instagram gives a different media id). `mediaId` is kept for backward compatibility and always
+ * mirrors `mediaIds[0]` on write (see `repos/campaigns.ts`). Readers use `campaignMediaIds()` in
+ * `engine/pick.ts`, which falls back to `mediaId` for rows written before `media_ids` existed.
+ * "All posts" = `mediaIds` empty/NULL and `mediaId` NULL. The `media_*` preview columns describe
+ * the first post only.
+ */
 export const campaigns = pgTable(
   "campaigns",
   {
@@ -93,8 +102,10 @@ export const campaigns = pgTable(
     accountId: uuid("account_id").references(() => instagramAccounts.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     description: text("description"),
-    /** Instagram media id. NULL = applies to every post/reel of the account. */
+    /** Instagram media id: mirror of `mediaIds[0]` (legacy). NULL = all posts. */
     mediaId: text("media_id"),
+    /** Every Instagram media id this campaign targets (source of truth). NULL/empty = all posts. */
+    mediaIds: text("media_ids").array(),
     mediaPermalink: text("media_permalink"),
     mediaThumbnailUrl: text("media_thumbnail_url"),
     mediaCaption: text("media_caption"),
@@ -103,7 +114,11 @@ export const campaigns = pgTable(
     endsAt: timestamp("ends_at", { withTimezone: true }),
     ...timestamps,
   },
-  (t) => [index("campaigns_media_idx").on(t.mediaId), index("campaigns_active_idx").on(t.isActive)],
+  (t) => [
+    index("campaigns_media_idx").on(t.mediaId),
+    index("campaigns_media_ids_idx").using("gin", t.mediaIds),
+    index("campaigns_active_idx").on(t.isActive),
+  ],
 );
 
 export const matchMode = pgEnum("match_mode", ["word", "exact", "contains", "any"]);

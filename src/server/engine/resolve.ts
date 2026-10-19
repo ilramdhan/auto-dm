@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, eq, gt, inArray, isNotNull, isNull, lte, ne, or, type SQL } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNull, lte, ne, or, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { campaigns, rules } from "@/server/db/schema";
 import {
@@ -12,9 +12,32 @@ import {
 
 export type { CampaignWithRules, ResolvedMatch };
 
+/*
+ * Targeting in SQL, mirroring `campaignMediaIds()` in pick.ts: `media_ids` is the source of truth;
+ * rows with an empty/NULL `media_ids` fall back to the legacy `media_id`.
+ */
+const noMediaIds = sql`(${campaigns.mediaIds} is null or cardinality(${campaigns.mediaIds}) = 0)`;
+
+/** "All posts" campaigns: no media ids at all. */
+export const allPostsCond: SQL = sql`(${noMediaIds} and ${campaigns.mediaId} is null)`;
+
+/** Post-specific campaigns (target at least one media id). */
+export const postSpecificCond: SQL = sql`not ${allPostsCond}`;
+
+/** Campaigns that target `mediaId` (the `@>` can use the GIN index on `media_ids`). */
+export function targetsMediaCond(mediaId: string): SQL {
+  return sql`(${campaigns.mediaIds} @> array[${mediaId}]::text[] or (${noMediaIds} and ${campaigns.mediaId} = ${mediaId}))`;
+}
+
+/** Campaigns that don't target `mediaId` (NULL-safe negation of {@link targetsMediaCond}). */
+export function notTargetsMediaCond(mediaId: string): SQL {
+  return sql`not coalesce(${targetsMediaCond(mediaId)}, false)`;
+}
+
 /**
  * Loads active campaigns (with their active rules) that apply to a comment on `mediaId` for
- * `accountId`: campaign is active, targets this media or all posts (`media_id IS NULL`), belongs
+ * `accountId`: campaign is active, targets this media (in `media_ids`, or legacy `media_id`) or all
+ * posts (neither set), belongs
  * to this account or to none, and `now` is inside `[startsAt, endsAt)`.
  * Media-specific campaigns come first, then "all posts" campaigns (oldest first within a tier).
  */
@@ -24,9 +47,7 @@ export async function loadApplicableCampaigns(params: {
   now?: Date;
 }): Promise<CampaignWithRules[]> {
   const now = params.now ?? new Date();
-  const mediaCond = params.mediaId
-    ? or(eq(campaigns.mediaId, params.mediaId), isNull(campaigns.mediaId))
-    : isNull(campaigns.mediaId);
+  const mediaCond = params.mediaId ? or(targetsMediaCond(params.mediaId), allPostsCond) : allPostsCond;
   return loadCampaignsWithRules(and(activeCampaignCond(params.accountId, now), mediaCond));
 }
 
@@ -73,7 +94,7 @@ export async function loadActiveCampaigns(params: { accountId: string; now?: Dat
 }
 
 /**
- * Active, in-schedule post-specific campaigns of the account for posts other than `mediaId`, with
+ * Active, in-schedule post-specific campaigns of the account that don't target `mediaId`, with
  * their active keyword rules (no `any` rules), in one query. Only used on the no-match path to
  * detect `no_campaign_for_post` (see {@link pickOtherPostMatch}).
  */
@@ -90,8 +111,8 @@ export async function loadOtherPostCampaigns(params: {
     .where(
       and(
         activeCampaignCond(params.accountId, now),
-        isNotNull(campaigns.mediaId),
-        params.mediaId ? ne(campaigns.mediaId, params.mediaId) : undefined,
+        postSpecificCond,
+        params.mediaId ? notTargetsMediaCond(params.mediaId) : undefined,
         eq(rules.isActive, true),
         ne(rules.matchMode, "any"),
       ),

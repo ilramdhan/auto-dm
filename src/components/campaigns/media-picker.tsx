@@ -34,23 +34,52 @@ function kind(m: MediaItem): { label: string; icon: typeof Images } {
   return { label: "Post", icon: Images };
 }
 
+function toPicked(m: MediaItem): PickedMedia {
+  return { id: m.id, permalink: m.permalink, thumbnailUrl: m.thumbnailUrl, caption: m.caption };
+}
+
+/**
+ * Multi-select post/reel picker (checkbox grid). `selected` is the current selection; on confirm
+ * `onSelect` receives the new selection in pick order (already-selected posts first, so the
+ * campaign's first post, whose preview is stored, doesn't change unless it was unticked). Posts
+ * that aren't in the loaded pages (e.g. an ad's media id) are kept as they are.
+ */
 export function MediaPickerDialog({
   open,
   onOpenChange,
-  selectedId,
+  selected,
   onSelect,
+  max,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  selectedId?: string | null;
-  onSelect: (m: PickedMedia) => void;
+  selected: readonly PickedMedia[];
+  onSelect: (m: PickedMedia[]) => void;
+  max: number;
 }) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "loaded" | "not-connected" | "error">("idle");
   const [error, setError] = useState<string>("");
   const [pending, startTransition] = useTransition();
-  const [choice, setChoice] = useState<string | null>(selectedId ?? null);
+  const [choice, setChoice] = useState<PickedMedia[]>([...selected]);
+  // Reset the working selection each time the dialog opens.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setChoice([...selected]);
+  }
+  const chosen = new Set(choice.map((c) => c.id));
+  const full = choice.length >= max;
+  function toggle(m: MediaItem) {
+    setChoice((prev) =>
+      prev.some((c) => c.id === m.id)
+        ? prev.filter((c) => c.id !== m.id)
+        : prev.length >= max
+          ? prev
+          : [...prev, toPicked(m)],
+    );
+  }
 
   const load = useCallback((after: string | null) => {
     startTransition(async () => {
@@ -75,15 +104,14 @@ export function MediaPickerDialog({
     if (open && state === "idle") load(null);
   }, [open, state, load]);
 
-  const picked = items.find((i) => i.id === choice);
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Choose a post or reel</DialogTitle>
+          <DialogTitle>Choose posts or reels</DialogTitle>
           <DialogDescription>
-            Comments on the selected content will trigger this campaign&apos;s rules.
+            Comments on any selected post will trigger this campaign&apos;s rules. Pick up to {max}, for
+            example a reel and its boosted (ad) version.
           </DialogDescription>
         </DialogHeader>
 
@@ -126,14 +154,15 @@ export function MediaPickerDialog({
               </p>
             ) : (
               <div
-                role="radiogroup"
+                role="group"
                 aria-label="Posts and reels"
                 className="grid grid-cols-3 gap-2 sm:grid-cols-4"
               >
                 {items.map((m) => {
                   const k = kind(m);
                   const Icon = k.icon;
-                  const selected = choice === m.id;
+                  const isChosen = chosen.has(m.id);
+                  const disabled = full && !isChosen;
                   const date = m.timestamp
                     ? new Date(m.timestamp).toLocaleDateString("en", { dateStyle: "medium" })
                     : "";
@@ -141,22 +170,17 @@ export function MediaPickerDialog({
                     <button
                       key={m.id}
                       type="button"
-                      role="radio"
-                      aria-checked={selected}
+                      role="checkbox"
+                      aria-checked={isChosen}
+                      aria-disabled={disabled || undefined}
                       aria-label={`${k.label}${date ? ` from ${date}` : ""}: ${m.caption ? truncate(m.caption, 80) : "no caption"}`}
-                      onClick={() => setChoice(m.id)}
-                      onDoubleClick={() => {
-                        onSelect({
-                          id: m.id,
-                          permalink: m.permalink,
-                          thumbnailUrl: m.thumbnailUrl,
-                          caption: m.caption,
-                        });
-                        onOpenChange(false);
+                      onClick={() => {
+                        if (!disabled) toggle(m);
                       }}
                       className={cn(
                         "group bg-muted focus-visible:ring-ring relative aspect-square overflow-hidden rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-offset-2",
-                        selected && "ring-primary ring-[3px] ring-offset-2",
+                        isChosen && "ring-primary ring-[3px] ring-offset-2",
+                        disabled && "cursor-not-allowed opacity-50",
                       )}
                     >
                       {m.thumbnailUrl ? (
@@ -164,7 +188,7 @@ export function MediaPickerDialog({
                         <img
                           src={m.thumbnailUrl}
                           alt=""
-                          className="size-full object-cover transition-transform group-hover:scale-105"
+                          className="size-full object-cover transition-transform group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                           loading="lazy"
                         />
                       ) : (
@@ -176,7 +200,7 @@ export function MediaPickerDialog({
                         <Icon className="size-3" aria-hidden />
                         {k.label}
                       </span>
-                      {selected ? (
+                      {isChosen ? (
                         <span className="bg-primary text-primary-foreground absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full">
                           <Check className="size-4" aria-hidden />
                         </span>
@@ -208,26 +232,25 @@ export function MediaPickerDialog({
           </div>
         )}
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            disabled={!picked}
-            onClick={() => {
-              if (!picked) return;
-              onSelect({
-                id: picked.id,
-                permalink: picked.permalink,
-                thumbnailUrl: picked.thumbnailUrl,
-                caption: picked.caption,
-              });
-              onOpenChange(false);
-            }}
-          >
-            Use this post
-          </Button>
+        <DialogFooter className="items-center sm:justify-between">
+          <p className="text-muted-foreground text-sm" aria-live="polite">
+            {choice.length} of {max} selected{full ? " (maximum reached)" : ""}
+          </p>
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              disabled={choice.length === 0}
+              onClick={() => {
+                onSelect(choice);
+                onOpenChange(false);
+              }}
+            >
+              {choice.length === 1 ? "Use this post" : `Use ${choice.length} posts`}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
