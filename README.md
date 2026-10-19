@@ -40,6 +40,8 @@ into n8n.
 - **Personalised DMs** with `{username}` and `{keyword}`, plus an optional **link button**.
 - **Once per user** per rule, and loop protection (your own replies are ignored).
 - **Live activity log** with status, errors and skip reasons for every comment.
+- **Skipped comments + manual send**: see why a comment wasn't answered (including keyword hits on a different post, e.g. the ad version of a boosted reel) and send a rule's reply + DM by hand within Instagram's 7-day window, once per comment.
+- **Check for missed comments**: re-read the last 7 days of a campaign post's comments from Instagram and list any whose webhook never arrived (nothing is sent automatically).
 - **Kill switch** to pause all sending instantly.
 - **Encrypted secrets** (AES-256-GCM): tokens and the Meta app secret are never stored in plain text.
 - **Automatic token refresh** (daily cron), so the 60-day Instagram token never expires on you.

@@ -64,6 +64,7 @@ export const PRIVATE_PATHS = [
   "/campaigns",
   "/analytics",
   "/activity",
+  "/skipped",
   "/settings",
   "/login",
   "/change-password",

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, LayoutDashboard, Megaphone, Settings } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  LayoutDashboard,
+  Megaphone,
+  MessageSquareWarning,
+  Settings,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const NAV_ITEMS = [
@@ -10,6 +17,7 @@ export const NAV_ITEMS = [
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/activity", label: "Activity", icon: Activity },
+  { href: "/skipped", label: "Skipped", icon: MessageSquareWarning },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 

@@ -323,6 +323,30 @@ describe.skipIf(!TEST_DB)("processCommentEvent (Postgres integration)", () => {
     expect(r.error).not.toContain("IGTOKEN");
   });
 
+  it("records no_campaign_for_post with the other post's campaign/rule (boosted reel ad id)", async () => {
+    const { postRule } = await seed({ mediaCampaign: true });
+    // Only the media-specific campaign has "drive"; drop the all-posts rule so nothing else matches.
+    const { rules } = m.schema;
+    const { ne } = await import("drizzle-orm");
+    await m.db.db.delete(rules).where(ne(rules.id, postRule!.id));
+    const e = event({ mediaId: "ad_version_of_reel" });
+    const res = await m.engine.processCommentEvent(e, { source: "webhook" });
+    expect(res).toMatchObject({
+      status: "skipped",
+      skipReason: "no_campaign_for_post",
+      ruleId: postRule!.id,
+      campaignId: postRule!.campaignId,
+      matchedKeyword: "drive",
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(await row(e.commentId)).toMatchObject({ status: "skipped", skipReason: "no_campaign_for_post" });
+    // Text that matches no campaign anywhere stays no_match.
+    const plain = await m.engine.processCommentEvent(event({ mediaId: "ad_version_of_reel", text: "nice" }), {
+      source: "webhook",
+    });
+    expect(plain).toMatchObject({ skipReason: "no_match", ruleId: null, campaignId: null });
+  });
+
   describe("api keys + n8n relay route", () => {
     it("creates, verifies and revokes API keys", async () => {
       const { id, key } = await m.apiKeys.createApiKey("n8n");

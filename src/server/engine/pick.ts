@@ -14,6 +14,24 @@ export interface ResolvedMatch {
 }
 
 /**
+ * Narrows campaigns to those that apply to a comment on `mediaId` (that post's campaigns plus
+ * "all posts" campaigns; `null` = only "all posts"; `undefined` = no narrowing) and orders them
+ * post-specific first, keeping input order within a tier. Pure.
+ */
+export function campaignsForMedia(
+  all: readonly CampaignWithRules[],
+  mediaId: string | null | undefined,
+): CampaignWithRules[] {
+  const applies = all.filter(
+    (c) => mediaId === undefined || c.campaign.mediaId === null || c.campaign.mediaId === mediaId,
+  );
+  return [
+    ...applies.filter((c) => c.campaign.mediaId !== null),
+    ...applies.filter((c) => c.campaign.mediaId === null),
+  ];
+}
+
+/**
  * Picks the rule for a comment: media-specific campaigns are tried first (all their rules,
  * by priority); only if none match are "all posts" campaigns tried. Within a tier keyword rules beat
  * `any` rules (see `matchComment`), but tiers come first: a media-specific `any` rule beats an
@@ -37,4 +55,29 @@ export function pickMatch(
     }
   }
   return null;
+}
+
+/**
+ * For a comment that matched nothing: would its text match a keyword rule of a post-specific
+ * campaign for a *different* post? (Typical cause: the comment is on the ad version of a boosted
+ * reel, whose media id differs from the organic reel the campaign targets.) `any` rules are ignored
+ * here, otherwise every unmatched comment would be reported. Campaigns for `mediaId` itself and
+ * "all posts" campaigns are ignored (they were already tried). Same priority order as
+ * {@link pickMatch}. Pure.
+ */
+export function pickOtherPostMatch(
+  text: string,
+  campaigns: readonly CampaignWithRules[],
+  mediaId: string | null,
+  opts: MatchOptions = {},
+): ResolvedMatch | null {
+  const candidates = campaigns
+    .filter((c) => c.campaign.mediaId !== null && c.campaign.mediaId !== mediaId)
+    .flatMap(({ campaign, rules: rs }) =>
+      rs.filter((r) => r.matchMode !== "any").map((rule) => ({ ...rule, campaign })),
+    );
+  const hit = matchComment(text, candidates, opts);
+  if (!hit) return null;
+  const { campaign, ...rule } = hit.rule;
+  return { campaign, rule, keyword: hit.keyword };
 }

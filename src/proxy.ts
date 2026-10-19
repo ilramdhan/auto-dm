@@ -7,7 +7,15 @@ import { NextResponse, type NextRequest } from "next/server";
  * Keep the cookie name in sync with src/server/auth/session-token.ts.
  */
 const SESSION_COOKIE = "ard_session";
-const PROTECTED = ["/dashboard", "/campaigns", "/analytics", "/activity", "/settings", "/change-password"];
+const PROTECTED = [
+  "/dashboard",
+  "/campaigns",
+  "/analytics",
+  "/activity",
+  "/skipped",
+  "/settings",
+  "/change-password",
+];
 
 export function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;

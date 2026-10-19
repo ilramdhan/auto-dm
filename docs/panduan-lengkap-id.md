@@ -226,6 +226,26 @@ Instagram di-connect ulang.
    sedang aktif) atau **Analytics** (mengikuti rentang tanggal). File berformat UTF-8 (bisa langsung
    dibuka di Excel), waktu memakai zona waktu di Settings, dan maksimal 50.000 baris per unduhan.
 
+### Skipped comments & kirim manual
+
+Menu **Skipped** menampilkan komentar yang tidak dibalas beserta alasannya (komentar akun sendiri dan
+komentar untuk akun lain disembunyikan; pilih **All reasons** untuk melihatnya).
+
+- **Send manually**: pilih aturan (otomatis terpilih kalau teks komentar cocok sekarang), lihat
+  pratinjau balasan publik & DM, lalu **Send now**. Hanya bisa untuk komentar **di bawah 7 hari**
+  (batas Private Reply Instagram) dan **sekali per komentar**: klik dua kali atau dua tab tetap hanya
+  mengirim satu DM. "Once per user" tetap berlaku kecuali kamu mencentang pengecualian di dialog.
+  Kill switch harus ON. Baris yang terkirim tercatat di Activity dengan source `manual`; kalau keyword
+  tidak cocok, kolom keyword berisi `*`.
+- **`Matched a campaign for a different post`** (`no_campaign_for_post`): keyword cocok dengan
+  campaign untuk post lain. Biasanya komentar ada di **versi iklan dari reel yang di-boost** (Instagram
+  Ads), yang punya media id berbeda dari reel aslinya. Kirim manual (aturan itu sudah terpilih), atau
+  buat campaign untuk post tersebut.
+- **Check post for missed comments**: membaca komentar 7 hari terakhir dari post campaign aktif (maks.
+  5 halaman × 50 komentar per post, plus balasan yang ikut terbaca) dan mencatat komentar yang
+  webhook-nya tidak pernah datang sebagai **Missed** (`not_delivered`). Tidak ada yang dikirim
+  otomatis; kirim manual dari daftar.
+
 ## 10. Supaya berlaku untuk semua orang (Live mode + App Review)
 
 Selama app di **Development mode**, hanya akun dengan role di app (tester/admin) yang memicu webhook.
@@ -399,6 +419,7 @@ Checklist kalau tidak ada yang masuk:
 | "Verify and save" di Meta gagal         | URL salah / app belum ter-deploy / verify token salah                                                        |
 | Komentar tidak muncul di Activity       | Lihat Settings → Instagram → Webhook diagnostics; detail di "Komentar tes saya tidak memicu apa-apa" di atas |
 | Activity: `skipped · no_match`          | Keyword tidak cocok; cek mode & ejaan dengan "Test a comment"                                                |
+| Activity: `no_campaign_for_post`        | Komentar di post lain (sering versi iklan reel yang di-boost). Kirim manual dari **Skipped**                 |
 | Activity: `skipped · already_delivered` | "Once per user" aktif dan orang itu sudah pernah dapat DM                                                    |
 | DM gagal kode `551`                     | Pengguna tidak bisa menerima pesan (privasi) – bukan error app                                               |
 | DM gagal kode `10` / `200`              | Izin kurang atau app belum Live/Advanced Access                                                              |

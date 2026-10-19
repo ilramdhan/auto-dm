@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Campaign, Rule } from "@/server/db/schema";
-import { pickMatch } from "./pick";
+import { campaignsForMedia, pickMatch, pickOtherPostMatch } from "./pick";
 
 const now = new Date();
 const campaign = (id: string, mediaId: string | null): Campaign => ({
@@ -104,5 +104,74 @@ describe("pickMatch", () => {
     ];
     expect(pickMatch("drive", applicable, opts)?.rule.id).toBe("r-all");
     expect(pickMatch("thanks kak", applicable, opts)).toBeNull();
+  });
+});
+
+describe("campaignsForMedia", () => {
+  const all = { campaign: campaign("all", null), rules: [] };
+  const p1 = { campaign: campaign("p1", "m1"), rules: [] };
+  const p2 = { campaign: campaign("p2", "m2"), rules: [] };
+
+  it("keeps the post's campaigns and 'all posts', post-specific first", () => {
+    expect(campaignsForMedia([all, p1, p2], "m1").map((c) => c.campaign.id)).toEqual(["p1", "all"]);
+  });
+  it("null media id keeps only 'all posts'; undefined keeps everything", () => {
+    expect(campaignsForMedia([all, p1, p2], null).map((c) => c.campaign.id)).toEqual(["all"]);
+    expect(campaignsForMedia([all, p1, p2], undefined).map((c) => c.campaign.id)).toEqual([
+      "p1",
+      "p2",
+      "all",
+    ]);
+  });
+});
+
+describe("pickOtherPostMatch (no_campaign_for_post)", () => {
+  const organic = campaign("organic", "m-organic");
+  const here = campaign("here", "m-ad");
+  const all = campaign("all", null);
+
+  it("finds a keyword rule of a campaign for a different post (boosted reel's ad id)", () => {
+    const res = pickOtherPostMatch(
+      "CRAFT 🙏",
+      [{ campaign: organic, rules: [rule("r-craft", "organic", ["craft"])] }],
+      "m-ad",
+    );
+    expect(res).toMatchObject({ campaign: { id: "organic" }, rule: { id: "r-craft" }, keyword: "craft" });
+  });
+
+  it("ignores campaigns for this post, 'all posts' campaigns and `any` rules", () => {
+    const res = pickOtherPostMatch(
+      "craft",
+      [
+        { campaign: here, rules: [rule("r-here", "here", ["craft"])] },
+        { campaign: all, rules: [rule("r-all", "all", ["craft"])] },
+        { campaign: organic, rules: [rule("r-any", "organic", [], 0, "any")] },
+      ],
+      "m-ad",
+    );
+    expect(res).toBeNull();
+  });
+
+  it("returns null when the text matches nothing", () => {
+    expect(
+      pickOtherPostMatch(
+        "menarik",
+        [{ campaign: organic, rules: [rule("r", "organic", ["craft"])] }],
+        "m-ad",
+      ),
+    ).toBeNull();
+  });
+
+  it("follows priority across campaigns", () => {
+    const other = campaign("other", "m-other");
+    const res = pickOtherPostMatch(
+      "craft",
+      [
+        { campaign: organic, rules: [rule("low", "organic", ["craft"], 0)] },
+        { campaign: other, rules: [rule("high", "other", ["craft"], 5)] },
+      ],
+      null,
+    );
+    expect(res?.rule.id).toBe("high");
   });
 });

@@ -5,6 +5,8 @@ export const SKIP_REASON_LABELS: Record<string, string> = {
   own_comment: "Own comment / reply (loop protection)",
   empty_comment: "Empty comment",
   no_match: "No keyword matched",
+  no_campaign_for_post: "Matched a campaign for a different post",
+  not_delivered: "Missed: Instagram never notified the app",
   processing_disabled: "Automation paused (kill switch)",
   already_delivered: "Already messaged this user (once per user)",
   no_actions: "Rule has nothing to send",
@@ -27,6 +29,10 @@ export const SKIP_REASON_EXPLANATIONS: Record<string, string> = {
     "This comment was sent for a different Instagram account than the one connected. Reconnect the account you're testing with in Settings → Instagram.",
   no_match:
     "The comment text didn't contain any active rule's keyword at the time it arrived. Rule edits only apply to new comments, not ones already received. Check the campaign's post, schedule, keywords and match mode with “Test a comment”. You can still send it manually from Skipped comments.",
+  no_campaign_for_post:
+    "The keyword matched {campaign}, but this comment is on a different post — often the ad version of a boosted reel. Add this post to the campaign, or send it manually.",
+  not_delivered:
+    "Found by “Check post for missed comments”: the comment is on Instagram, but Meta never sent the app a webhook for it, so nothing was sent. Send it manually if you want to answer it.",
   processing_disabled:
     "A rule matched, but automation is paused, so nothing was sent. Turn it back on in Settings → Processing.",
   no_account:
@@ -35,9 +41,17 @@ export const SKIP_REASON_EXPLANATIONS: Record<string, string> = {
     "This person already got this rule's DM and “Once per user” is on. Test with another account or turn it off.",
 };
 
-/** Explanation for a skip reason, or `null` when there is nothing more to say than the label. */
-export function skipReasonExplanation(reason: string | null | undefined): string | null {
-  return reason ? (SKIP_REASON_EXPLANATIONS[reason] ?? null) : null;
+/**
+ * Explanation for a skip reason, or `null` when there is nothing more to say than the label.
+ * `{campaign}` is replaced with the row's campaign name (`no_campaign_for_post`).
+ */
+export function skipReasonExplanation(
+  reason: string | null | undefined,
+  ctx: { campaignName?: string | null } = {},
+): string | null {
+  const text = reason ? SKIP_REASON_EXPLANATIONS[reason] : undefined;
+  if (!text) return null;
+  return text.replace("{campaign}", ctx.campaignName ? `campaign “${ctx.campaignName}”` : "a campaign");
 }
 
 /** Common Graph API error codes worth explaining in the UI. */
