@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { changePasswordSchema, forcedChangePasswordSchema, loginSchema, passwordStrength } from "./auth";
-import { campaignSchema } from "./campaign";
+import { addCampaignMediaSchema, campaignSchema, MAX_CAMPAIGN_MEDIA } from "./campaign";
 import { ruleSchema, splitKeywords } from "./rule";
 import { activityFiltersSchema } from "./activity";
 import { metaAppSchema } from "./settings";
@@ -52,6 +52,14 @@ describe("ruleSchema", () => {
         .success,
     ).toBe(true);
   });
+  it("allows empty keywords only for the any mode", () => {
+    expect(ruleSchema.safeParse({ ...baseRule, matchMode: "any", keywords: [] }).success).toBe(true);
+    for (const matchMode of ["word", "exact", "contains"] as const) {
+      const res = ruleSchema.safeParse({ ...baseRule, matchMode, keywords: [] });
+      expect(res.success).toBe(false);
+      expect(res.error!.issues.map((i) => i.path.join("."))).toContain("keywords");
+    }
+  });
   it("coerces priority", () => {
     expect(ruleSchema.parse({ ...baseRule, priority: "5" }).priority).toBe(5);
   });
@@ -79,7 +87,25 @@ describe("campaignSchema", () => {
   it("requires media when targeting a post", () => {
     const res = campaignSchema.safeParse({ ...base, target: "media" });
     expect(res.success).toBe(false);
-    expect(res.error!.issues[0]!.path).toEqual(["mediaId"]);
+    expect(res.error!.issues[0]!.path).toEqual(["mediaIds"]);
+    expect(campaignSchema.safeParse({ ...base, target: "media", mediaIds: [] }).success).toBe(false);
+  });
+  it("accepts several posts, dedupes them and keeps their order", () => {
+    const c = campaignSchema.parse({ ...base, target: "media", mediaIds: ["m2", "m1", "m2"] });
+    expect(c.mediaIds).toEqual(["m2", "m1"]);
+  });
+  it("still accepts the legacy single mediaId", () => {
+    expect(campaignSchema.parse({ ...base, target: "media", mediaId: "m1" }).mediaIds).toEqual(["m1"]);
+  });
+  it("clears media ids for 'all posts'", () => {
+    expect(campaignSchema.parse({ ...base, mediaIds: ["m1"] }).mediaIds).toEqual([]);
+  });
+  it("rejects empty, unsafe and too many media ids", () => {
+    const media = (mediaIds: string[]) => campaignSchema.safeParse({ ...base, target: "media", mediaIds });
+    expect(media([" "]).success).toBe(false);
+    expect(media(["1/../x"]).success).toBe(false);
+    expect(media(Array.from({ length: MAX_CAMPAIGN_MEDIA }, (_, i) => `m${i}`)).success).toBe(true);
+    expect(media(Array.from({ length: MAX_CAMPAIGN_MEDIA + 1 }, (_, i) => `m${i}`)).success).toBe(false);
   });
   it("rejects an end before the start", () => {
     const res = campaignSchema.safeParse({
@@ -93,6 +119,14 @@ describe("campaignSchema", () => {
   it("parses ISO dates", () => {
     const c = campaignSchema.parse({ ...base, startsAt: "2026-10-10T10:00:00.000Z" });
     expect(c.startsAt).toBeInstanceOf(Date);
+  });
+});
+
+describe("addCampaignMediaSchema", () => {
+  it("requires uuids", () => {
+    const id = "00000000-0000-4000-8000-000000000000";
+    expect(addCampaignMediaSchema.safeParse({ campaignId: id, deliveryId: id }).success).toBe(true);
+    expect(addCampaignMediaSchema.safeParse({ campaignId: "x", deliveryId: id }).success).toBe(false);
   });
 });
 

@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
         "dms_failed",
         "success_rate_pct",
         `last_activity (${range.timeZone})`,
+        // Appended last so existing column positions don't move. Space-separated media ids.
+        "media_ids",
       ],
       ...rows.map((r) => [
         r.name,
@@ -45,6 +47,7 @@ export async function GET(req: NextRequest) {
         r.dmsFailed,
         pct(r.delivered, r.matched),
         formatCsvDateTime(r.lastActivity, range.timeZone),
+        r.mediaIds.join(" "),
       ]),
     ]);
     const filename = `${appSlug()}-analytics-${filters.group}-${range.fromYmd}_${range.toYmd}.csv`;

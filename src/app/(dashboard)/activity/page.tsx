@@ -28,7 +28,9 @@ function detail(d: DeliveryRow): string | null {
 
 /** Actionable explanation shown inline for confusing skip reasons (e.g. own_comment). */
 function explanation(d: DeliveryRow): string | null {
-  return d.status === "skipped" ? skipReasonExplanation(d.skipReason) : null;
+  return d.status === "skipped"
+    ? skipReasonExplanation(d.skipReason, { campaignName: d.campaignName })
+    : null;
 }
 
 function Explanation({ d, className }: { d: DeliveryRow; className?: string }) {

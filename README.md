@@ -34,12 +34,16 @@ into n8n.
 
 ## Features
 
-- **Multi-post campaigns**: one campaign per post or reel, or one for "all posts".
-- **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains; case, accent and emoji safe).
+- **Multi-post campaigns**: a campaign targets one or more posts/reels (up to 20, e.g. a reel and
+  its boosted ad version), or "all posts". Comments from an ad that aren't covered show up on
+  Skipped comments with **Add this post to campaign**.
+- **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains, or any comment; case, accent and emoji safe).
 - **Random public-reply variants** so your replies don't look copy-pasted.
 - **Personalised DMs** with `{username}` and `{keyword}`, plus an optional **link button**.
 - **Once per user** per rule, and loop protection (your own replies are ignored).
 - **Live activity log** with status, errors and skip reasons for every comment.
+- **Skipped comments + manual send**: see why a comment wasn't answered (including keyword hits on a different post, e.g. the ad version of a boosted reel) and send a rule's reply + DM by hand within Instagram's 7-day window, once per comment.
+- **Check for missed comments**: re-read the last 7 days of a campaign post's comments from Instagram and list any whose webhook never arrived (nothing is sent automatically).
 - **Kill switch** to pause all sending instantly.
 - **Encrypted secrets** (AES-256-GCM): tokens and the Meta app secret are never stored in plain text.
 - **Automatic token refresh** (daily cron), so the 60-day Instagram token never expires on you.

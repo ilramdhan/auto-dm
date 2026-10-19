@@ -11,6 +11,7 @@ import {
   ListChecks,
   Lock,
   MessageSquareReply,
+  MessageSquareWarning,
   MoonStar,
   OctagonPause,
   RefreshCw,
@@ -83,6 +84,11 @@ const INSIGHT = [
     icon: Webhook,
     title: "Live activity log",
     body: "Every comment with its status (sent, partial, skipped or failed), the matched keyword and the reason when something did not go out.",
+  },
+  {
+    icon: MessageSquareWarning,
+    title: "Skipped comments and manual send",
+    body: "See why a comment wasn't answered and send a rule's reply and DM by hand within Instagram's 7-day window. Missed comments can be pulled in from Instagram too.",
   },
   {
     icon: BarChart3,

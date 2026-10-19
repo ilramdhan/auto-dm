@@ -200,13 +200,19 @@ function RuleSummary({
               </Badge>
               {rule.priority !== 0 ? <Badge variant="outline">Priority {rule.priority}</Badge> : null}
             </div>
-            <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Keywords">
-              {rule.keywords.map((k) => (
-                <li key={k} className="bg-secondary rounded-md px-2 py-0.5 text-sm">
-                  {k}
-                </li>
-              ))}
-            </ul>
+            {rule.matchMode === "any" ? (
+              <p className="text-muted-foreground mt-2 text-sm">
+                Replies to every top-level comment (no keywords).
+              </p>
+            ) : (
+              <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Keywords">
+                {rule.keywords.map((k) => (
+                  <li key={k} className="bg-secondary rounded-md px-2 py-0.5 text-sm">
+                    {k}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <Switch

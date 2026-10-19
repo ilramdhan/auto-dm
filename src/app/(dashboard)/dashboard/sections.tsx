@@ -18,6 +18,7 @@ import { CommentsVsDmsChart } from "@/components/analytics/comments-dms-chart";
 import { RowsSkeleton, SectionSkeleton } from "@/components/section-skeleton";
 import { formatNumber, timeAgo, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { skipReasonLabel } from "@/lib/labels";
 import type { DayPoint } from "@/server/repos/analytics";
 import type { DeliveryRow } from "@/server/repos/deliveries";
 import type { DashboardStats } from "@/server/repos/stats";
@@ -277,7 +278,17 @@ export async function RecentSection({ recent }: { recent: Promise<DeliveryRow[]>
               <span className="text-muted-foreground">{truncate(d.commentText ?? "", 90)}</span>
             </p>
             <p className="text-muted-foreground text-xs">
-              {d.campaignName ?? "No campaign"}
+              {d.status === "skipped" && d.skipReason === "no_campaign_for_post" ? (
+                <>
+                  {skipReasonLabel(d.skipReason)}
+                  {d.campaignName ? <> (“{d.campaignName}”)</> : null}:{" "}
+                  <Link href="/skipped?reason=no_campaign_for_post" className="underline underline-offset-4">
+                    add this post to the campaign or send manually
+                  </Link>
+                </>
+              ) : (
+                (d.campaignName ?? (d.status === "skipped" ? skipReasonLabel(d.skipReason) : "—"))
+              )}
               {d.matchedKeyword ? <> · keyword “{d.matchedKeyword}”</> : null}
             </p>
           </div>

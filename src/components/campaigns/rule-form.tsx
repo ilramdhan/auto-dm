@@ -19,7 +19,13 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FieldError } from "@/components/field-error";
 import { DM_BUTTON_TITLE_MAX, DM_MAX_CHARS } from "@/lib/constants";
-import { MATCH_MODE_INFO, MATCH_MODES, ruleSchema, type MatchMode } from "@/lib/validation/rule";
+import {
+  MATCH_MODE_INFO,
+  MATCH_MODES,
+  modeNeedsKeywords,
+  ruleSchema,
+  type MatchMode,
+} from "@/lib/validation/rule";
 import { handleActionResult } from "@/lib/forms";
 import { cn } from "@/lib/utils";
 import { saveRuleAction } from "@/app/(dashboard)/campaigns/[id]/actions";
@@ -52,7 +58,12 @@ export const EMPTY_RULE: RuleFormValues = {
 };
 
 function toPayload(v: RuleFormValues) {
-  return { ...v, publicReplies: v.publicReplies.map((r) => r.text) };
+  return {
+    ...v,
+    // `any` rules ignore keywords; don't persist hidden leftovers.
+    keywords: modeNeedsKeywords(v.matchMode) ? v.keywords : [],
+    publicReplies: v.publicReplies.map((r) => r.text),
+  };
 }
 
 /** Maps a Zod path of the payload to the form field path (replies are wrapped for useFieldArray). */
@@ -183,27 +194,6 @@ export function RuleForm({
       </div>
 
       <div className="grid gap-2">
-        <Label htmlFor={f("keywords")}>Keywords</Label>
-        <Controller
-          control={control}
-          name="keywords"
-          render={({ field }) => (
-            <KeywordInput
-              id={f("keywords")}
-              value={field.value}
-              onChange={field.onChange}
-              invalid={!!errors.keywords}
-              describedBy={`${f("keywords-help")}${errors.keywords ? ` ${f("keywords-error")}` : ""}`}
-            />
-          )}
-        />
-        <p id={f("keywords-help")} className="text-muted-foreground text-xs">
-          Press Enter or comma to add. Matching ignores case and accents; emoji work too.
-        </p>
-        <FieldError id={f("keywords-error")} errors={errMsg(errors.keywords?.message)} />
-      </div>
-
-      <div className="grid gap-2">
         <Label htmlFor={f("matchMode")}>Match mode</Label>
         <Controller
           control={control}
@@ -235,6 +225,29 @@ export function RuleForm({
           </span>
         </p>
       </div>
+
+      {modeNeedsKeywords(matchMode) ? (
+        <div className="grid gap-2">
+          <Label htmlFor={f("keywords")}>Keywords</Label>
+          <Controller
+            control={control}
+            name="keywords"
+            render={({ field }) => (
+              <KeywordInput
+                id={f("keywords")}
+                value={field.value}
+                onChange={field.onChange}
+                invalid={!!errors.keywords}
+                describedBy={`${f("keywords-help")}${errors.keywords ? ` ${f("keywords-error")}` : ""}`}
+              />
+            )}
+          />
+          <p id={f("keywords-help")} className="text-muted-foreground text-xs">
+            Press Enter or comma to add. Matching ignores case and accents; emoji work too.
+          </p>
+          <FieldError id={f("keywords-error")} errors={errMsg(errors.keywords?.message)} />
+        </div>
+      ) : null}
 
       <fieldset className="grid gap-2">
         <legend className="mb-2 text-sm font-medium">Public reply variants</legend>
@@ -290,7 +303,7 @@ export function RuleForm({
         <div className="flex flex-wrap items-end justify-between gap-2">
           <Label htmlFor={f("dm")}>Direct message</Label>
           <div className="flex flex-wrap gap-1" role="group" aria-label="Insert variable">
-            {VARIABLES.map((v) => (
+            {VARIABLES.filter((v) => v.token !== "{keyword}" || modeNeedsKeywords(matchMode)).map((v) => (
               <Button
                 key={v.token}
                 type="button"

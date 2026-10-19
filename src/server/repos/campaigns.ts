@@ -1,8 +1,8 @@
 import "server-only";
-import { asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { db, retryable } from "@/server/db/client";
 import { campaigns, rules, type Campaign } from "@/server/db/schema";
-import type { CampaignData } from "@/lib/validation/campaign";
+import { MAX_CAMPAIGN_MEDIA, type CampaignData } from "@/lib/validation/campaign";
 
 export type CampaignListItem = Campaign & {
   ruleCount: number;
@@ -48,12 +48,17 @@ async function getCampaignQuery(id: string): Promise<Campaign | undefined> {
 }
 export const getCampaign = retryable("campaigns.getCampaign", getCampaignQuery);
 
+/**
+ * Form data -> columns. `media_ids` is the source of truth; `media_id` mirrors its first element
+ * (legacy readers: n8n workflows, older code, external SQL). "All posts" writes NULL to both.
+ */
 function toColumns(data: CampaignData) {
-  const media = data.target === "media";
+  const media = data.target === "media" && data.mediaIds.length > 0;
   return {
     name: data.name,
     description: data.description || null,
-    mediaId: media ? (data.mediaId ?? null) : null,
+    mediaIds: media ? data.mediaIds : null,
+    mediaId: media ? (data.mediaIds[0] ?? null) : null,
     mediaPermalink: media ? data.mediaPermalink || null : null,
     mediaThumbnailUrl: media ? data.mediaThumbnailUrl || null : null,
     mediaCaption: media ? (data.mediaCaption ?? null) : null,
@@ -89,4 +94,41 @@ export async function setCampaignActive(id: string, isActive: boolean): Promise<
 export async function deleteCampaign(id: string): Promise<boolean> {
   const rows = await db.delete(campaigns).where(eq(campaigns.id, id)).returning({ id: campaigns.id });
   return rows.length > 0;
+}
+
+export type AddMediaResult = "added" | "already" | "not_found" | "all_posts" | "full";
+
+/**
+ * Appends `mediaId` to a post-specific campaign's `media_ids` ("Add this post to campaign").
+ * Idempotent: a single UPDATE that only appends when the id is absent, so concurrent clicks can't
+ * add it twice. Rows not yet backfilled (`media_ids` NULL) start from `[media_id]`. `media_id`
+ * keeps mirroring the first element. "All posts" campaigns are refused (they already cover it).
+ */
+export async function addMediaToCampaign(campaignId: string, mediaId: string): Promise<AddMediaResult> {
+  const current = sql`coalesce(nullif(${campaigns.mediaIds}, '{}'::text[]), array_remove(array[${campaigns.mediaId}], null))`;
+  const rows = await db
+    .update(campaigns)
+    .set({
+      mediaIds: sql`array_append(${current}, ${mediaId}::text)`,
+      // Appending never changes the first element, so the mirror stays `media_ids[1]`.
+      mediaId: sql`(${current})[1]`,
+    })
+    .where(
+      and(
+        eq(campaigns.id, campaignId),
+        sql`cardinality(${current}) > 0`,
+        sql`cardinality(${current}) < ${MAX_CAMPAIGN_MEDIA}`,
+        sql`not (${current} @> array[${mediaId}::text])`,
+      ),
+    )
+    .returning({ id: campaigns.id });
+  if (rows.length > 0) return "added";
+
+  // Nothing updated: find out why (for the message shown to the operator).
+  const row = await getCampaignQuery(campaignId);
+  if (!row) return "not_found";
+  const ids = row.mediaIds?.length ? row.mediaIds : row.mediaId ? [row.mediaId] : [];
+  if (ids.length === 0) return "all_posts";
+  if (ids.includes(mediaId)) return "already";
+  return "full";
 }

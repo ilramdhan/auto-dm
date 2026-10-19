@@ -5,7 +5,7 @@ import { z } from "zod";
 import { ok } from "@/lib/action-result";
 import { ruleSchema, testCommentSchema } from "@/lib/validation/rule";
 import { authedAction } from "@/server/actions/safe-action";
-import { matchComment } from "@/server/engine/match";
+import { matchComment, templateKeyword } from "@/server/engine/match";
 import { renderTemplate } from "@/server/engine/template";
 import { AppError } from "@/server/errors";
 import { logger } from "@/server/log";
@@ -81,15 +81,15 @@ export const testCommentAction = authedAction(
   "rules",
   "test_comment",
   testCommentSchema.extend({ campaignId: z.uuid() }),
-  async ({ campaignId, text, username }) => {
+  async ({ campaignId, text, username, isReply }) => {
     const rules = await listRules(campaignId);
-    const match = matchComment(text, rules);
+    const match = matchComment(text, rules, { isReply });
     if (!match)
       return ok<TestCommentResult>({
         matched: false,
         activeRuleCount: rules.filter((r) => r.isActive).length,
       });
-    const vars = { username: username || "commenter", keyword: match.keyword };
+    const vars = { username: username || "commenter", keyword: templateKeyword(match.keyword) };
     const { rule } = match;
     return ok<TestCommentResult>({
       matched: true,

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."match_mode" ADD VALUE 'any';

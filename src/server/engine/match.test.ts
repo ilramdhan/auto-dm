@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { keywordMatches, matchComment, type MatchableRule } from "./match";
+import { ANY_KEYWORD, keywordMatches, matchComment, templateKeyword, type MatchableRule } from "./match";
 import { normalizeText } from "./normalize";
 
 type R = MatchableRule & { id: string };
@@ -180,5 +180,56 @@ describe("matchComment", () => {
     ];
     expect(matchComment("Berapa kak?", rules)?.rule.id).toBe("prices");
     expect(matchComment("berapa? kirim link dong", rules)?.rule.id).toBe("links");
+  });
+});
+
+describe("matchComment: any mode", () => {
+  const any = (id: string, extra: Partial<R> = {}) => rule(id, [], { matchMode: "any", ...extra });
+
+  it.each(["nice post!", "🔥", "😍😍😍", "@someone", "ok"])("matches %s", (text) => {
+    const res = matchComment(text, [any("a")]);
+    expect(res?.rule.id).toBe("a");
+    expect(res?.keyword).toBe(ANY_KEYWORD);
+  });
+
+  it.each(["", "   ", "\n\t "])("does not match empty/whitespace %j", (text) => {
+    expect(matchComment(text, [any("a")])).toBeNull();
+  });
+
+  it("ignores keywords on any rules", () => {
+    expect(matchComment("hello", [any("a", { keywords: ["drive"] })])?.rule.id).toBe("a");
+  });
+
+  it("never matches thread replies, while keyword rules still do", () => {
+    expect(matchComment("thanks kak", [any("a")], { isReply: true })).toBeNull();
+    const kw = rule("kw", ["drive"]);
+    expect(matchComment("drive pls", [any("a"), kw], { isReply: true })?.rule.id).toBe("kw");
+    expect(matchComment("thanks", [any("a"), kw], { isReply: false })?.rule.id).toBe("a");
+  });
+
+  it("keyword rules beat higher-priority any rules", () => {
+    const a = any("a", { priority: 100 });
+    const kw = rule("kw", ["drive"], { priority: -5 });
+    expect(matchComment("drive pls", [a, kw])?.rule.id).toBe("kw");
+    expect(matchComment("hello", [a, kw])?.rule.id).toBe("a");
+  });
+
+  it("orders any rules by priority then input order and skips inactive ones", () => {
+    const a = any("a");
+    const b = any("b");
+    const hi = any("hi", { priority: 2 });
+    const off = any("off", { priority: 9, isActive: false });
+    expect(matchComment("x", [a, b])?.rule.id).toBe("a");
+    expect(matchComment("x", [b, a])?.rule.id).toBe("b");
+    expect(matchComment("x", [a, off, hi])?.rule.id).toBe("hi");
+  });
+
+  it("templateKeyword renders empty for any matches", () => {
+    expect(templateKeyword(ANY_KEYWORD)).toBe("");
+    expect(templateKeyword("drive")).toBe("drive");
+  });
+
+  it("a literal '*' keyword never matches in keyword modes", () => {
+    expect(matchComment("* hello *", [rule("star", ["*"])])).toBeNull();
   });
 });

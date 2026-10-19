@@ -10,6 +10,7 @@ import { CampaignActiveSwitch } from "@/components/campaigns/campaign-active-swi
 import { CampaignStatusBadge, campaignState } from "@/components/campaigns/campaign-status";
 import { formatDateTime, truncate } from "@/lib/format";
 import { requireUser } from "@/server/auth/guard";
+import { campaignMediaIds } from "@/server/engine/pick";
 import { listCampaigns } from "@/server/repos/campaigns";
 
 export const metadata: Metadata = { title: "Campaigns" };
@@ -51,6 +52,7 @@ export default async function CampaignsPage() {
         <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {campaigns.map((c) => {
             const state = campaignState(c);
+            const posts = campaignMediaIds(c).length;
             return (
               <li key={c.id}>
                 <Card className="group hover:border-primary/40 relative h-full gap-0 overflow-hidden py-0 transition-colors">
@@ -68,7 +70,7 @@ export default async function CampaignsPage() {
                         className="bg-muted text-muted-foreground flex size-16 shrink-0 items-center justify-center rounded-md border"
                         aria-hidden
                       >
-                        {c.mediaId ? <ImageOff className="size-5" /> : <Globe className="size-5" />}
+                        {posts > 0 ? <ImageOff className="size-5" /> : <Globe className="size-5" />}
                       </span>
                     )}
                     <div className="min-w-0 flex-1">
@@ -84,15 +86,19 @@ export default async function CampaignsPage() {
                         {c.description ||
                           (c.mediaCaption
                             ? truncate(c.mediaCaption, 100)
-                            : c.mediaId
-                              ? "Specific post"
+                            : posts > 0
+                              ? posts === 1
+                                ? "Specific post"
+                                : `${posts} posts`
                               : "Applies to every post & reel")}
                       </p>
                     </div>
                   </div>
                   <div className="mt-auto flex flex-wrap items-center gap-2 border-t px-4 py-3">
                     <CampaignStatusBadge state={state} />
-                    <Badge variant="outline">{c.mediaId ? "One post" : "All posts"}</Badge>
+                    <Badge variant="outline">
+                      {posts === 0 ? "All posts" : posts === 1 ? "One post" : `${posts} posts`}
+                    </Badge>
                     <span className="text-muted-foreground text-xs">
                       {c.ruleCount} {c.ruleCount === 1 ? "rule" : "rules"} · {c.keywordCount}{" "}
                       {c.keywordCount === 1 ? "keyword" : "keywords"}
