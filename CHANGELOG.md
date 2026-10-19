@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/ilramdhan/auto-dm/compare/v0.6.2...v0.7.0) (2026-10-19)
+
+
+### Features
+
+* skipped comments page, manual send, "any comment" mode and multi-post campaigns ([#99](https://github.com/ilramdhan/auto-dm/issues/99)) ([35a4c7d](https://github.com/ilramdhan/auto-dm/commit/35a4c7dbc48a94f95873ba8c6c02cf2dc68b4e63))
+
 ## [0.6.2](https://github.com/ilramdhan/auto-dm/compare/v0.6.1...v0.6.2) (2026-10-15)
 
 
