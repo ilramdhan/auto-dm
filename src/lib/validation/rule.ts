@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { COMMENT_REPLY_MAX_CHARS, DM_BUTTON_TITLE_MAX, DM_MAX_CHARS } from "@/lib/constants";
 
-export const MATCH_MODES = ["word", "exact", "contains"] as const;
+export const MATCH_MODES = ["word", "exact", "contains", "any"] as const;
 export type MatchMode = (typeof MATCH_MODES)[number];
 
 export const MATCH_MODE_INFO: Record<MatchMode, { label: string; help: string; example: string }> = {
@@ -20,7 +20,17 @@ export const MATCH_MODE_INFO: Record<MatchMode, { label: string; help: string; e
     help: "The keyword appears anywhere, even inside another word.",
     example: '"link" matches "linkedin" and "unlink"',
   },
+  any: {
+    label: "Any comment",
+    help: "Replies to every comment, no keywords needed. Replies inside a comment thread are ignored, and keyword rules in the same campaign tier take precedence.",
+    example: '"nice post!" and "🔥" both match',
+  },
 };
+
+/** Modes that need at least one keyword (everything except `any`). */
+export function modeNeedsKeywords(mode: MatchMode): boolean {
+  return mode !== "any";
+}
 
 export const keywordSchema = z
   .string()
@@ -42,7 +52,6 @@ export const ruleSchema = z
     name: z.string().trim().min(1, "Give the rule a name").max(80, "At most 80 characters"),
     keywords: z
       .array(keywordSchema)
-      .min(1, "Add at least one keyword")
       .max(50, "At most 50 keywords per rule")
       .transform((list) => {
         const seen = new Set<string>();
@@ -73,6 +82,9 @@ export const ruleSchema = z
     isActive: z.boolean(),
   })
   .superRefine((v, ctx) => {
+    if (modeNeedsKeywords(v.matchMode) && v.keywords.length === 0) {
+      ctx.addIssue({ code: "custom", path: ["keywords"], message: "Add at least one keyword" });
+    }
     if (v.dmButtonTitle && !v.dmButtonUrl) {
       ctx.addIssue({ code: "custom", path: ["dmButtonUrl"], message: "Add a URL for the button" });
     }
@@ -87,6 +99,8 @@ export type RuleData = z.output<typeof ruleSchema>;
 export const testCommentSchema = z.object({
   text: z.string().trim().min(1, "Type a comment to test").max(2200),
   username: z.string().trim().max(64).optional(),
+  /** Simulate a reply inside a comment thread (`any` rules ignore those). */
+  isReply: z.boolean().optional(),
 });
 
 /** Split raw keyword input on commas / newlines (used by the chips input when pasting). */

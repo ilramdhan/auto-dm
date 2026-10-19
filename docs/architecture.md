@@ -36,7 +36,7 @@ erDiagram
   rules ||--o{ deliveries : "set null"
 ```
 
-`campaigns.media_id = NULL` means "all posts". `match_mode`: word, exact, contains. `delivery_status`:
+`campaigns.media_id = NULL` means "all posts". `match_mode`: word, exact, contains, any (every non-empty top-level comment; thread replies ignored; keyword rules win within a tier; `matched_keyword` is `*`). `delivery_status`:
 received, processing, skipped, sent, partial, failed. `delivery_source`: webhook, n8n, manual.
 
 ## Request flows

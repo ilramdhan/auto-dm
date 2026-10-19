@@ -63,8 +63,10 @@ export async function resolveRule(params: {
   accountId: string;
   mediaId: string | null;
   text: string;
+  /** The comment is a reply in a thread (`parent_id` set); `any` rules skip these. */
+  isReply?: boolean;
   now?: Date;
 }): Promise<ResolvedMatch | null> {
   const applicable = await loadApplicableCampaigns(params);
-  return pickMatch(params.text, applicable);
+  return pickMatch(params.text, applicable, { isReply: params.isReply });
 }

@@ -8,12 +8,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ANY_KEYWORD } from "@/server/engine/match";
 import { FieldError } from "@/components/field-error";
 import { testCommentAction, type TestCommentResult } from "@/app/(dashboard)/campaigns/[id]/actions";
 
 export function TestCommentBox({ campaignId }: { campaignId: string }) {
   const [text, setText] = useState("");
   const [username, setUsername] = useState("");
+  const [isReply, setIsReply] = useState(false);
   const [result, setResult] = useState<TestCommentResult | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [pending, startTransition] = useTransition();
@@ -21,7 +24,7 @@ export function TestCommentBox({ campaignId }: { campaignId: string }) {
   function run(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const res = await testCommentAction({ campaignId, text, username });
+      const res = await testCommentAction({ campaignId, text, username, isReply });
       if (res.ok) {
         setResult(res.data);
         setError(undefined);
@@ -67,6 +70,20 @@ export function TestCommentBox({ campaignId }: { campaignId: string }) {
               autoComplete="off"
             />
           </div>
+          <div className="flex items-start gap-2">
+            <Checkbox
+              id="test-is-reply"
+              checked={isReply}
+              onCheckedChange={(v) => setIsReply(v === true)}
+              aria-describedby="test-is-reply-help"
+            />
+            <div className="grid gap-0.5">
+              <Label htmlFor="test-is-reply">Reply inside a comment thread</Label>
+              <p id="test-is-reply-help" className="text-muted-foreground text-xs">
+                &ldquo;Any comment&rdquo; rules ignore thread replies; keyword rules still match them.
+              </p>
+            </div>
+          </div>
           <Button type="submit" variant="secondary" disabled={pending}>
             {pending ? <Loader2 className="animate-spin" aria-hidden /> : null}
             Run test
@@ -79,7 +96,10 @@ export function TestCommentBox({ campaignId }: { campaignId: string }) {
               <div className="border-success/40 bg-success/5 grid gap-3 rounded-lg border p-3 text-sm">
                 <p className="flex flex-wrap items-center gap-2 font-medium">
                   <CircleCheck className="text-success size-4" aria-hidden />
-                  Matched rule “{result.ruleName}”<Badge variant="outline">keyword: {result.keyword}</Badge>
+                  Matched rule “{result.ruleName}”
+                  <Badge variant="outline">
+                    {result.keyword === ANY_KEYWORD ? "Any comment" : `keyword: ${result.keyword}`}
+                  </Badge>
                 </p>
                 {result.publicReplies.length ? (
                   <div className="grid gap-1">
@@ -123,7 +143,7 @@ export function TestCommentBox({ campaignId }: { campaignId: string }) {
                   <p className="text-muted-foreground text-xs">
                     {result.activeRuleCount === 0
                       ? "This campaign has no active rules yet."
-                      : "Check the keywords and match mode. This comment would be logged as skipped."}
+                      : "Check the keywords and match mode (“Any comment” rules skip thread replies). This comment would be logged as skipped."}
                   </p>
                 </div>
               </div>

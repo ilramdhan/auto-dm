@@ -35,7 +35,7 @@ into n8n.
 ## Features
 
 - **Multi-post campaigns**: one campaign per post or reel, or one for "all posts".
-- **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains; case, accent and emoji safe).
+- **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains, or any comment; case, accent and emoji safe).
 - **Random public-reply variants** so your replies don't look copy-pasted.
 - **Personalised DMs** with `{username}` and `{keyword}`, plus an optional **link button**.
 - **Once per user** per rule, and loop protection (your own replies are ignored).

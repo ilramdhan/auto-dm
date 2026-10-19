@@ -52,6 +52,14 @@ describe("ruleSchema", () => {
         .success,
     ).toBe(true);
   });
+  it("allows empty keywords only for the any mode", () => {
+    expect(ruleSchema.safeParse({ ...baseRule, matchMode: "any", keywords: [] }).success).toBe(true);
+    for (const matchMode of ["word", "exact", "contains"] as const) {
+      const res = ruleSchema.safeParse({ ...baseRule, matchMode, keywords: [] });
+      expect(res.success).toBe(false);
+      expect(res.error!.issues.map((i) => i.path.join("."))).toContain("keywords");
+    }
+  });
   it("coerces priority", () => {
     expect(ruleSchema.parse({ ...baseRule, priority: "5" }).priority).toBe(5);
   });

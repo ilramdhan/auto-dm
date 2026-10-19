@@ -106,7 +106,7 @@ export const campaigns = pgTable(
   (t) => [index("campaigns_media_idx").on(t.mediaId), index("campaigns_active_idx").on(t.isActive)],
 );
 
-export const matchMode = pgEnum("match_mode", ["word", "exact", "contains"]);
+export const matchMode = pgEnum("match_mode", ["word", "exact", "contains", "any"]);
 
 /** A rule = set of keywords -> public reply variants + DM. Many per campaign. */
 export const rules = pgTable(

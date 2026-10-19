@@ -26,7 +26,7 @@ export const SKIP_REASON_EXPLANATIONS: Record<string, string> = {
   account_mismatch:
     "This comment was sent for a different Instagram account than the one connected. Reconnect the account you're testing with in Settings → Instagram.",
   no_match:
-    "No active rule's keyword matched this comment. Check the campaign's post, its schedule, the keywords and the match mode with “Test a comment”.",
+    "The comment text didn't contain any active rule's keyword at the time it arrived. Rule edits only apply to new comments, not ones already received. Check the campaign's post, schedule, keywords and match mode with “Test a comment”. You can still send it manually from Skipped comments.",
   processing_disabled:
     "A rule matched, but automation is paused, so nothing was sent. Turn it back on in Settings → Processing.",
   no_account:

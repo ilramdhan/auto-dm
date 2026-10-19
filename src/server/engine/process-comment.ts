@@ -9,6 +9,7 @@ import { logger, type Logger } from "@/server/log";
 import { replyToComment, sendPrivateReply } from "@/server/instagram/messaging";
 import type { CommentEvent } from "@/server/instagram/webhook";
 import { getSetting } from "@/server/settings";
+import { templateKeyword } from "./match";
 import { resolveRule } from "./resolve";
 import { pickRandom, renderTemplate, truncateText } from "./template";
 
@@ -203,6 +204,7 @@ export async function processCommentEvent(
       accountId: account.id,
       mediaId: event.mediaId,
       text: event.text,
+      isReply: event.parentId != null,
       now: opts.now,
     });
     if (!match) return await skip("no_match");
@@ -222,7 +224,7 @@ export async function processCommentEvent(
     if (!claimed) return await skip("already_delivered", matchInfo);
 
     token = getAccessToken(account);
-    const vars = { username: event.fromUsername, keyword: match.keyword };
+    const vars = { username: event.fromUsername, keyword: templateKeyword(match.keyword) };
     const errors: string[] = [];
     let errorCode: string | null = null;
     let publicReplyStatus: ActionStatus = "not_attempted";

@@ -18,12 +18,18 @@ const campaign = (id: string, mediaId: string | null): Campaign => ({
   createdAt: now,
   updatedAt: now,
 });
-const rule = (id: string, campaignId: string, keywords: string[], priority = 0): Rule => ({
+const rule = (
+  id: string,
+  campaignId: string,
+  keywords: string[],
+  priority = 0,
+  matchMode: Rule["matchMode"] = "word",
+): Rule => ({
   id,
   campaignId,
   name: id,
   keywords,
-  matchMode: "word",
+  matchMode,
   publicReplies: [],
   dmMessage: "dm",
   dmButtonTitle: null,
@@ -70,5 +76,33 @@ describe("pickMatch", () => {
   it("returns null without matches", () => {
     expect(pickMatch("hello", [{ campaign: all, rules: [rule("r", "all", ["drive"])] }])).toBeNull();
     expect(pickMatch("hello", [])).toBeNull();
+  });
+
+  it("a media-specific any rule beats an 'all posts' keyword rule (tiers come first)", () => {
+    const res = pickMatch("drive", [
+      { campaign: all, rules: [rule("r-all", "all", ["drive"], 100)] },
+      { campaign: post, rules: [rule("r-any", "post", [], 0, "any")] },
+    ]);
+    expect(res?.rule.id).toBe("r-any");
+    expect(res?.keyword).toBe("*");
+  });
+
+  it("within a tier, keyword rules beat any rules across campaigns", () => {
+    const all2 = campaign("all2", null);
+    const res = pickMatch("drive", [
+      { campaign: all, rules: [rule("r-any", "all", [], 50, "any")] },
+      { campaign: all2, rules: [rule("r-kw", "all2", ["drive"])] },
+    ]);
+    expect(res?.rule.id).toBe("r-kw");
+  });
+
+  it("falls through to an 'all posts' keyword rule for thread replies", () => {
+    const opts = { isReply: true };
+    const applicable = [
+      { campaign: post, rules: [rule("r-any", "post", [], 0, "any")] },
+      { campaign: all, rules: [rule("r-all", "all", ["drive"])] },
+    ];
+    expect(pickMatch("drive", applicable, opts)?.rule.id).toBe("r-all");
+    expect(pickMatch("thanks kak", applicable, opts)).toBeNull();
   });
 });

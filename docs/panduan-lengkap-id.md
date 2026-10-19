@@ -211,6 +211,8 @@ Instagram di-connect ulang.
 2. **Add rule**:
    - **Keywords**: `drive` (tekan Enter per keyword; bisa banyak, mis. `drive`, `prompt`).
    - **Match mode**: _Whole word_ (disarankan) – cocok untuk "DRIVE", "drive 🙏", "Drive!!".
+     _Any comment_ membalas semua komentar tanpa keyword (balasan di dalam thread diabaikan, dan
+     aturan ber-keyword selalu didahulukan).
    - **Public replies**: beberapa variasi, dipilih acak, mis. `Sudah aku kirim ke DM ya {username} 🙌`.
    - **DM message** (maks 1000 karakter): mis.
      `Hai {username}! Ini prompt lengkap merapikan Google Drive dengan Claude: https://ilramdhan.dev/prompt/drive`

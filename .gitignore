@@ -45,3 +45,5 @@ __pycache__/
 
 # docker build output
 /dist
+
+.env.local
