@@ -97,6 +97,10 @@ docker compose up -d
 docker compose logs -f app
 ```
 
+After upgrading to a release with the **follow gate** (Require follow), toggle **`messaging_postbacks`**
+on in Meta App Dashboard → Webhooks (Instagram) and click **Settings → Instagram → Re-subscribe
+webhooks** once. Without it only the follow gate button stays unresponsive; everything else works.
+
 Pre-1.0 minor versions can contain breaking changes. See [releasing.md](releasing.md) for rollback.
 
 ## Backups

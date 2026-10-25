@@ -190,6 +190,19 @@ Tokens last ~60 days and are refreshed daily by cron. Check `CRON_SECRET` and th
 - Message over 1000 characters or invalid button URL: shorten; check the error in Activity.
 - Rate limited (~750 private replies/hour/account, ⚠ verify): retry later.
 
+## Follow gate: tapping "I've followed" does nothing
+
+The tap arrives as a `messaging_postbacks` webhook, which accounts connected before the follow gate
+release are not subscribed to.
+
+1. Meta App Dashboard → Webhooks (Instagram): toggle **`messaging_postbacks`** on.
+2. AutoDM **Settings → Instagram → Re-subscribe webhooks** (once per connected account).
+3. Tap the button again; the Activity row should change from "Waiting for follow" to "Follow unlocked".
+
+Comments, public replies and normal DMs are not affected by this. If the first DM arrived without a
+button at all, Instagram rejected the postback template: check the logs for
+`action.follow_gate_template_fallback` and turn the gate off for that rule.
+
 ## Public reply posted but no DM (status `partial`)
 
 See the error in the Activity row; usually one of the above.
