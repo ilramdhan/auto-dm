@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/ilramdhan/auto-dm/compare/v0.7.0...v0.8.0) (2026-10-25)
+
+
+### Features
+
+* **engine:** add follow gate that requires a follow before the DM link is sent ([#104](https://github.com/ilramdhan/auto-dm/issues/104)) ([ac09255](https://github.com/ilramdhan/auto-dm/commit/ac09255dc56158914edaadd07655225168b9140e))
+
 ## [0.7.0](https://github.com/ilramdhan/auto-dm/compare/v0.6.2...v0.7.0) (2026-10-19)
 
 
