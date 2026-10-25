@@ -26,6 +26,7 @@ function setup(over: Partial<FollowGateDeps> = {}, deliveryOver: Record<string, 
       ruleId: RULE,
       matchedKeyword: "link",
       followGateStatus: state.status,
+      dmStatus: "sent" as const,
       ...deliveryOver,
     })),
     getRule: vi.fn(async () => ({
@@ -37,9 +38,9 @@ function setup(over: Partial<FollowGateDeps> = {}, deliveryOver: Record<string, 
       followGateButtonTitle: null,
       followGateRetryMessage: "Not yet {username}",
     })),
-    // Simulates the conditional UPDATE ... WHERE follow_gate_status = 'pending'.
+    // Simulates the conditional UPDATE ... WHERE follow_gate_status is pending or null.
     claimUnlock: vi.fn(async () => {
-      if (state.status !== "pending") return false;
+      if (state.status === "unlocked") return false;
       state.status = "unlocked";
       return true;
     }),
@@ -104,6 +105,21 @@ describe("handleFollowGatePostback", () => {
     const { deps } = setup({}, { followGateStatus: "unlocked" });
     await expect(handleFollowGatePostback(tap(), { deps, log: silent })).resolves.toBe("ignored_not_pending");
     expect(deps.isFollowing).not.toHaveBeenCalled();
+    expect(deps.sendDirect).not.toHaveBeenCalled();
+  });
+
+  it("gate message recorded as failed (timed out) but delivered: the tap still unlocks", async () => {
+    const { deps, state } = setup({}, { dmStatus: "failed" });
+    state.status = null;
+    await expect(handleFollowGatePostback(tap(), { deps, log: silent })).resolves.toBe("unlocked");
+    expect(deps.sendDirect).toHaveBeenCalledTimes(1);
+    expect(deps.recordUnlockedMessage).toHaveBeenCalledWith(DELIVERY, "mid_dm");
+    expect(state.status).toBe("unlocked");
+  });
+
+  it("no gate status and the DM was not a failed gate message: ignored", async () => {
+    const { deps } = setup({}, { followGateStatus: null, dmStatus: "sent" });
+    await expect(handleFollowGatePostback(tap(), { deps, log: silent })).resolves.toBe("ignored_not_pending");
     expect(deps.sendDirect).not.toHaveBeenCalled();
   });
 
