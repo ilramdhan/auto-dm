@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/ilramdhan/auto-dm/compare/v0.8.0...v0.8.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* **engine:** unlock the follow gate when the gate DM timed out but was delivered ([#108](https://github.com/ilramdhan/auto-dm/issues/108)) ([e708e4b](https://github.com/ilramdhan/auto-dm/commit/e708e4b20b6c8a00c25630810ff7f8611cd2f9ed))
+
 ## [0.8.0](https://github.com/ilramdhan/auto-dm/compare/v0.7.0...v0.8.0) (2026-10-25)
 
 
