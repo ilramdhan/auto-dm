@@ -203,6 +203,13 @@ Comments, public replies and normal DMs are not affected by this. If the first D
 button at all, Instagram rejected the postback template: check the logs for
 `action.follow_gate_template_fallback` and turn the gate off for that rule.
 
+### Activity shows "private reply: Instagram API request timed out" but the gate DM arrived
+
+Instagram sometimes delivers a message after our request has already timed out. The row then shows
+`Reply sent · DM failed`, but the user still got the "follow first" message. The gate now
+stays pending after a timeout or 5xx, so a tap on its button sends the real DM, and the row changes
+to `Sent`. Rows recorded before this fix are covered too: the user just taps the button again.
+
 ## Public reply posted but no DM (status `partial`)
 
 See the error in the Activity row; usually one of the above.

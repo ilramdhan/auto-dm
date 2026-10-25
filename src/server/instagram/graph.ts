@@ -40,6 +40,14 @@ export class GraphApiError extends Error {
     return this.status === 429 || [4, 17, 32, 613].includes(this.code ?? -1);
   }
 
+  /**
+   * The outcome is unknown: a timeout/network error (status 0) or a 5xx. A POST that failed this way
+   * may still have been applied by Instagram (e.g. the DM was delivered).
+   */
+  get mayHaveBeenApplied(): boolean {
+    return this.status === 0 || this.status >= 500;
+  }
+
   /** Maps to the app-wide error type (`UPSTREAM`, 502) for route handlers. */
   toAppError(publicMessage = "Instagram API request failed"): AppError {
     return new AppError("UPSTREAM", publicMessage, { cause: this });

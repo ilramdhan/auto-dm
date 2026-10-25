@@ -248,6 +248,9 @@ export async function sendForDelivery(input: SendForDeliveryInput): Promise<Proc
         errorCode ??= errorCodeOf(err);
         errors.push(`private reply: ${safeErrorMessage(err, [token], 240)}`);
         log.warn("action.dm_failed", { commentId, err: safeErrorMessage(err, [token]) });
+        // A timeout/5xx may still have delivered the gate message. Keep the gate pending so a tap on
+        // its button unlocks the DM; the tap itself proves the message arrived.
+        if (err instanceof GraphApiError && err.mayHaveBeenApplied) followGatePending = true;
       }
     } else if (dmText) {
       const button =

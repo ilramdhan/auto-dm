@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull, or, sql } from "drizzle-orm";
 import { db } from "@/server/db/client";
 import { deliveries, rules, type Delivery, type InstagramAccount, type Rule } from "@/server/db/schema";
 import { getAccessToken, getActiveAccount } from "@/server/instagram/account";
@@ -36,7 +36,14 @@ export type FollowGateOutcome =
 
 type GateDelivery = Pick<
   Delivery,
-  "id" | "igUserId" | "commenterId" | "commenterUsername" | "ruleId" | "matchedKeyword" | "followGateStatus"
+  | "id"
+  | "igUserId"
+  | "commenterId"
+  | "commenterUsername"
+  | "ruleId"
+  | "matchedKeyword"
+  | "followGateStatus"
+  | "dmStatus"
 >;
 type GateRule = Pick<
   Rule,
@@ -56,7 +63,10 @@ export interface FollowGateDeps {
   getToken: (account: Pick<InstagramAccount, "accessTokenEnc">) => string;
   getDelivery: (id: string) => Promise<GateDelivery | undefined>;
   getRule: (id: string) => Promise<GateRule | undefined>;
-  /** `pending` → `unlocked` only if still pending. Returns true for exactly one caller. */
+  /**
+   * `pending` (or `null`, see {@link handleFollowGatePostback}) → `unlocked` only if not unlocked yet.
+   * Returns true for exactly one caller.
+   */
   claimUnlock: (deliveryId: string) => Promise<boolean>;
   /** Back to `pending` after a failed send, so the user can tap again. */
   revertUnlock: (deliveryId: string) => Promise<void>;
@@ -92,7 +102,15 @@ export const defaultFollowGateDeps: FollowGateDeps = {
     const rows = await db
       .update(deliveries)
       .set({ followGateStatus: "unlocked", followGateUnlockedAt: new Date() })
-      .where(and(eq(deliveries.id, deliveryId), eq(deliveries.followGateStatus, "pending")))
+      .where(
+        and(
+          eq(deliveries.id, deliveryId),
+          or(
+            eq(deliveries.followGateStatus, "pending"),
+            and(isNull(deliveries.followGateStatus), eq(deliveries.dmStatus, "failed")),
+          ),
+        ),
+      )
       .returning({ id: deliveries.id });
     return rows.length === 1;
   },
@@ -103,7 +121,18 @@ export const defaultFollowGateDeps: FollowGateDeps = {
       .where(and(eq(deliveries.id, deliveryId), eq(deliveries.followGateStatus, "unlocked")));
   },
   recordUnlockedMessage: async (deliveryId, messageId) => {
-    await db.update(deliveries).set({ dmMessageId: messageId }).where(eq(deliveries.id, deliveryId));
+    // The DM is now delivered: also heal a gate message recorded as failed after a timeout.
+    const publicFailed = sql`${deliveries.publicReplyStatus} = 'failed'`;
+    await db
+      .update(deliveries)
+      .set({
+        dmMessageId: messageId,
+        dmStatus: "sent",
+        status: sql`case when ${publicFailed} then 'partial'::delivery_status else 'sent'::delivery_status end`,
+        error: sql`case when ${publicFailed} then ${deliveries.error} else null end`,
+        errorCode: sql`case when ${publicFailed} then ${deliveries.errorCode} else null end`,
+      })
+      .where(eq(deliveries.id, deliveryId));
   },
   isFollowing: (token, igsid) => getUserFollowStatus(token, igsid),
   sendDirect: (token, igUserId, igsid, message) => sendDirectMessage(token, igUserId, igsid, message),
@@ -163,7 +192,13 @@ export async function handleFollowGatePostback(
       return done("ignored_account_mismatch", { deliveryId });
     if (!delivery.commenterId || delivery.commenterId !== event.senderId)
       return done("ignored_sender_mismatch", { deliveryId });
-    if (delivery.followGateStatus !== "pending") return done("ignored_not_pending", { deliveryId });
+    // `null` happens when the gate message was recorded as failed (e.g. timed out) but Instagram
+    // delivered it anyway: the payload carries this delivery's id, so the tap proves it arrived.
+    if (
+      delivery.followGateStatus === "unlocked" ||
+      (delivery.followGateStatus === null && delivery.dmStatus !== "failed")
+    )
+      return done("ignored_not_pending", { deliveryId });
     if (!delivery.ruleId) return done("ignored_rule_deleted", { deliveryId });
     const rule = await deps.getRule(delivery.ruleId);
     if (!rule) return done("ignored_rule_deleted", { deliveryId });
