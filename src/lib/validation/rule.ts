@@ -1,5 +1,13 @@
 import { z } from "zod";
-import { COMMENT_REPLY_MAX_CHARS, DM_BUTTON_TITLE_MAX, DM_MAX_CHARS } from "@/lib/constants";
+import {
+  COMMENT_REPLY_MAX_CHARS,
+  DEFAULT_FOLLOW_GATE_BUTTON_TITLE,
+  DEFAULT_FOLLOW_GATE_MESSAGE,
+  DEFAULT_FOLLOW_GATE_RETRY_MESSAGE,
+  DM_BUTTON_TITLE_MAX,
+  DM_MAX_CHARS,
+  FOLLOW_GATE_TEXT_MAX,
+} from "@/lib/constants";
 
 export const MATCH_MODES = ["word", "exact", "contains", "any"] as const;
 export type MatchMode = (typeof MATCH_MODES)[number];
@@ -78,6 +86,11 @@ export const ruleSchema = z
       .optional()
       .transform((v) => (v ? v : null)),
     oncePerUser: z.boolean(),
+    /** Follow gate: require a follow before the DM (and its link) is sent. */
+    followGateEnabled: z.boolean().default(false),
+    followGateMessage: optionalText(FOLLOW_GATE_TEXT_MAX, `At most ${FOLLOW_GATE_TEXT_MAX} characters`),
+    followGateButtonTitle: optionalText(DM_BUTTON_TITLE_MAX, `At most ${DM_BUTTON_TITLE_MAX} characters`),
+    followGateRetryMessage: optionalText(FOLLOW_GATE_TEXT_MAX, `At most ${FOLLOW_GATE_TEXT_MAX} characters`),
     priority: z.coerce.number().int("Whole numbers only").min(-1000).max(1000),
     isActive: z.boolean(),
   })
@@ -92,6 +105,19 @@ export const ruleSchema = z
       ctx.addIssue({ code: "custom", path: ["dmButtonTitle"], message: "Add a button title" });
     }
   });
+
+/** The follow gate texts a rule uses (its own, or the defaults when unset). */
+export function followGateTexts(rule: {
+  followGateMessage: string | null;
+  followGateButtonTitle: string | null;
+  followGateRetryMessage: string | null;
+}): { message: string; buttonTitle: string; retryMessage: string } {
+  return {
+    message: rule.followGateMessage?.trim() || DEFAULT_FOLLOW_GATE_MESSAGE,
+    buttonTitle: rule.followGateButtonTitle?.trim() || DEFAULT_FOLLOW_GATE_BUTTON_TITLE,
+    retryMessage: rule.followGateRetryMessage?.trim() || DEFAULT_FOLLOW_GATE_RETRY_MESSAGE,
+  };
+}
 
 export type RuleInput = z.input<typeof ruleSchema>;
 export type RuleData = z.output<typeof ruleSchema>;

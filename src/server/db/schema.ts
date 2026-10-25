@@ -149,6 +149,17 @@ export const rules = pgTable(
     dmButtonUrl: text("dm_button_url"),
     /** Only DM a given commenter once per rule. */
     oncePerUser: boolean("once_per_user").notNull().default(true),
+    /**
+     * Follow gate: the Private Reply asks the commenter to follow and carries a postback button;
+     * the real DM (dmMessage + link) is sent only after the follow is confirmed.
+     */
+    followGateEnabled: boolean("follow_gate_enabled").notNull().default(false),
+    /** First DM when the gate is on. NULL = default text. Supports {username}, {keyword}. */
+    followGateMessage: text("follow_gate_message"),
+    /** Postback button label (max 20 chars). NULL = default. */
+    followGateButtonTitle: text("follow_gate_button_title"),
+    /** Sent when the user taps the button but isn't following yet. NULL = default. */
+    followGateRetryMessage: text("follow_gate_retry_message"),
     priority: integer("priority").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     ...timestamps,
@@ -169,6 +180,9 @@ export const deliveryStatus = pgEnum("delivery_status", [
 
 /** Outcome of each individual action, so analytics can report reply vs DM success separately. */
 export const actionStatus = pgEnum("action_status", ["not_attempted", "sent", "failed"]);
+
+/** Follow gate state of a delivery (NULL = the rule had no gate). */
+export const followGateStatus = pgEnum("follow_gate_status", ["pending", "unlocked"]);
 
 export const deliverySource = pgEnum("delivery_source", ["webhook", "n8n", "manual"]);
 
@@ -202,6 +216,9 @@ export const deliveries = pgTable(
     error: text("error"),
     attempts: integer("attempts").notNull().default(0),
     source: deliverySource("source").notNull().default("webhook"),
+    /** `pending` after the gate DM was sent; `unlocked` once the real DM went out. */
+    followGateStatus: followGateStatus("follow_gate_status"),
+    followGateUnlockedAt: timestamp("follow_gate_unlocked_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     processedAt: timestamp("processed_at", { withTimezone: true }),
   },

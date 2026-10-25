@@ -5,6 +5,7 @@ import {
   countMatchedEntries,
   entryIds,
   extractCommentEvents,
+  extractPostbackEvents,
   parseWebhookPayload,
   verifySignature,
 } from "./webhook";
@@ -191,5 +192,67 @@ describe("entryIds / countMatchedEntries", () => {
     expect(countMatchedEntries(entryIds(payload), "a")).toBe(2);
     expect(countMatchedEntries(entryIds(payload), "z")).toBe(0);
     expect(countMatchedEntries(entryIds(payload), null)).toBeNull();
+  });
+});
+
+describe("extractPostbackEvents", () => {
+  const OUR = "17841400000000001";
+  const DELIVERY = "0b6f1c3e-1a2b-4c3d-8e9f-001122334455";
+  const postback = (over: Record<string, unknown> = {}) => ({
+    sender: { id: "igsid_1" },
+    recipient: { id: OUR },
+    timestamp: 1_700_000_000_000,
+    postback: { mid: "mid_1", title: "Saya sudah follow", payload: `fg:${DELIVERY}` },
+    ...over,
+  });
+  const payload = (messaging: unknown[], changes?: unknown[]) =>
+    parseWebhookPayload(
+      JSON.stringify({ object: "instagram", entry: [{ id: OUR, time: 1, messaging, changes }] }),
+    )!;
+
+  it("extracts a follow gate postback", () => {
+    expect(extractPostbackEvents(payload([postback()]))).toEqual([
+      {
+        igUserId: OUR,
+        senderId: "igsid_1",
+        recipientId: OUR,
+        payload: `fg:${DELIVERY}`,
+        mid: "mid_1",
+        timestamp: 1_700_000_000_000,
+      },
+    ]);
+  });
+
+  it("ignores echoes, plain messages, missing/foreign payloads, malformed items and duplicates", () => {
+    const p = payload([
+      postback({ message: { is_echo: true } }),
+      { sender: { id: "igsid_2" }, recipient: { id: OUR }, message: { mid: "m", text: "hi" } },
+      postback({ postback: { mid: "mid_2", title: "x" } }),
+      postback({ postback: { mid: "mid_3", payload: "GET_STARTED" } }),
+      postback({ sender: { id: OUR } }),
+      { recipient: { id: OUR }, postback: { payload: "fg:x" } },
+      "garbage",
+      postback(),
+      postback(),
+    ]);
+    expect(extractPostbackEvents(p).map((e) => e.mid)).toEqual(["mid_1"]);
+  });
+
+  it("handles mixed comment changes and messaging in one payload", () => {
+    const p = payload(
+      [postback({ sender: { id: 99 } })],
+      [{ field: "comments", value: { id: "c1", text: "link", from: { id: "u1" } } }],
+    );
+    expect(extractCommentEvents(p).map((e) => e.commentId)).toEqual(["c1"]);
+    expect(extractPostbackEvents(p).map((e) => e.senderId)).toEqual(["99"]);
+  });
+
+  it("ignores non-Instagram objects and payloads without messaging", () => {
+    const p = parseWebhookPayload(
+      JSON.stringify({ object: "page", entry: [{ id: OUR, messaging: [postback()] }] }),
+    )!;
+    expect(extractPostbackEvents(p)).toEqual([]);
+    expect(extractPostbackEvents(payload([]))).toEqual([]);
+    expect(extractPostbackEvents(parseWebhookPayload(JSON.stringify(commentPayload))!)).toEqual([]);
   });
 });

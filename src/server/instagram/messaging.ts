@@ -64,14 +64,52 @@ function isTemplateRejection(err: unknown): err is GraphApiError {
   );
 }
 
-async function sendMessage(accessToken: string, igUserId: string, commentId: string, message: unknown) {
+/** Who a message goes to: a comment (Private Reply) or a user inside the 24h messaging window. */
+export type MessageRecipient = { comment_id: string } | { id: string };
+
+async function sendMessage(
+  accessToken: string,
+  igUserId: string,
+  recipient: MessageRecipient,
+  message: unknown,
+) {
   return graphRequest({
     method: "POST",
     path: `/${encodeURIComponent(igUserId)}/messages`,
     accessToken,
-    json: { recipient: { comment_id: commentId }, message },
+    json: { recipient, message },
     schema: messageSchema,
   });
+}
+
+/** Button template with one `web_url` button. */
+function webUrlTemplate(text: string, button: { title: string; url: string }) {
+  return {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "button",
+        text,
+        buttons: [{ type: "web_url", url: button.url, title: truncateText(button.title, BUTTON_TITLE_MAX) }],
+      },
+    },
+  };
+}
+
+/** Button template with one `postback` button (Meta sends `messaging_postbacks` when tapped). */
+export function postbackTemplate(text: string, button: { title: string; payload: string }) {
+  return {
+    attachment: {
+      type: "template",
+      payload: {
+        template_type: "button",
+        text: truncateText(text, BUTTON_TEMPLATE_TEXT_MAX),
+        buttons: [
+          { type: "postback", title: truncateText(button.title, BUTTON_TITLE_MAX), payload: button.payload },
+        ],
+      },
+    },
+  };
 }
 
 /**
@@ -83,29 +121,40 @@ async function sendMessage(accessToken: string, igUserId: string, commentId: str
  * we fall back to plain text with the link appended, so the DM is still delivered.
  */
 export async function sendPrivateReply(input: PrivateReplyInput): Promise<PrivateReplyResult> {
-  const { accessToken, igUserId, commentId, button } = input;
+  return sendWithButton(input.accessToken, input.igUserId, { comment_id: input.commentId }, input);
+}
+
+/**
+ * Sends a regular DM to `igsid` (`recipient: { id }`), allowed inside the 24h window the user opened
+ * (e.g. by tapping a postback button). Same button template / text fallback as {@link sendPrivateReply}.
+ */
+export async function sendDirectMessage(
+  accessToken: string,
+  igUserId: string,
+  igsid: string,
+  message: { text: string; button?: { title: string; url: string } | null },
+): Promise<PrivateReplyResult> {
+  return sendWithButton(accessToken, igUserId, { id: igsid }, message);
+}
+
+async function sendWithButton(
+  accessToken: string,
+  igUserId: string,
+  recipient: MessageRecipient,
+  input: { text: string; button?: { title: string; url: string } | null },
+): Promise<PrivateReplyResult> {
+  const { button } = input;
   const text = truncateText(input.text, DM_MAX_CHARS);
 
   if (button && button.url && button.title) {
     const textChars = Array.from(text).length;
     if (textChars > 0 && textChars <= BUTTON_TEMPLATE_TEXT_MAX) {
       try {
-        const res = await sendMessage(accessToken, igUserId, commentId, {
-          attachment: {
-            type: "template",
-            payload: {
-              template_type: "button",
-              text,
-              buttons: [
-                { type: "web_url", url: button.url, title: truncateText(button.title, BUTTON_TITLE_MAX) },
-              ],
-            },
-          },
-        });
+        const res = await sendMessage(accessToken, igUserId, recipient, webUrlTemplate(text, button));
         return { messageId: res.message_id, format: "button" };
       } catch (err) {
         if (!isTemplateRejection(err)) throw err;
-        const res = await sendMessage(accessToken, igUserId, commentId, { text: textWithLink(text, button) });
+        const res = await sendMessage(accessToken, igUserId, recipient, { text: textWithLink(text, button) });
         return {
           messageId: res.message_id,
           format: "text",
@@ -113,10 +162,36 @@ export async function sendPrivateReply(input: PrivateReplyInput): Promise<Privat
         };
       }
     }
-    const res = await sendMessage(accessToken, igUserId, commentId, { text: textWithLink(text, button) });
+    const res = await sendMessage(accessToken, igUserId, recipient, { text: textWithLink(text, button) });
     return { messageId: res.message_id, format: "text" };
   }
 
-  const res = await sendMessage(accessToken, igUserId, commentId, { text });
+  const res = await sendMessage(accessToken, igUserId, recipient, { text });
   return { messageId: res.message_id, format: "text" };
+}
+
+/**
+ * Sends `text` with one postback button (follow gate). If Instagram rejects the template with a
+ * 400-class error, the plain gate text is sent instead (no button: the user can't unlock from that
+ * message, but the delivery stays `pending` and the failure is reported via `templateFallback`).
+ */
+export async function sendPostbackMessage(
+  accessToken: string,
+  igUserId: string,
+  recipient: MessageRecipient,
+  input: { text: string; button: { title: string; payload: string } },
+): Promise<PrivateReplyResult> {
+  const text = truncateText(input.text, BUTTON_TEMPLATE_TEXT_MAX);
+  try {
+    const res = await sendMessage(accessToken, igUserId, recipient, postbackTemplate(text, input.button));
+    return { messageId: res.message_id, format: "button" };
+  } catch (err) {
+    if (!isTemplateRejection(err)) throw err;
+    const res = await sendMessage(accessToken, igUserId, recipient, { text });
+    return {
+      messageId: res.message_id,
+      format: "text",
+      templateFallback: { code: err.code, message: err.message },
+    };
+  }
 }

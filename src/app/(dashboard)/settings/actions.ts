@@ -133,7 +133,7 @@ export const disconnectInstagramAction = authedAction(
   },
 );
 
-/** Calls `POST /me/subscribed_apps?subscribed_fields=comments` again and stores the outcome. */
+/** Calls `POST /me/subscribed_apps?subscribed_fields=comments,messaging_postbacks` again and stores the outcome. */
 export const resubscribeWebhooksAction = authedAction(
   "settings",
   "resubscribe_webhooks",

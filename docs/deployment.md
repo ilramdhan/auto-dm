@@ -245,6 +245,12 @@ GitHub → your fork → **Sync fork** (or `git pull upstream main` and push). V
 new migrations during the build. Read the release notes first and back up the database before a
 major version.
 
+Some releases need a one-time step after upgrading; the release notes say so. For example, the
+**follow gate** (Require follow) needs the `messaging_postbacks` webhook field: in the Meta App
+Dashboard → Webhooks (Instagram) toggle **`messaging_postbacks`** on, then click **Settings →
+Instagram → Re-subscribe webhooks** once. Until then everything else keeps working; only the follow
+gate button does not respond. See [meta-setup.md](meta-setup.md#part-9---private-reply-rules-what-limits-your-dms).
+
 **Settings → About** shows the running version (plus commit and environment on Vercel), whether a
 newer release exists, the latest release notes, and the server region with the database latency. The check calls the public GitHub Releases API
 from the server, cached for 6 hours; if GitHub can't be reached it just says so.

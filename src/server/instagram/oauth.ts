@@ -178,17 +178,20 @@ export async function completeOAuth(rawCode: string): Promise<ConnectResult> {
   return { account, subscribed: status.ok };
 }
 
-/** Subscribes the app to the account's `comments` webhook field. Returns false on failure. */
+/** Subscribes the app to the account's `comments` and `messaging_postbacks` webhook fields. Returns false on failure. */
 export async function subscribeToWebhooks(accessToken: string): Promise<boolean> {
   return (await subscribeWithDetails(accessToken)).ok;
 }
+
+/** Webhook fields we subscribe to: comments (engine) and postbacks (follow gate button). */
+export const WEBHOOK_SUBSCRIBED_FIELDS = "comments,messaging_postbacks";
 
 const subscribedAppsSchema = z.object({
   data: z.array(z.looseObject({ subscribed_fields: z.array(z.string()).optional() })).optional(),
 });
 
 /**
- * `POST /me/subscribed_apps?subscribed_fields=comments`, then (best-effort) reads back the
+ * `POST /me/subscribed_apps?subscribed_fields=comments,messaging_postbacks`, then (best-effort) reads back the
  * subscribed fields. Never throws for Graph API errors; the error text is token-free.
  */
 export async function subscribeWithDetails(
@@ -198,7 +201,7 @@ export async function subscribeWithDetails(
     const res = await graphRequest({
       method: "POST",
       path: "/me/subscribed_apps",
-      query: { subscribed_fields: "comments" },
+      query: { subscribed_fields: WEBHOOK_SUBSCRIBED_FIELDS },
       accessToken,
       schema: subscribeSchema,
       idempotent: true,

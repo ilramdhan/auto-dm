@@ -1,4 +1,5 @@
 import { after, NextResponse, type NextRequest } from "next/server";
+import { handleFollowGatePostbacks } from "@/server/engine/follow-gate";
 import { processCommentEvents } from "@/server/engine/process-comment";
 import { errorResponse, noStore } from "@/server/instagram/http";
 import { authenticateWebhook, rejectionResult, verificationResponse } from "@/server/instagram/inbound";
@@ -61,9 +62,9 @@ export async function POST(req: NextRequest) {
     });
     return res;
   }
-  const { entries, entryIds, events } = inbound;
+  const { entries, entryIds, events, postbacks } = inbound;
   const durationMs = Date.now() - started;
-  log.info("webhook.received", { entries, events: events.length, durationMs });
+  log.info("webhook.received", { entries, events: events.length, postbacks: postbacks.length, durationMs });
   after(async () => {
     await recordWebhookRequest({
       kind: "delivery",
@@ -75,6 +76,11 @@ export async function POST(req: NextRequest) {
       commentEvents: events.length,
       durationMs,
     });
+    if (postbacks.length > 0) {
+      // Follow gate button taps. Never throws (failures are logged per event).
+      const outcomes = await handleFollowGatePostbacks(postbacks, { log });
+      log.info("webhook.postbacks_processed", { postbacks: outcomes.length, outcomes });
+    }
     if (events.length === 0) return;
     const t0 = Date.now();
     try {

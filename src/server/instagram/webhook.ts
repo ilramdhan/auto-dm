@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 import { safeEqual } from "@/server/crypto";
+import { FOLLOW_GATE_PAYLOAD_PREFIX } from "@/lib/constants";
 
 /** Max accepted webhook body size (Meta batches are small; this is a DoS guard). */
 export const MAX_WEBHOOK_BODY_BYTES = 1_000_000;
@@ -58,11 +59,42 @@ export const webhookPayloadSchema = z.object({
       id,
       time: z.number().optional(),
       changes: z.array(z.object({ field: z.string(), value: z.unknown() })).optional(),
+      /** Messaging events (`messaging_postbacks`, messages, ...). Validated per item on extraction. */
+      messaging: z.array(z.unknown()).optional(),
     }),
   ),
 });
 
 export type WebhookPayload = z.infer<typeof webhookPayloadSchema>;
+
+/** One `entry[].messaging[]` item. Unknown keys are stripped. */
+export const messagingEventSchema = z.object({
+  sender: z.object({ id }),
+  recipient: z.object({ id }),
+  timestamp: z.number().optional(),
+  message: z.object({ is_echo: z.boolean().optional() }).optional(),
+  postback: z
+    .object({
+      mid: z.string().optional(),
+      title: z.string().optional(),
+      payload: z.string().max(1000).optional(),
+    })
+    .optional(),
+});
+
+/** A tap on one of our follow gate postback buttons. */
+export interface PostbackEvent {
+  /** Receiving (our) account id from `entry[].id`. */
+  igUserId: string;
+  /** IGSID of the user who tapped. */
+  senderId: string;
+  /** `recipient.id` (our account as seen by the sender). */
+  recipientId: string;
+  /** Full payload, e.g. `fg:<deliveryId>`. */
+  payload: string;
+  mid: string | null;
+  timestamp: number | null;
+}
 
 /** Normalized comment event, the engine's input. */
 export interface CommentEvent {
@@ -118,6 +150,39 @@ export function parseWebhookPayload(rawBody: string): WebhookPayload | null {
   }
   const parsed = webhookPayloadSchema.safeParse(json);
   return parsed.success ? parsed.data : null;
+}
+
+/**
+ * Extracts follow gate postback events (`entry[].messaging[].postback` with our payload prefix).
+ * Ignores echoes, plain messages, malformed items, foreign payloads and duplicate `mid`s.
+ */
+export function extractPostbackEvents(payload: WebhookPayload): PostbackEvent[] {
+  if (payload.object !== "instagram") return [];
+  const events: PostbackEvent[] = [];
+  const seen = new Set<string>();
+  for (const entry of payload.entry) {
+    for (const item of entry.messaging ?? []) {
+      const v = messagingEventSchema.safeParse(item);
+      if (!v.success) continue;
+      const { sender, recipient, postback, message, timestamp } = v.data;
+      if (message?.is_echo || !postback?.payload) continue;
+      if (!postback.payload.startsWith(FOLLOW_GATE_PAYLOAD_PREFIX)) continue;
+      // Our own account never taps; also a cheap echo guard.
+      if (sender.id === entry.id) continue;
+      const key = postback.mid ?? `${sender.id}:${postback.payload}:${timestamp ?? ""}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      events.push({
+        igUserId: entry.id,
+        senderId: sender.id,
+        recipientId: recipient.id,
+        payload: postback.payload,
+        mid: postback.mid ?? null,
+        timestamp: timestamp ?? null,
+      });
+    }
+  }
+  return events;
 }
 
 /**

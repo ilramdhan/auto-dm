@@ -71,6 +71,13 @@
       "when": 1792388184252,
       "tag": "0009_campaign_media_ids_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792888517426,
+      "tag": "0010_follow_gate",
+      "breakpoints": true
     }
   ]
 }

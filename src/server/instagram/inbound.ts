@@ -6,10 +6,12 @@ import {
   checkVerifyRequest,
   entryIds,
   extractCommentEvents,
+  extractPostbackEvents,
   MAX_WEBHOOK_BODY_BYTES,
   parseWebhookPayload,
   verifySignature,
   type CommentEvent,
+  type PostbackEvent,
 } from "./webhook";
 
 export const SIGNATURE_HEADER = "x-hub-signature-256";
@@ -20,6 +22,8 @@ export interface AuthenticatedWebhook {
   /** `entry[].id` values (receiving account ids), for diagnostics. */
   entryIds: string[];
   events: CommentEvent[];
+  /** Follow gate button taps (`messaging_postbacks`). */
+  postbacks: PostbackEvent[];
 }
 
 /** Why a webhook POST was rejected; recorded in `webhook_requests.result`. */
@@ -79,6 +83,7 @@ export async function authenticateWebhook(req: Request): Promise<AuthenticatedWe
     entries: payload.entry.length,
     entryIds: entryIds(payload),
     events: extractCommentEvents(payload),
+    postbacks: extractPostbackEvents(payload),
   };
 }
 
