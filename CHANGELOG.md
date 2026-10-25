@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.2](https://github.com/ilramdhan/auto-dm/compare/v0.8.1...v0.8.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* **deps:** upgrade next to 16.4.1 for critical security advisories ([#111](https://github.com/ilramdhan/auto-dm/issues/111)) ([986daa9](https://github.com/ilramdhan/auto-dm/commit/986daa989a9c87dabf53b868a17a61df4710eaf2)), closes [#110](https://github.com/ilramdhan/auto-dm/issues/110)
+
 ## [0.8.1](https://github.com/ilramdhan/auto-dm/compare/v0.8.0...v0.8.1) (2026-10-25)
 
 
