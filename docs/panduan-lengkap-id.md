@@ -200,7 +200,7 @@ Instagram di-connect ulang.
 1. Meta → **Instagram → API setup with Instagram login → Configure webhooks**.
 2. **Callback URL**: `https://<app-kamu>/api/webhooks/instagram` (salin dari Settings → Instagram).
 3. **Verify token**: salin dari Settings → Instagram (tombol mata untuk melihat, tombol copy).
-4. **Verify and save**, lalu **Subscribe** field **`comments`**.
+4. **Verify and save**, lalu **Subscribe** field **`comments`** dan **`messaging_postbacks`** (untuk fitur Require follow).
 5. Kartu "Webhook" di Settings berubah jadi **Receiving events** setelah komentar pertama masuk.
    Kartu **Webhook diagnostics** di bawahnya menampilkan setiap permintaan dari Meta (diterima atau
    ditolak, dan alasannya), hasil verifikasi, dan tombol **Re-subscribe webhooks**.
@@ -219,6 +219,10 @@ Instagram di-connect ulang.
    - **DM message** (maks 1000 karakter): mis.
      `Hai {username}! Ini prompt lengkap merapikan Google Drive dengan Claude: https://ilramdhan.dev/prompt/drive`
    - **Button** (opsional): judul + URL. Jika Meta menolak tombol, app otomatis mengirim teks + link.
+   - **Require follow** (opsional): DM pertama berisi tombol "Sudah follow"; link baru dikirim setelah
+     orang itu menekan tombol dan terdeteksi follow akun kamu (jika pengecekan gagal, link tetap
+     dikirim). Akun yang dihubungkan sebelum fitur ini harus klik **Settings → Re-subscribe webhooks**
+     sekali. Detail teknis: [meta-setup.md](meta-setup.md).
    - **Once per user**: ON (satu orang hanya dapat DM sekali per aturan).
 3. Pakai kotak **Test a comment** untuk simulasi (tidak mengirim apa pun).
 4. Tes sungguhan: komentar `DRIVE` dari **akun lain yang sudah jadi Instagram Tester** (selama app

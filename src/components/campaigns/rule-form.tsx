@@ -18,7 +18,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FieldError } from "@/components/field-error";
-import { DM_BUTTON_TITLE_MAX, DM_MAX_CHARS } from "@/lib/constants";
+import {
+  DEFAULT_FOLLOW_GATE_BUTTON_TITLE,
+  DEFAULT_FOLLOW_GATE_MESSAGE,
+  DEFAULT_FOLLOW_GATE_RETRY_MESSAGE,
+  DM_BUTTON_TITLE_MAX,
+  DM_MAX_CHARS,
+  FOLLOW_GATE_TEXT_MAX,
+} from "@/lib/constants";
 import {
   MATCH_MODE_INFO,
   MATCH_MODES,
@@ -39,6 +46,10 @@ export type RuleFormValues = {
   dmMessage: string;
   dmButtonTitle: string;
   dmButtonUrl: string;
+  followGateEnabled: boolean;
+  followGateMessage: string;
+  followGateButtonTitle: string;
+  followGateRetryMessage: string;
   oncePerUser: boolean;
   priority: number;
   isActive: boolean;
@@ -52,6 +63,10 @@ export const EMPTY_RULE: RuleFormValues = {
   dmMessage: "Hey {username}! Here's the link you asked for: ",
   dmButtonTitle: "",
   dmButtonUrl: "",
+  followGateEnabled: false,
+  followGateMessage: "",
+  followGateButtonTitle: "",
+  followGateRetryMessage: "",
   oncePerUser: true,
   priority: 0,
   isActive: true,
@@ -122,6 +137,9 @@ export function RuleForm({
   const replies = useFieldArray({ control, name: "publicReplies" });
   const dm = useWatch({ control, name: "dmMessage" }) ?? "";
   const matchMode = useWatch({ control, name: "matchMode" });
+  const gateEnabled = useWatch({ control, name: "followGateEnabled" });
+  const gateMsg = useWatch({ control, name: "followGateMessage" }) ?? "";
+  const gateRetry = useWatch({ control, name: "followGateRetryMessage" }) ?? "";
   const dmRegister = register("dmMessage");
 
   function insertVariable(token: string) {
@@ -378,6 +396,94 @@ export function RuleForm({
             <FieldError id={f("btn-url-error")} errors={errMsg(errors.dmButtonUrl?.message)} />
           </div>
         </div>
+      </fieldset>
+
+      <fieldset className="grid gap-3 rounded-lg border p-4">
+        <legend className="px-1 text-sm font-medium">Require follow</legend>
+        <Controller
+          control={control}
+          name="followGateEnabled"
+          render={({ field }) => (
+            <div className="flex items-center justify-between gap-4">
+              <div className="grid gap-0.5">
+                <Label htmlFor={f("gate")}>Require follow before the link is sent</Label>
+                <p id={f("gate-help")} className="text-muted-foreground text-xs">
+                  The first DM asks the commenter to follow you and shows a button. The message and link
+                  above are sent only after they tap it and we confirm they follow you. If the follow check
+                  fails on Meta&apos;s side, the link is sent anyway.
+                </p>
+              </div>
+              <Switch
+                id={f("gate")}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                aria-describedby={f("gate-help")}
+              />
+            </div>
+          )}
+        />
+        {gateEnabled ? (
+          <div className="grid gap-4">
+            <p className="text-muted-foreground flex gap-1.5 text-xs">
+              <Info className="mt-px size-3.5 shrink-0" aria-hidden />
+              <span>
+                The commenter must tap the button. Accounts connected before this update need Settings →
+                &quot;Re-subscribe webhooks&quot; once, otherwise the button does nothing.
+              </span>
+            </p>
+            <div className="grid gap-2">
+              <Label htmlFor={f("gate-msg")}>Follow request message</Label>
+              <Textarea
+                id={f("gate-msg")}
+                rows={3}
+                placeholder={DEFAULT_FOLLOW_GATE_MESSAGE}
+                aria-invalid={!!errors.followGateMessage}
+                aria-describedby={`${f("gate-msg-count")}${errors.followGateMessage ? ` ${f("gate-msg-error")}` : ""}`}
+                {...register("followGateMessage")}
+              />
+              <div className="flex items-start justify-between gap-3">
+                <FieldError id={f("gate-msg-error")} errors={errMsg(errors.followGateMessage?.message)} />
+                <p id={f("gate-msg-count")} className="text-muted-foreground ml-auto text-xs tabular-nums">
+                  {[...gateMsg].length} / {FOLLOW_GATE_TEXT_MAX}
+                  <span className="sr-only"> characters</span>
+                </p>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={f("gate-btn")}>Button title</Label>
+              <Input
+                id={f("gate-btn")}
+                placeholder={DEFAULT_FOLLOW_GATE_BUTTON_TITLE}
+                maxLength={DM_BUTTON_TITLE_MAX}
+                aria-invalid={!!errors.followGateButtonTitle}
+                aria-describedby={errors.followGateButtonTitle ? f("gate-btn-error") : undefined}
+                {...register("followGateButtonTitle")}
+              />
+              <FieldError id={f("gate-btn-error")} errors={errMsg(errors.followGateButtonTitle?.message)} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={f("gate-retry")}>&quot;Not following yet&quot; message</Label>
+              <Textarea
+                id={f("gate-retry")}
+                rows={3}
+                placeholder={DEFAULT_FOLLOW_GATE_RETRY_MESSAGE}
+                aria-invalid={!!errors.followGateRetryMessage}
+                aria-describedby={`${f("gate-retry-count")}${errors.followGateRetryMessage ? ` ${f("gate-retry-error")}` : ""}`}
+                {...register("followGateRetryMessage")}
+              />
+              <div className="flex items-start justify-between gap-3">
+                <FieldError
+                  id={f("gate-retry-error")}
+                  errors={errMsg(errors.followGateRetryMessage?.message)}
+                />
+                <p id={f("gate-retry-count")} className="text-muted-foreground ml-auto text-xs tabular-nums">
+                  {[...gateRetry].length} / {FOLLOW_GATE_TEXT_MAX}
+                  <span className="sr-only"> characters</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </fieldset>
 
       <div className="grid gap-3 sm:grid-cols-2">

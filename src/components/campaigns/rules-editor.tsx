@@ -45,6 +45,10 @@ export type RuleView = {
   dmMessage: string;
   dmButtonTitle: string | null;
   dmButtonUrl: string | null;
+  followGateEnabled: boolean;
+  followGateMessage: string | null;
+  followGateButtonTitle: string | null;
+  followGateRetryMessage: string | null;
   oncePerUser: boolean;
   priority: number;
   isActive: boolean;
@@ -59,6 +63,10 @@ function toFormValues(r: RuleView): RuleFormValues {
     dmMessage: r.dmMessage,
     dmButtonTitle: r.dmButtonTitle ?? "",
     dmButtonUrl: r.dmButtonUrl ?? "",
+    followGateEnabled: r.followGateEnabled,
+    followGateMessage: r.followGateMessage ?? "",
+    followGateButtonTitle: r.followGateButtonTitle ?? "",
+    followGateRetryMessage: r.followGateRetryMessage ?? "",
     oncePerUser: r.oncePerUser,
     priority: r.priority,
     isActive: r.isActive,
@@ -198,6 +206,7 @@ function RuleSummary({
               <Badge variant="outline" title="Match mode">
                 {MATCH_MODE_INFO[rule.matchMode].label}
               </Badge>
+              {rule.followGateEnabled ? <Badge variant="info">Follow gate</Badge> : null}
               {rule.priority !== 0 ? <Badge variant="outline">Priority {rule.priority}</Badge> : null}
             </div>
             {rule.matchMode === "any" ? (

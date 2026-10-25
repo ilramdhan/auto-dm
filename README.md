@@ -40,6 +40,7 @@ into n8n.
 - **Unlimited keywords per post**, each rule with its own replies (match modes: word, exact, contains, or any comment; case, accent and emoji safe).
 - **Random public-reply variants** so your replies don't look copy-pasted.
 - **Personalised DMs** with `{username}` and `{keyword}`, plus an optional **link button**.
+- **Follow gate** (optional, per rule): the link is sent only after the commenter taps "I've followed" and is confirmed to follow you.
 - **Once per user** per rule, and loop protection (your own replies are ignored).
 - **Live activity log** with status, errors and skip reasons for every comment.
 - **Skipped comments + manual send**: see why a comment wasn't answered (including keyword hits on a different post, e.g. the ad version of a boosted reel) and send a rule's reply + DM by hand within Instagram's 7-day window, once per comment.

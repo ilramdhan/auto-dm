@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { changePasswordSchema, forcedChangePasswordSchema, loginSchema, passwordStrength } from "./auth";
 import { addCampaignMediaSchema, campaignSchema, MAX_CAMPAIGN_MEDIA } from "./campaign";
-import { ruleSchema, splitKeywords } from "./rule";
+import { followGateTexts, ruleSchema, splitKeywords } from "./rule";
+import {
+  DEFAULT_FOLLOW_GATE_BUTTON_TITLE,
+  DEFAULT_FOLLOW_GATE_MESSAGE,
+  DEFAULT_FOLLOW_GATE_RETRY_MESSAGE,
+  DM_BUTTON_TITLE_MAX,
+  FOLLOW_GATE_TEXT_MAX,
+} from "@/lib/constants";
 import { activityFiltersSchema } from "./activity";
 import { metaAppSchema } from "./settings";
 
@@ -62,6 +69,68 @@ describe("ruleSchema", () => {
   });
   it("coerces priority", () => {
     expect(ruleSchema.parse({ ...baseRule, priority: "5" }).priority).toBe(5);
+  });
+});
+
+describe("ruleSchema follow gate", () => {
+  it("defaults to off with null texts (older clients don't send the fields)", () => {
+    const r = ruleSchema.parse(baseRule);
+    expect(r.followGateEnabled).toBe(false);
+    expect(r.followGateMessage).toBeNull();
+    expect(r.followGateButtonTitle).toBeNull();
+    expect(r.followGateRetryMessage).toBeNull();
+  });
+  it("trims texts and turns empty strings into null", () => {
+    const r = ruleSchema.parse({
+      ...baseRule,
+      followGateEnabled: true,
+      followGateMessage: "  Follow us {username}  ",
+      followGateButtonTitle: "   ",
+      followGateRetryMessage: "",
+    });
+    expect(r.followGateEnabled).toBe(true);
+    expect(r.followGateMessage).toBe("Follow us {username}");
+    expect(r.followGateButtonTitle).toBeNull();
+    expect(r.followGateRetryMessage).toBeNull();
+  });
+  it("enforces the 640-char text and 20-char button limits", () => {
+    const res = ruleSchema.safeParse({
+      ...baseRule,
+      followGateEnabled: true,
+      followGateMessage: "x".repeat(FOLLOW_GATE_TEXT_MAX + 1),
+      followGateButtonTitle: "y".repeat(DM_BUTTON_TITLE_MAX + 1),
+      followGateRetryMessage: "z".repeat(FOLLOW_GATE_TEXT_MAX + 1),
+    });
+    expect(res.success).toBe(false);
+    expect(res.error!.issues.map((i) => i.path.join(".")).sort()).toEqual([
+      "followGateButtonTitle",
+      "followGateMessage",
+      "followGateRetryMessage",
+    ]);
+    expect(
+      ruleSchema.safeParse({
+        ...baseRule,
+        followGateMessage: "x".repeat(FOLLOW_GATE_TEXT_MAX),
+        followGateButtonTitle: "y".repeat(DM_BUTTON_TITLE_MAX),
+      }).success,
+    ).toBe(true);
+  });
+  it("followGateTexts falls back to the defaults", () => {
+    expect(
+      followGateTexts({ followGateMessage: null, followGateButtonTitle: " ", followGateRetryMessage: null }),
+    ).toEqual({
+      message: DEFAULT_FOLLOW_GATE_MESSAGE,
+      buttonTitle: DEFAULT_FOLLOW_GATE_BUTTON_TITLE,
+      retryMessage: DEFAULT_FOLLOW_GATE_RETRY_MESSAGE,
+    });
+    expect(
+      followGateTexts({ followGateMessage: "a", followGateButtonTitle: "b", followGateRetryMessage: "c" }),
+    ).toEqual({ message: "a", buttonTitle: "b", retryMessage: "c" });
+  });
+  it("defaults fit Instagram's limits", () => {
+    expect(Array.from(DEFAULT_FOLLOW_GATE_BUTTON_TITLE).length).toBeLessThanOrEqual(DM_BUTTON_TITLE_MAX);
+    expect(DEFAULT_FOLLOW_GATE_MESSAGE.length).toBeLessThanOrEqual(FOLLOW_GATE_TEXT_MAX);
+    expect(DEFAULT_FOLLOW_GATE_RETRY_MESSAGE.length).toBeLessThanOrEqual(FOLLOW_GATE_TEXT_MAX);
   });
 });
 

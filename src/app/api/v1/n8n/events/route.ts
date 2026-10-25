@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyApiKey } from "@/server/api-keys";
+import { handleFollowGatePostbacks } from "@/server/engine/follow-gate";
 import { processCommentEvents } from "@/server/engine/process-comment";
 import { AppError } from "@/server/errors";
 import { errorResponse, noStore } from "@/server/instagram/http";
@@ -32,8 +33,10 @@ export async function POST(req: NextRequest) {
   let authenticated = false;
   try {
     if (!(await verifyApiKey(req.headers.get("authorization")))) throw new ApiKeyRejected();
-    const { entries, entryIds, events } = await authenticateWebhook(req);
+    const { entries, entryIds, events, postbacks } = await authenticateWebhook(req);
     authenticated = true;
+    // Relayed follow gate taps are handled too (never throws); the response shape is unchanged.
+    if (postbacks.length > 0) await handleFollowGatePostbacks(postbacks, { log });
     const results = await processCommentEvents(events, { source: "n8n", log });
     const durationMs = Date.now() - started;
     log.info("n8n.events_processed", {

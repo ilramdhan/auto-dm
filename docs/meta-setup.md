@@ -96,7 +96,7 @@ New apps start in **Development mode**: only people with a role on the app can u
 2. Log in to Instagram and **Allow** all three permissions.
 3. You return to the app and see your username. Behind the scenes the app exchanges the code for a
    short-lived token, upgrades it to a **long-lived (~60 days)** token, encrypts it, and subscribes
-   your account to the `comments` webhook field (`POST /me/subscribed_apps`).
+   your account to the `comments` and `messaging_postbacks` webhook fields (`POST /me/subscribed_apps`).
 
 ## Part 7 - Webhook setup
 
@@ -105,7 +105,8 @@ New apps start in **Development mode**: only people with a role on the app can u
    **Verify token**: copy it from **Settings → Instagram** in the app.
 3. Click **Verify and save**. Meta sends a `GET` with `hub.challenge`; the app answers if the token
    matches. If it fails, see [troubleshooting.md](troubleshooting.md).
-4. In the webhook fields list, **subscribe to `comments`** (toggle it on).
+4. In the webhook fields list, **subscribe to `comments`** and **`messaging_postbacks`** (toggle both on).
+   `messaging_postbacks` is only needed for the follow gate button (Part 9).
 5. Your account must also be subscribed to the app. The **Connect Instagram** step does this; the
    dashboard shows "Webhook subscriptions" per account on the same page. In the app, **Settings →
    Instagram → Webhook diagnostics** shows the last subscription result, a **Re-subscribe webhooks**
@@ -200,6 +201,16 @@ Verified against Meta's Private Replies documentation and secondary sources:
 - **Buttons:** a link button requires the _generic template_ message format. ⚠ verify that generic
   templates/buttons are accepted in a _private reply_ to a comment; if Meta rejects it the app falls
   back to a plain-text DM with the URL included in the text (see `docs/troubleshooting.md`).
+- **Follow gate (optional, per rule):** the first Private Reply carries the gate text and a _postback_
+  button ("I've followed" by default) instead of the link. When the commenter taps it, Meta sends a
+  `messaging_postbacks` webhook and the tap **opens the 24-hour messaging window**, so the follow-up
+  is sent with `recipient: { id }` (IGSID). The app calls `GET /{IGSID}?fields=is_user_follow_business`:
+  if they follow you it sends the rule's normal DM (text + link button); if not, it resends the
+  editable "not following yet" text with the same button. If that API call fails (Meta error or
+  timeout) it **fails open** and sends the link, logging a redacted summary. Each delivery unlocks only
+  once; repeat taps are ignored. Accounts connected before this feature must click **Settings →
+  Instagram → Re-subscribe webhooks** once to add `messaging_postbacks`; until then everything except
+  the gate button keeps working.
 - **Rate limits** (⚠ verify, from secondary sources): about **750 calls/hour per account** for private
   replies on posts/reels (100/second for Live). General Graph API call limits also apply. A typical
   creator account never gets near these, but a viral post can; the app logs failures in **Activity**.
@@ -242,7 +253,8 @@ paywalled features. Hosting runs on the free tiers of Vercel Hobby and Supabase 
 - [ ] Redirect URI `{APP_URL}/api/instagram/oauth/callback` whitelisted
 - [ ] IG account added as Instagram Tester and invite accepted
 - [ ] **Connect Instagram** done
-- [ ] Webhook callback `{APP_URL}/api/webhooks/instagram` + verify token verified, `comments` subscribed
+- [ ] Webhook callback `{APP_URL}/api/webhooks/instagram` + verify token verified, `comments` and `messaging_postbacks` subscribed
+- [ ] Using the follow gate on an account connected earlier? Clicked **Re-subscribe webhooks** once
 - [ ] Name + contact email saved in **Settings → Account → Public contact**
 - [ ] App settings → Basic: Privacy Policy URL `{APP_URL}/privacy`, data deletion instructions URL
       `{APP_URL}/data-deletion`

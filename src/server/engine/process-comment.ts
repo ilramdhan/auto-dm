@@ -6,10 +6,12 @@ import { getAccessToken, getActiveAccount } from "@/server/instagram/account";
 import { COMMENT_MAX_CHARS, DM_MAX_CHARS } from "@/server/instagram/constants";
 import { GraphApiError, safeErrorMessage } from "@/server/instagram/graph";
 import { logger, type Logger } from "@/server/log";
-import { replyToComment, sendPrivateReply } from "@/server/instagram/messaging";
+import { replyToComment, sendPostbackMessage, sendPrivateReply } from "@/server/instagram/messaging";
 import type { CommentEvent } from "@/server/instagram/webhook";
 import type { SkipReason } from "@/lib/validation/skipped";
 import { getSetting } from "@/server/settings";
+import { followGateTexts } from "@/lib/validation/rule";
+import { followGatePayload } from "./follow-gate-payload";
 import { templateKeyword } from "./match";
 import { resolveOtherPostRule, resolveRule, type ResolvedMatch } from "./resolve";
 import { pickRandom, renderTemplate, truncateText } from "./template";
@@ -218,8 +220,36 @@ export async function sendForDelivery(input: SendForDeliveryInput): Promise<Proc
       }
     }
 
+    let followGatePending = false;
     const dmText = truncateText(renderTemplate(match.rule.dmMessage, vars).trim(), DM_MAX_CHARS);
-    if (dmText) {
+    if (dmText && match.rule.followGateEnabled) {
+      // Follow gate: the Private Reply asks for a follow and carries a postback button; the real DM
+      // is sent by `handleFollowGatePostback` once the follow is confirmed.
+      const gate = followGateTexts(match.rule);
+      const gateText = renderTemplate(gate.message, vars).trim() || gate.message;
+      try {
+        const dm = await sendPostbackMessage(
+          token,
+          account.igUserId,
+          { comment_id: commentId },
+          { text: gateText, button: { title: gate.buttonTitle, payload: followGatePayload(deliveryId) } },
+        );
+        dmMessageId = dm.messageId;
+        dmStatus = "sent";
+        followGatePending = true;
+        if (dm.templateFallback) {
+          log.warn("action.follow_gate_template_fallback", {
+            commentId,
+            graphCode: dm.templateFallback.code,
+          });
+        }
+      } catch (err) {
+        dmStatus = "failed";
+        errorCode ??= errorCodeOf(err);
+        errors.push(`private reply: ${safeErrorMessage(err, [token], 240)}`);
+        log.warn("action.dm_failed", { commentId, err: safeErrorMessage(err, [token]) });
+      }
+    } else if (dmText) {
       const button =
         match.rule.dmButtonUrl && match.rule.dmButtonTitle
           ? { title: match.rule.dmButtonTitle, url: match.rule.dmButtonUrl }
@@ -269,6 +299,7 @@ export async function sendForDelivery(input: SendForDeliveryInput): Promise<Proc
         durationMs,
         attempts: sql`${deliveries.attempts} + 1`,
         processedAt: new Date(),
+        ...(followGatePending ? { followGateStatus: "pending" as const, followGateUnlockedAt: null } : {}),
       })
       .where(eq(deliveries.id, deliveryId));
     return finish({ status, error, errorCode, publicReplyId, dmMessageId, durationMs });

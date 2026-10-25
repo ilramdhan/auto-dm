@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/empty-state";
+import { Badge } from "@/components/ui/badge";
 import { DeliveryStatusBadge } from "@/components/delivery-status-badge";
 import { DeleteCommenterButton } from "@/components/data-deletion/delete-commenter";
 import { CSV_ROW_LIMIT } from "@/lib/csv";
@@ -36,6 +37,13 @@ function explanation(d: DeliveryRow): string | null {
 function Explanation({ d, className }: { d: DeliveryRow; className?: string }) {
   const text = explanation(d);
   return text ? <p className={className ?? "text-muted-foreground max-w-64 text-xs"}>{text}</p> : null;
+}
+
+/** Text badge for the follow gate; renders nothing when the delivery has no gate. */
+function FollowGateBadge({ d }: { d: DeliveryRow }) {
+  if (d.followGateStatus === "pending") return <Badge variant="outline">Waiting for follow</Badge>;
+  if (d.followGateStatus === "unlocked") return <Badge variant="outline">Follow unlocked</Badge>;
+  return null;
 }
 
 function StatusCell({ d }: { d: DeliveryRow }) {
@@ -211,6 +219,7 @@ export default async function ActivityPage({
                       <TableCell>
                         <div className="grid gap-0.5">
                           <StatusCell d={d} />
+                          <FollowGateBadge d={d} />
                           <Outcome d={d} />
                           <Explanation d={d} />
                         </div>
@@ -237,6 +246,7 @@ export default async function ActivityPage({
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <StatusCell d={d} />
+                    <FollowGateBadge d={d} />
                     <DeleteCommenterButton commenterId={d.commenterId} username={d.commenterUsername} />
                   </div>
                 </div>

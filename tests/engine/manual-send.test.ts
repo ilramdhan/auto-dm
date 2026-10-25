@@ -118,6 +118,26 @@ describe.skipIf(!TEST_DB)("manual send + missed comment sync (Postgres integrati
     return r!;
   }
 
+  it("manual send of a follow gate rule sends the postback template and marks it pending", async () => {
+    const { rule } = await seed();
+    const { eq } = await import("drizzle-orm");
+    await m.db.db
+      .update(m.schema.rules)
+      .set({ followGateEnabled: true })
+      .where(eq(m.schema.rules.id, rule.id));
+    const d = await skippedRow();
+    const res = await m.manual.manualSend({ deliveryId: d.id, ruleId: rule.id });
+    expect(res.status).toBe("sent");
+    const dm = JSON.parse(String(fetchMock.mock.calls[1]![1].body));
+    expect(dm).toMatchObject({
+      recipient: { comment_id: d.commentId },
+      message: {
+        attachment: { payload: { buttons: [{ type: "postback", payload: `fg:${d.id}` }] } },
+      },
+    });
+    expect(await get(d.id)).toMatchObject({ status: "sent", followGateStatus: "pending" });
+  });
+
   it("sends once on the same row with source manual and '*' as keyword; a second attempt is refused", async () => {
     const { rule } = await seed();
     const d = await skippedRow();
