@@ -408,9 +408,9 @@ export function RuleForm({
               <div className="grid gap-0.5">
                 <Label htmlFor={f("gate")}>Require follow before the link is sent</Label>
                 <p id={f("gate-help")} className="text-muted-foreground text-xs">
-                  The first DM asks the commenter to follow you and shows a button. The message and link
-                  above are sent only after they tap it and we confirm they follow you. If the follow check
-                  fails on Meta&apos;s side, the link is sent anyway.
+                  The first DM asks the commenter to follow you and shows a button. The message and link above
+                  are sent only after they tap it and we confirm they follow you. If the follow check fails on
+                  Meta&apos;s side, the link is sent anyway.
                 </p>
               </div>
               <Switch
