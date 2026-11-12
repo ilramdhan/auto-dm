@@ -16,9 +16,27 @@ const graphError = (code: number, status = 400) =>
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe("graphRequest", () => {
+  it("routes Unified Login media and DM requests to Facebook Graph with explicit IG IDs", async () => {
+    vi.stubEnv("META_CONFIG_ID", "123456789012345");
+    const fetchMock = vi.fn<FetchFn>(async () => json({ id: "1" }));
+    vi.stubGlobal("fetch", fetchMock);
+    await graphRequest({ path: "/178414123/media", accessToken: "TOKEN", schema: z.unknown() });
+    await graphRequest({
+      method: "POST",
+      path: "/178414123/messages",
+      accessToken: "TOKEN",
+      json: { recipient: { comment_id: "comment" }, message: { text: "link" } },
+      schema: z.unknown(),
+    });
+    expect(fetchMock.mock.calls.map(([url]) => url.origin + url.pathname)).toEqual([
+      "https://graph.facebook.com/v27.0/178414123/media",
+      "https://graph.facebook.com/v27.0/178414123/messages",
+    ]);
+  });
   it("builds the versioned URL, sends the token as a query param and parses the response", async () => {
     const fetchMock = vi.fn<FetchFn>(async () => json({ id: "1", extra: true }));
     vi.stubGlobal("fetch", fetchMock);

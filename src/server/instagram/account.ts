@@ -6,6 +6,7 @@ import { db, retryable } from "@/server/db/client";
 import { instagramAccounts, type InstagramAccount } from "@/server/db/schema";
 import { IG_REFRESH_TOKEN_URL } from "./constants";
 import { graphId, graphRequest } from "./graph";
+import { unifiedConfigId } from "./login-mode";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** Refresh when fewer than this many days are left (long-lived tokens last 60 days). */
@@ -81,7 +82,9 @@ export async function disconnectAccount(): Promise<void> {
   try {
     await graphRequest({
       method: "DELETE",
-      path: "/me/subscribed_apps",
+      path: unifiedConfigId()
+        ? `/${encodeURIComponent(account.igUserId)}/subscribed_apps`
+        : "/me/subscribed_apps",
       accessToken: getAccessToken(account),
       schema: z.unknown(),
       retries: 0,
@@ -143,7 +146,7 @@ export async function listMedia(opts: { limit?: number; after?: string | null } 
   if (!account) throw new Error("No Instagram account connected");
   const limit = Math.min(Math.max(Math.trunc(opts.limit ?? 24), 1), 50);
   const page = await graphRequest({
-    path: "/me/media",
+    path: unifiedConfigId() ? `/${encodeURIComponent(account.igUserId)}/media` : "/me/media",
     accessToken: getAccessToken(account),
     query: {
       fields: "id,caption,media_type,media_product_type,media_url,permalink,thumbnail_url,timestamp",
@@ -189,6 +192,13 @@ export async function refreshTokenIfNeeded(
 ): Promise<RefreshResult> {
   const now = opts.now ?? new Date();
   const expiresAt = account.tokenExpiresAt;
+  // Unified system-user tokens cannot use Instagram's 60-day refresh endpoint.
+  if (unifiedConfigId()) {
+    if (expiresAt && expiresAt.getTime() <= now.getTime()) {
+      throw new Error("Unified Login token expired. Reconnect Instagram in Settings.");
+    }
+    return { refreshed: false, expiresAt };
+  }
   const due = !expiresAt || expiresAt.getTime() - now.getTime() < REFRESH_THRESHOLD_DAYS * DAY_MS;
   if (!opts.force && !due) return { refreshed: false, expiresAt };
 

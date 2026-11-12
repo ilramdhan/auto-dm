@@ -74,6 +74,7 @@ export type MetaReviewUrls = {
 };
 
 export function InstagramTab(props: {
+  unifiedLogin: boolean;
   appId: string;
   appSecretConfigured: boolean;
   account: Account | null;
@@ -90,11 +91,12 @@ export function InstagramTab(props: {
   return (
     <div className="grid max-w-3xl grid-cols-1 gap-6">
       <MetaAppCard
+        unifiedLogin={props.unifiedLogin}
         appId={props.appId}
         secretConfigured={props.appSecretConfigured}
         redirectUri={props.redirectUri}
       />
-      <ConnectionCard account={props.account} configured={configured} />
+      <ConnectionCard account={props.account} configured={configured} unifiedLogin={props.unifiedLogin} />
       <WebhookCard webhookUrl={props.webhookUrl} receivedEvents={props.receivedEvents} mode={props.mode} />
       <WebhookDiagnosticsCard
         requests={props.webhookRequests}
@@ -143,10 +145,12 @@ function CopyField({
 }
 
 function MetaAppCard({
+  unifiedLogin,
   appId,
   secretConfigured,
   redirectUri,
 }: {
+  unifiedLogin: boolean;
   appId: string;
   secretConfigured: boolean;
   redirectUri: string;
@@ -180,7 +184,9 @@ function MetaAppCard({
         <CardHeader>
           <CardTitle>Meta app</CardTitle>
           <CardDescription>
-            From developers.facebook.com → your app → Instagram → API setup with Instagram login.
+            {unifiedLogin
+              ? "Unified Login: use the Meta App ID and App Secret from App settings → Basic. Share exactly one Instagram account when connecting."
+              : "From developers.facebook.com → your app → Instagram → API setup with Instagram login."}
           </CardDescription>
           <CardAction>
             {appId && secretConfigured ? (
@@ -197,7 +203,7 @@ function MetaAppCard({
         <CardContent className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="grid gap-2">
-              <Label htmlFor="meta-app-id">Instagram App ID</Label>
+              <Label htmlFor="meta-app-id">{unifiedLogin ? "Meta App ID" : "Instagram App ID"}</Label>
               <Input
                 id="meta-app-id"
                 inputMode="numeric"
@@ -211,7 +217,7 @@ function MetaAppCard({
             </div>
             <div className="grid gap-2">
               <Label htmlFor="meta-app-secret" className="flex items-center gap-2">
-                Instagram App Secret
+                {unifiedLogin ? "Meta App Secret" : "Instagram App Secret"}
                 {secretConfigured ? (
                   <span className="text-success inline-flex items-center gap-1 text-xs font-normal">
                     <ShieldCheck className="size-3.5" aria-hidden /> stored encrypted
@@ -251,7 +257,15 @@ function MetaAppCard({
   );
 }
 
-function ConnectionCard({ account, configured }: { account: Account | null; configured: boolean }) {
+function ConnectionCard({
+  account,
+  configured,
+  unifiedLogin,
+}: {
+  account: Account | null;
+  configured: boolean;
+  unifiedLogin: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const daysLeft = account?.tokenDaysLeft ?? null;
@@ -261,7 +275,9 @@ function ConnectionCard({ account, configured }: { account: Account | null; conf
       <CardHeader>
         <CardTitle>Instagram account</CardTitle>
         <CardDescription>
-          A professional (Business or Creator) account. Tokens refresh automatically every day.
+          {unifiedLogin
+            ? "A professional (Business or Creator) account. Use a non-expiring token configuration; reconnect if access is revoked or expires."
+            : "A professional (Business or Creator) account. Tokens refresh automatically every day."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -285,7 +301,9 @@ function ConnectionCard({ account, configured }: { account: Account | null; conf
                 <p className="text-muted-foreground text-xs">
                   {account.tokenExpiresAt
                     ? `Token valid until ${formatDateTime(account.tokenExpiresAt)}${daysLeft !== null ? ` (${daysLeft} days)` : ""}`
-                    : "Token expiry unknown"}
+                    : unifiedLogin
+                      ? "No scheduled token expiry reported by Meta"
+                      : "Token expiry unknown"}
                 </p>
               </div>
             </div>
