@@ -7,9 +7,10 @@ import type { InstagramAccount } from "@/server/db/schema";
 import type { SubscriptionStatus } from "@/lib/webhook-diagnostics";
 import { logger } from "@/server/log";
 import { getSettings, setSetting } from "@/server/settings";
-import { tokenResponseSchema, upsertAccount } from "./account";
+import { getActiveAccount, tokenResponseSchema, upsertAccount } from "./account";
 import { IG_AUTHORIZE_URL, IG_LONG_TOKEN_URL, IG_SCOPES, IG_SHORT_TOKEN_URL } from "./constants";
 import { GraphApiError, graphId, graphRequest, safeErrorMessage } from "./graph";
+import { unifiedConfigId, UNIFIED_GRAPH_BASE } from "./login-mode";
 
 const log = logger("oauth");
 
@@ -77,6 +78,19 @@ async function getAppCredentials(): Promise<{ appId: string; appSecret: string }
 /** Builds the Instagram Business Login authorization URL. */
 export async function buildAuthorizeUrl(state: string): Promise<string> {
   const { appId } = await getAppCredentials();
+  const configId = unifiedConfigId();
+  if (configId) {
+    const url = new URL("https://www.facebook.com/dialog/oauth");
+    url.searchParams.set("client_id", appId);
+    url.searchParams.set("config_id", configId);
+    url.searchParams.set("redirect_uri", oauthRedirectUri());
+    url.searchParams.set("response_type", "code");
+    url.searchParams.set("override_default_response_type", "true");
+    url.searchParams.set("display", "popup");
+    url.searchParams.set("prompt", "login");
+    url.searchParams.set("state", state);
+    return url.toString();
+  }
   const url = new URL(IG_AUTHORIZE_URL);
   url.searchParams.set("client_id", appId);
   url.searchParams.set("redirect_uri", oauthRedirectUri());
@@ -121,6 +135,8 @@ export interface ConnectResult {
  */
 export async function completeOAuth(rawCode: string): Promise<ConnectResult> {
   const { appId, appSecret } = await getAppCredentials();
+  const configId = unifiedConfigId();
+  if (configId) return completeUnifiedOAuth(rawCode, appId, appSecret, configId);
   // Instagram appends `#_` to the code in the redirect; strip it if it leaked into the value.
   const code = rawCode.replace(/#_$/, "");
 
@@ -178,6 +194,61 @@ export async function completeOAuth(rawCode: string): Promise<ConnectResult> {
   return { account, subscribed: status.ok };
 }
 
+async function completeUnifiedOAuth(
+  code: string,
+  appId: string,
+  appSecret: string,
+  configId: string,
+): Promise<ConnectResult> {
+  let token: z.infer<typeof tokenResponseSchema>;
+  try {
+    token = await graphRequest({
+      path: `${UNIFIED_GRAPH_BASE}/oauth/access_token`,
+      query: { client_id: appId, client_secret: appSecret, code, redirect_uri: oauthRedirectUri() },
+      schema: tokenResponseSchema,
+      retries: 0,
+    });
+  } catch (err) {
+    throw new OAuthFlowError("token_exchange_failed", err);
+  }
+  let profile: { id: string; username: string };
+  let businessId: string;
+  try {
+    const business = await graphRequest({
+      path: "/me",
+      query: { fields: "client_business_id" },
+      accessToken: token.access_token,
+      schema: z.object({ client_business_id: graphId }),
+    });
+    const accounts = await graphRequest({
+      path: "/me/assigned_instagram_accounts",
+      query: { fields: "id,username", limit: 2 },
+      accessToken: token.access_token,
+      schema: z.object({
+        data: z.array(z.object({ id: graphId, username: z.string().min(1) })),
+        paging: z.object({ next: z.string().optional() }).optional(),
+      }),
+    });
+    // AutoDM operates one account. Never silently connect the wrong shared asset.
+    if (accounts.data.length !== 1 || accounts.paging?.next) {
+      throw new Error("Share exactly one Instagram account when connecting AutoDM.");
+    }
+    profile = accounts.data[0]!;
+    businessId = business.client_business_id;
+  } catch (err) {
+    throw new OAuthFlowError("profile_fetch_failed", err);
+  }
+  const account = await upsertAccount({
+    igUserId: profile.id,
+    username: profile.username,
+    accessToken: token.access_token,
+    expiresInSeconds: token.expires_in ?? null,
+  });
+  await setSetting("meta.unifiedConnection", { igUserId: profile.id, businessId, configId });
+  const status = await subscribeAndRecord(token.access_token, "connect", profile.id);
+  return { account, subscribed: status.ok };
+}
+
 /** Subscribes the app to the account's `comments` and `messaging_postbacks` webhook fields. Returns false on failure. */
 export async function subscribeToWebhooks(accessToken: string): Promise<boolean> {
   return (await subscribeWithDetails(accessToken)).ok;
@@ -196,11 +267,15 @@ const subscribedAppsSchema = z.object({
  */
 export async function subscribeWithDetails(
   accessToken: string,
+  igUserId?: string,
 ): Promise<{ ok: boolean; fields?: string[]; error?: string }> {
+  const accountId = unifiedConfigId() ? (igUserId ?? (await getActiveAccount())?.igUserId) : undefined;
+  if (unifiedConfigId() && !accountId) return { ok: false, error: "No Instagram account connected" };
+  const path = accountId ? `/${encodeURIComponent(accountId)}/subscribed_apps` : "/me/subscribed_apps";
   try {
     const res = await graphRequest({
       method: "POST",
-      path: "/me/subscribed_apps",
+      path,
       query: { subscribed_fields: WEBHOOK_SUBSCRIBED_FIELDS },
       accessToken,
       schema: subscribeSchema,
@@ -213,7 +288,7 @@ export async function subscribeWithDetails(
   }
   try {
     const current = await graphRequest({
-      path: "/me/subscribed_apps",
+      path,
       accessToken,
       schema: subscribedAppsSchema,
       retries: 0,
@@ -230,8 +305,9 @@ export async function subscribeWithDetails(
 export async function subscribeAndRecord(
   accessToken: string,
   source: SubscriptionStatus["source"],
+  igUserId?: string,
 ): Promise<SubscriptionStatus> {
-  const result = await subscribeWithDetails(accessToken);
+  const result = await subscribeWithDetails(accessToken, igUserId);
   const status: SubscriptionStatus = {
     ok: result.ok,
     at: new Date().toISOString(),

@@ -1,5 +1,8 @@
 # Meta (Instagram) setup guide
 
+> **New Meta apps using Unified Login:** follow [Unified Login setup](unified-login.md)
+> instead. The guide below describes the original Instagram Login flow.
+
 This guide connects your own Instagram account to your own AutoDM deployment. It takes about
 15 minutes and costs nothing. You create **your own Meta app** (nobody else's credentials are shared),
 so you stay in full control of your data.

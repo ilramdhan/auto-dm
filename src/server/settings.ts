@@ -17,6 +17,11 @@ import { settings } from "./db/schema";
  * encrypted at rest and never sent to the browser (use `getPublicSettings` for UI).
  */
 export const SETTINGS = {
+  /** Onboarding metadata for the single connected Unified Login account. */
+  "meta.unifiedConnection": {
+    schema: z.object({ igUserId: z.string(), businessId: z.string(), configId: z.string() }),
+    secret: false,
+  },
   /** Instagram app (Meta developer dashboard -> Instagram -> API setup with Instagram login). */
   "meta.appId": { schema: z.string().regex(/^\d{5,25}$/, "Must be a numeric app id"), secret: false },
   "meta.appSecret": { schema: z.string().min(16).max(128), secret: true },

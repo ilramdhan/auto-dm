@@ -13,6 +13,10 @@
 | `CRON_SECRET`            | no       | -                            | Protects `/api/cron/*`                                                                |
 | `LOG_LEVEL`              | no       | `info` (`debug` in dev)      | `debug`, `info`, `warn` or `error`                                                    |
 
+`META_CONFIG_ID` is optional. Set it to your numeric Meta Unified Login configuration ID
+to enable Unified Login for new Meta apps. Leave it unset for Instagram Login. See
+[Unified Login setup](unified-login.md) for credentials, token lifetime and rollback.
+
 Generate secrets: `openssl rand -base64 48`.
 
 Without `APP_URL` (and outside Vercel) canonical links and social-card URLs cannot be made absolute, and
@@ -45,5 +49,9 @@ Stored in the `settings` table; secret ones are encrypted. Defined in `src/serve
 | `general.timezone`         | no     | IANA time zone for Analytics days and "Comments today" (default `UTC`; Settings → Processing)                                                                       |
 | `general.operatorName`     | no     | Your name or business name, shown on the public `/privacy` and `/data-deletion` pages (Settings → Account → Public contact)                                         |
 | `general.contactEmail`     | no     | Public contact email for privacy questions and deletion requests, shown on the same pages                                                                           |
+
+`meta.unifiedConnection` (non-secret) records the connected Instagram account ID, client
+business ID and configuration ID after Unified Login. Tokens remain encrypted in the
+account record.
 
 Campaigns, rules and API keys are managed in their own pages.

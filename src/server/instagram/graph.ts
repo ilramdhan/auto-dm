@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AppError } from "@/server/errors";
 import { logger } from "@/server/log";
 import { GRAPH_BASE_URL } from "./constants";
+import { unifiedConfigId, UNIFIED_GRAPH_BASE } from "./login-mode";
 
 const log = logger("graph");
 
@@ -145,7 +146,10 @@ function buildUrl(
 ): URL {
   const url = /^https:\/\//.test(path)
     ? new URL(path)
-    : new URL(GRAPH_BASE_URL + (path.startsWith("/") ? path : `/${path}`));
+    : new URL(
+        (unifiedConfigId() ? UNIFIED_GRAPH_BASE : GRAPH_BASE_URL) +
+          (path.startsWith("/") ? path : `/${path}`),
+      );
   for (const [k, v] of Object.entries(query ?? {})) {
     if (v !== undefined && v !== null) url.searchParams.set(k, String(v));
   }

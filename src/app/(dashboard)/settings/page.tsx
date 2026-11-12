@@ -17,6 +17,7 @@ import { listWebhookRequests } from "@/server/repos/webhook-requests";
 import { getPublicSettings } from "@/server/settings";
 import { AccountTab } from "./account-tab";
 import { InstagramTab } from "./instagram-tab";
+import { unifiedConfigId } from "@/server/instagram/login-mode";
 import { ProcessingTab } from "./processing-tab";
 import { RetentionCard } from "./retention-card";
 import { TimeZoneCard } from "./timezone-card";
@@ -111,6 +112,7 @@ export default async function SettingsPage({
         </TabsContent>
         <TabsContent value="instagram">
           <InstagramTab
+            unifiedLogin={!!unifiedConfigId()}
             appId={settings["meta.appId"].value ?? ""}
             appSecretConfigured={settings["meta.appSecret"].configured}
             account={
